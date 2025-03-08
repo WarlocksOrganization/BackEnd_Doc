@@ -35,7 +35,7 @@ set(SOURCE_FILES
     "${SRC_DIR}/service/auth_service.cpp"
     "${SRC_DIR}/repository/user_repository.cpp"
     "${SRC_DIR}/util/db_pool.cpp"
-    "${SRC_DIR}/util/password_util.cpp"  # 추가된 부분
+    "${SRC_DIR}/util/password_util.cpp"
 )
 
 # 모든 헤더 디렉토리를 명시적으로 추가
