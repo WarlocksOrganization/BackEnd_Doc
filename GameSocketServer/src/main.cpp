@@ -35,7 +35,7 @@ int main(int argc, char* argv[])
         // 기본 설정
         short port = 8080;
         std::string db_connection_string =
-            "dbname=GameData user=admin password=admin host=localhost port=5432";
+            "dbname=GameData user=admin password=admin host=localhost port=5432 client_encoding=UTF8";
 
         // 커맨드 라인 인자 처리
         for (int i = 1; i < argc; ++i) {
