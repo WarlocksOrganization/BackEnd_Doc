@@ -26,20 +26,31 @@ message(STATUS "Source directory: ${SRC_DIR}")
 # vcpkg 설치 디렉토리 설정
 set(VCPKG_INSTALLED_DIR "${CMAKE_CURRENT_SOURCE_DIR}/vcpkg_installed/x64-windows")
 
-# 소스 파일 설정
+# 소스 파일과 헤더 파일 명시적으로 나열
 set(SOURCE_FILES
     "${SRC_DIR}/main.cpp"
-    "${SRC_DIR}/server.cpp"
-    "${SRC_DIR}/session.cpp"
-    "${SRC_DIR}/api/auth_api.cpp"
-    "${SRC_DIR}/db/db_pool.cpp"
-    "${SRC_DIR}/db/user_dao.cpp"
+    "${SRC_DIR}/core/server.cpp"
+    "${SRC_DIR}/core/session.cpp"
+    "${SRC_DIR}/controller/auth_controller.cpp"
+    "${SRC_DIR}/service/auth_service.cpp"
+    "${SRC_DIR}/repository/user_repository.cpp"
+    "${SRC_DIR}/util/db_pool.cpp"
+    "${SRC_DIR}/util/password_util.cpp"
 )
 
-# 헤더 파일 디렉토리
+# 모든 헤더 디렉토리를 명시적으로 추가
 set(INCLUDE_DIRS
     "${CMAKE_CURRENT_SOURCE_DIR}"
     "${SRC_DIR}"
+    "${SRC_DIR}/core"
+    "${SRC_DIR}/controller"
+    "${SRC_DIR}/service"
+    "${SRC_DIR}/repository"
+    "${SRC_DIR}/dto"
+    "${SRC_DIR}/dto/request"
+    "${SRC_DIR}/dto/response"
+    "${SRC_DIR}/entity"
+    "${SRC_DIR}/util"
     "${VCPKG_INSTALLED_DIR}/include"
 )
 
@@ -65,7 +76,7 @@ message(STATUS "Found PQXX libraries: ${PQXX_LIBS}")
 message(STATUS "Found SSL libraries: ${SSL_LIBS}")
 message(STATUS "Found CRYPTO libraries: ${CRYPTO_LIBS}")
 
-# 라이브러리 링크 - fmt와 spdlog 라이브러리 파일 제외 (헤더 전용으로 사용)
+# 라이브러리 링크
 target_link_libraries(${PROJECT_NAME} PRIVATE
     ${BOOST_SYSTEM_LIBS}
     ${PQXX_LIBS}
@@ -73,15 +84,17 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     ${CRYPTO_LIBS}
 )
 
-# 디버깅 정보 출력
-message(STATUS "Include directories:")
-foreach(DIR ${INCLUDE_DIRS})
-    message(STATUS "  ${DIR}")
-endforeach()
+# 빌드 후 모든 DLL 파일 복사
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    "${VCPKG_INSTALLED_DIR}/bin/pqxx.dll"
+    $<TARGET_FILE_DIR:${PROJECT_NAME}>/pqxx.dll
+    COMMENT "Copying pqxx.dll to output directory"
+)
 
-message(STATUS "Source files:")
+# 디버깅 정보 출력 - 파일 존재 확인
+message(STATUS "Checking source files existence:")
 foreach(SOURCE_FILE ${SOURCE_FILES})
-    # 파일 존재 여부 확인
     if(EXISTS "${SOURCE_FILE}")
         message(STATUS "  ${SOURCE_FILE} (exists)")
     else()
