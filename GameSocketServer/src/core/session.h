@@ -1,19 +1,18 @@
+// core/session.h
 #pragma once
-
 #include <boost/asio.hpp>
 #include <memory>
 #include <string>
-#include <deque>
-#include <map>
 #include <array>
-#include "api/api_handler.h"
+#include <map>
+#include "../controller/controller.h"
 
 namespace game_server {
 
     class Session : public std::enable_shared_from_this<Session> {
     public:
         Session(boost::asio::ip::tcp::socket socket,
-            std::map<std::string, std::shared_ptr<ApiHandler>>& api_handlers);
+            std::map<std::string, std::shared_ptr<Controller>>& controllers);
 
         void start();
 
@@ -25,11 +24,10 @@ namespace game_server {
         void handle_error(const std::string& error_message);
 
         boost::asio::ip::tcp::socket socket_;
-        std::map<std::string, std::shared_ptr<ApiHandler>>& api_handlers_;
+        std::map<std::string, std::shared_ptr<Controller>>& controllers_;
         std::array<char, 8192> buffer_;
         std::string message_;
-        int user_id_; // Authenticated user ID (0 = not authenticated)
-        std::string auth_token_; // Authentication token
+        int user_id_; // 현재 세션의 사용자 ID (0 = 인증 안됨)
     };
 
 } // namespace game_server
