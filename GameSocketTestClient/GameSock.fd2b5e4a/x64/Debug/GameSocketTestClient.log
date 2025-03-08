@@ -1,0 +1,12 @@
+﻿  GameTestClient.cpp
+  Please define _WIN32_WINNT or _WIN32_WINDOWS appropriately. For example:
+  - add -D_WIN32_WINNT=0x0601 to the compiler command line; or
+  - add _WIN32_WINNT=0x0601 to your project's Preprocessor Definitions.
+  Assuming _WIN32_WINNT=0x0601 (i.e. Windows 7 target).
+  GameSocketTestClient.vcxproj -> C:\Users\SangHyeok\Desktop\git\BackEnd_Doc\GameSocketTestClient\x64\Debug\GameSocketTestClient.exe
+  C:\Users\SangHyeok\Desktop\git\BackEnd_Doc\GameSocketTestClient\..\GameSocketServer\vcpkg_installed\x64-windows\bin\boost_system-vc143-mt-x64-1_87.dll
+  1개 파일이 복사되었습니다.
+  C:\Users\SangHyeok\Desktop\git\BackEnd_Doc\GameSocketTestClient\..\GameSocketServer\vcpkg_installed\x64-windows\bin\libssl-3-x64.dll
+  1개 파일이 복사되었습니다.
+  C:\Users\SangHyeok\Desktop\git\BackEnd_Doc\GameSocketTestClient\..\GameSocketServer\vcpkg_installed\x64-windows\bin\libcrypto-3-x64.dll
+  1개 파일이 복사되었습니다.
