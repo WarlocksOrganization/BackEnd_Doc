@@ -143,56 +143,58 @@ private:
 };
 
 int main() {
-    string IP;
-    int Port;
-    cout << "\n서버 IP를 입력해 주세요 : ";
-    cin >> IP;
-    cout << "\n포트 번호를 입력해 주세요 : ";
-    cin >> Port;
-    cout << "\n연결을 시도합니다...\n";
-    GameTestClient client(IP, Port);
+    while (1) {
+        string IP;
+        int Port;
+        cout << "\n서버 IP를 입력해 주세요 : ";
+        cin >> IP;
+        cout << "\n포트 번호를 입력해 주세요 : ";
+        cin >> Port;
+        cout << "\n연결을 시도합니다...\n";
+        GameTestClient client(IP, Port);
 
-    try {
-        if (client.connect()) {
-            cout << "연결 성공!\n";
-            string s;
-            while (1) {
-                cout << "\n작업을 선택해 주세요(회원가입, 로그인, 종료) : ";
-                cin >> s;
-                if (s == "회원가입") {
-                    string id, pw;
-                    cout << "\n사용할 ID를 입력해 주세요 : ";
-                    cin >> id;
-                    cout << "\n사용할 비밀번호를 입력해 주세요 : ";
-                    cin >> pw;
-                    cout << "\n회원 가입을 시도합니다...\n";
-                    // Test user registration
-                    client.registerUser(id, pw);
-                }
-                else if (s == "로그인") {
-                    string id, pw;
-                    cout << "\nID를 입력해 주세요 : ";
-                    cin >> id;
-                    cout << "\n비밀번호를 입력해 주세요 : ";
-                    cin >> pw;
-                    cout << "\n로그인을 시도합니다...\n";
-                    if (client.login(id, pw)) {
-                        std::cout << "Login successful!" << std::endl;
+        try {
+            if (client.connect()) {
+                cout << "연결 성공!\n";
+                string s;
+                while (1) {
+                    cout << "\n작업을 선택해 주세요(회원가입, 로그인, 종료) : ";
+                    cin >> s;
+                    if (s == "회원가입") {
+                        string id, pw;
+                        cout << "\n사용할 ID를 입력해 주세요 : ";
+                        cin >> id;
+                        cout << "\n사용할 비밀번호를 입력해 주세요 : ";
+                        cin >> pw;
+                        cout << "\n회원 가입을 시도합니다...\n";
+                        // Test user registration
+                        client.registerUser(id, pw);
                     }
-                }
-                else if (s == "종료") {
-                    cout << "\n소켓 서버와 연결을 종료합니다.\n";
-                    client.disconnect();
-                    return 0;
-                }
-                else {
-                    cout << "\n올바른 값을 입력해 주세요\n";
+                    else if (s == "로그인") {
+                        string id, pw;
+                        cout << "\nID를 입력해 주세요 : ";
+                        cin >> id;
+                        cout << "\n비밀번호를 입력해 주세요 : ";
+                        cin >> pw;
+                        cout << "\n로그인을 시도합니다...\n";
+                        if (client.login(id, pw)) {
+                            std::cout << "Login successful!" << std::endl;
+                        }
+                    }
+                    else if (s == "종료") {
+                        cout << "\n소켓 서버와 연결을 종료합니다.\n";
+                        client.disconnect();
+                        break;
+                    }
+                    else {
+                        cout << "\n올바른 값을 입력해 주세요\n";
+                    }
                 }
             }
         }
-    }
-    catch (const std::exception& e) {
-        std::cerr << "Exception: " << e.what() << std::endl;
+        catch (const std::exception& e) {
+            std::cerr << "Exception: " << e.what() << std::endl;
+        }
     }
     
 
