@@ -1,3 +1,4 @@
+// core/session.cpp
 #include "session.h"
 #include <iostream>
 #include <nlohmann/json.hpp>
@@ -8,9 +9,9 @@ namespace game_server {
     using json = nlohmann::json;
 
     Session::Session(boost::asio::ip::tcp::socket socket,
-        std::map<std::string, std::shared_ptr<ApiHandler>>& api_handlers)
+        std::map<std::string, std::shared_ptr<Controller>>& controllers)
         : socket_(std::move(socket)),
-        api_handlers_(api_handlers),
+        controllers_(controllers),
         user_id_(0)
     {
         spdlog::info("New session created from {}:{}",
@@ -18,51 +19,49 @@ namespace game_server {
             socket_.remote_endpoint().port());
     }
 
-    void Session::start()
-    {
+    void Session::start() {
         read_header();
     }
 
-    void Session::read_header()
-    {
+    void Session::read_header() {
         auto self = shared_from_this();
 
-        // Read HTTP header or handle WebSocket protocol
-        // Here we assume HTTP-based JSON API for simplicity
         socket_.async_read_some(
             boost::asio::buffer(buffer_),
             [this, self](boost::system::error_code ec, std::size_t length) {
                 if (!ec) {
-                    // Simple HTTP header parsing (find Content-Length)
+                    // 간단한 HTTP 헤더 파싱 (Content-Length 찾기)
                     std::string header(buffer_.data(), length);
                     std::size_t content_length = 0;
 
-                    // Find Content-Length header
+                    // Content-Length 헤더 찾기
                     std::string cl_header = "Content-Length: ";
                     auto pos = header.find(cl_header);
                     if (pos != std::string::npos) {
                         auto end_pos = header.find("\r\n", pos);
                         if (end_pos != std::string::npos) {
-                            std::string length_str = header.substr(pos + cl_header.length(),
-                                end_pos - (pos + cl_header.length()));
+                            std::string length_str = header.substr(
+                                pos + cl_header.length(),
+                                end_pos - (pos + cl_header.length())
+                            );
                             content_length = std::stoul(length_str);
                         }
                     }
 
-                    // Find body and header separator
+                    // 본문과 헤더 구분자 찾기
                     auto body_start = header.find("\r\n\r\n");
                     if (body_start != std::string::npos) {
-                        body_start += 4; // Start of body after "\r\n\r\n"
+                        body_start += 4; // "\r\n\r\n" 이후부터 본문 시작
 
-                        // Already received part of the body
+                        // 이미 받은 본문 부분
                         std::string body_part = header.substr(body_start);
 
                         if (body_part.length() >= content_length) {
-                            // Body already fully received
+                            // 본문이 이미 완전히 수신됨
                             process_request(body_part.substr(0, content_length));
                         }
                         else {
-                            // Need to read more body data
+                            // 본문의 나머지 부분 읽기 필요
                             message_ = body_part;
                             read_body(content_length - body_part.length());
                         }
@@ -74,8 +73,7 @@ namespace game_server {
             });
     }
 
-    void Session::read_body(std::size_t remaining_length)
-    {
+    void Session::read_body(std::size_t remaining_length) {
         auto self = shared_from_this();
 
         socket_.async_read_some(
@@ -85,11 +83,11 @@ namespace game_server {
                     message_.append(buffer_.data(), length);
 
                     if (length >= remaining_length) {
-                        // Body fully received
+                        // 본문 완전히 수신
                         process_request(message_);
                     }
                     else {
-                        // Need to read more
+                        // 더 읽기 필요
                         read_body(remaining_length - length);
                     }
                 }
@@ -99,21 +97,20 @@ namespace game_server {
             });
     }
 
-    void Session::process_request(const std::string& request_data)
-    {
+    void Session::process_request(const std::string& request_data) {
         try {
-            // Parse JSON
+            // JSON 파싱
             json request = json::parse(request_data);
 
-            // Route to API
+            // 요청 라우팅
             std::string action = request["action"];
-            std::string api_type;
+            std::string controller_type;
 
             if (action == "register" || action == "login") {
-                api_type = "auth";
+                controller_type = "auth";
             }
             else {
-                // Add routing for other API actions
+                // 다른 API 액션 라우팅 추가
                 spdlog::warn("Unknown action: {}", action);
                 json error_response = {
                     {"status", "error"},
@@ -123,26 +120,23 @@ namespace game_server {
                 return;
             }
 
-            // Find appropriate API handler
-            auto handler_it = api_handlers_.find(api_type);
-            if (handler_it != api_handlers_.end()) {
-                // Forward request to API handler
-                std::string response = handler_it->second->handle_request(request, user_id_, auth_token_);
+            // 적절한 컨트롤러 찾기
+            auto controller_it = controllers_.find(controller_type);
+            if (controller_it != controllers_.end()) {
+                // 컨트롤러에 요청 전달
+                std::string response = controller_it->second->handleRequest(request);
 
-                // Update authentication info (on successful login)
+                // 인증 정보 갱신 (로그인 성공 시)
                 if (action == "login" && json::parse(response)["status"] == "success") {
                     json resp_json = json::parse(response);
                     user_id_ = resp_json["user_id"];
-                    if (resp_json.contains("token")) {
-                        auth_token_ = resp_json["token"];
-                    }
                     spdlog::info("User {} logged in", user_id_);
                 }
 
                 write_response(response);
             }
             else {
-                spdlog::error("API handler not found for type: {}", api_type);
+                spdlog::error("Controller not found for type: {}", controller_type);
                 json error_response = {
                     {"status", "error"},
                     {"message", "Internal server error"}
@@ -160,11 +154,10 @@ namespace game_server {
         }
     }
 
-    void Session::write_response(const std::string& response)
-    {
+    void Session::write_response(const std::string& response) {
         auto self = shared_from_this();
 
-        // Create HTTP response header
+        // HTTP 응답 헤더 생성
         std::string response_header =
             "HTTP/1.1 200 OK\r\n"
             "Content-Type: application/json\r\n"
@@ -179,7 +172,7 @@ namespace game_server {
             boost::asio::buffer(full_response),
             [this, self](boost::system::error_code ec, std::size_t /*length*/) {
                 if (!ec) {
-                    // After response, wait for next request
+                    // 응답 후, 다음 요청 대기
                     read_header();
                 }
                 else {
@@ -188,12 +181,11 @@ namespace game_server {
             });
     }
 
-    void Session::handle_error(const std::string& error_message)
-    {
-        // Log the error
+    void Session::handle_error(const std::string& error_message) {
+        // 에러 로깅
         spdlog::error(error_message);
 
-        // Clean up resources if needed
+        // 필요시 리소스 정리
         if (socket_.is_open()) {
             boost::system::error_code ec;
             socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_both, ec);
