@@ -51,8 +51,8 @@ namespace game_server {
         }
 
         std::optional<User> findByUsername(const std::string& username) override {
+            auto conn = dbPool_->get_connection();
             try {
-                auto conn = dbPool_->get_connection();
                 pqxx::work txn(*conn);
 
                 pqxx::result result = txn.exec_params(
@@ -80,11 +80,12 @@ namespace game_server {
                 if (!result[0][7].is_null()) {
                     user.lastLogin = result[0][7].as<std::string>();
                 }
-
+                dbPool_->return_connection(conn);
                 return user;
             }
             catch (const std::exception& e) {
                 spdlog::error("Error finding user by username: {}", e.what());
+                dbPool_->return_connection(conn);
                 return std::nullopt;
             }
         }
