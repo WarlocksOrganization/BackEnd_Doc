@@ -52,4 +52,7 @@ if ($LASTEXITCODE -ne 0) {
 # 6. Return to original location
 Set-Location -Path $currentDir
 
+# 7. Run Server
+.\build\Release\SocketServer.exe
+
 Write-Host "===== Clean Build and Reconfiguration Script Completed =====" -ForegroundColor Cyan
