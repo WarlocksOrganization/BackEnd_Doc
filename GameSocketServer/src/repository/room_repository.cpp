@@ -12,8 +12,8 @@ namespace game_server {
         explicit RoomRepositoryImpl(DbPool* dbPool) : dbPool_(dbPool) {}
 
         std::optional<Room> findById(int roomId) override {
+            auto conn = dbPool_->get_connection();
             try {
-                auto conn = dbPool_->get_connection();
                 pqxx::work txn(*conn);
 
                 pqxx::result result = txn.exec_params(
@@ -48,13 +48,14 @@ namespace game_server {
             }
             catch (const std::exception& e) {
                 spdlog::error("Error finding room by ID: {}", e.what());
+                dbPool_->return_connection(conn);
                 return std::nullopt;
             }
         }
 
         std::optional<Room> findByName(const std::string& roomName) override {
+            auto conn = dbPool_->get_connection();
             try {
-                auto conn = dbPool_->get_connection();
                 pqxx::work txn(*conn);
 
                 pqxx::result result = txn.exec_params(
@@ -89,15 +90,15 @@ namespace game_server {
             }
             catch (const std::exception& e) {
                 spdlog::error("Error finding room by name: {}", e.what());
+                dbPool_->return_connection(conn);
                 return std::nullopt;
             }
         }
 
         std::vector<Room> findAllOpen(int limit) override {
             std::vector<Room> rooms;
-
+            auto conn = dbPool_->get_connection();
             try {
-                auto conn = dbPool_->get_connection();
                 pqxx::work txn(*conn);
 
                 pqxx::result result = txn.exec_params(
@@ -131,14 +132,15 @@ namespace game_server {
             }
             catch (const std::exception& e) {
                 spdlog::error("Error retrieving open rooms list: {}", e.what());
+                dbPool_->return_connection(conn);
             }
 
             return rooms;
         }
 
         int create(const std::string& roomName, int creatorId, int maxPlayers, const std::string& gameMode) override {
+            auto conn = dbPool_->get_connection();
             try {
-                auto conn = dbPool_->get_connection();
                 pqxx::work txn(*conn);
 
                 pqxx::result result = txn.exec_params(
@@ -158,13 +160,14 @@ namespace game_server {
             }
             catch (const std::exception& e) {
                 spdlog::error("Error creating room: {}", e.what());
+                auto conn = dbPool_->get_connection();
                 return -1;
             }
         }
 
         bool addPlayer(int roomId, int userId) override {
+            auto conn = dbPool_->get_connection();
             try {
-                auto conn = dbPool_->get_connection();
                 pqxx::work txn(*conn);
 
                 // Check if already joined
@@ -193,13 +196,14 @@ namespace game_server {
             }
             catch (const std::exception& e) {
                 spdlog::error("Error processing player room join: {}", e.what());
+                dbPool_->return_connection(conn);
                 return false;
             }
         }
 
         bool removePlayer(int roomId, int userId) override {
+            auto conn = dbPool_->get_connection();
             try {
-                auto conn = dbPool_->get_connection();
                 pqxx::work txn(*conn);
 
                 pqxx::result result = txn.exec_params(
@@ -215,13 +219,14 @@ namespace game_server {
             }
             catch (const std::exception& e) {
                 spdlog::error("Error processing player room leave: {}", e.what());
+                dbPool_->return_connection(conn);
                 return false;
             }
         }
 
         int getPlayerCount(int roomId) override {
+            auto conn = dbPool_->get_connection();
             try {
-                auto conn = dbPool_->get_connection();
                 pqxx::work txn(*conn);
 
                 pqxx::result result = txn.exec_params(
@@ -240,15 +245,16 @@ namespace game_server {
             }
             catch (const std::exception& e) {
                 spdlog::error("Error retrieving room player count: {}", e.what());
+                dbPool_->return_connection(conn);
                 return 0;
             }
         }
 
         std::vector<int> getPlayersInRoom(int roomId) override {
             std::vector<int> playerIds;
+            auto conn = dbPool_->get_connection();
 
             try {
-                auto conn = dbPool_->get_connection();
                 pqxx::work txn(*conn);
 
                 pqxx::result result = txn.exec_params(
@@ -265,6 +271,7 @@ namespace game_server {
             }
             catch (const std::exception& e) {
                 spdlog::error("Error retrieving room player list: {}", e.what());
+                dbPool_->return_connection(conn);
             }
 
             return playerIds;

@@ -12,8 +12,8 @@ namespace game_server {
         explicit UserRepositoryImpl(DbPool* dbPool) : dbPool_(dbPool) {}
 
         std::optional<User> findById(int userId) override {
+            auto conn = dbPool_->get_connection();
             try {
-                auto conn = dbPool_->get_connection();
                 pqxx::work txn(*conn);
 
                 pqxx::result result = txn.exec_params(
@@ -46,6 +46,7 @@ namespace game_server {
             }
             catch (const std::exception& e) {
                 spdlog::error("Error finding user by ID: {}", e.what());
+                dbPool_->return_connection(conn);
                 return std::nullopt;
             }
         }
@@ -91,8 +92,8 @@ namespace game_server {
         }
 
         int create(const std::string& username, const std::string& hashedPassword) override {
+            auto conn = dbPool_->get_connection();
             try {
-                auto conn = dbPool_->get_connection();
                 pqxx::work txn(*conn);
 
                 pqxx::result result = txn.exec_params(
@@ -111,13 +112,14 @@ namespace game_server {
             }
             catch (const std::exception& e) {
                 spdlog::error("Error creating user: {}", e.what());
+                dbPool_->return_connection(conn);
                 return -1;
             }
         }
 
         bool updateLastLogin(int userId) override {
+            auto conn = dbPool_->get_connection();
             try {
-                auto conn = dbPool_->get_connection();
                 pqxx::work txn(*conn);
 
                 pqxx::result result = txn.exec_params(
@@ -132,13 +134,14 @@ namespace game_server {
             }
             catch (const std::exception& e) {
                 spdlog::error("Error updating last login: {}", e.what());
+                dbPool_->return_connection(conn);
                 return false;
             }
         }
 
         bool updateRating(int userId, int newRating) override {
+            auto conn = dbPool_->get_connection();
             try {
-                auto conn = dbPool_->get_connection();
                 pqxx::work txn(*conn);
 
                 pqxx::result result = txn.exec_params(
@@ -152,13 +155,14 @@ namespace game_server {
             }
             catch (const std::exception& e) {
                 spdlog::error("Error updating user rating: {}", e.what());
+                dbPool_->return_connection(conn);
                 return false;
             }
         }
 
         bool updateStats(int userId, bool isWin) override {
+            auto conn = dbPool_->get_connection();
             try {
-                auto conn = dbPool_->get_connection();
                 pqxx::work txn(*conn);
 
                 std::string query;
@@ -180,15 +184,16 @@ namespace game_server {
             }
             catch (const std::exception& e) {
                 spdlog::error("Error updating user stats: {}", e.what());
+                dbPool_->return_connection(conn);
                 return false;
             }
         }
 
         std::vector<User> getTopPlayers(int limit) override {
             std::vector<User> users;
+            auto conn = dbPool_->get_connection();
 
             try {
-                auto conn = dbPool_->get_connection();
                 pqxx::work txn(*conn);
 
                 pqxx::result result = txn.exec_params(
@@ -219,6 +224,7 @@ namespace game_server {
             }
             catch (const std::exception& e) {
                 spdlog::error("Error getting top players: {}", e.what());
+                dbPool_->return_connection(conn);
             }
 
             return users;
