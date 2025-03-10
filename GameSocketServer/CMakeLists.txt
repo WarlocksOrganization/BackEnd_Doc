@@ -84,12 +84,29 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     ${CRYPTO_LIBS}
 )
 
-# 빌드 후 모든 DLL 파일 복사
+# 빌드 후 DLL 파일 복사
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+    # pqxx.dll 복사
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
     "${VCPKG_INSTALLED_DIR}/bin/pqxx.dll"
     $<TARGET_FILE_DIR:${PROJECT_NAME}>/pqxx.dll
-    COMMENT "Copying pqxx.dll to output directory"
+    
+    # LIBPQ.dll 복사
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    "${VCPKG_INSTALLED_DIR}/bin/LIBPQ.dll"
+    $<TARGET_FILE_DIR:${PROJECT_NAME}>/LIBPQ.dll
+
+    # libcrypto-3-x64.dll 복사
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    "${VCPKG_INSTALLED_DIR}/bin/libcrypto-3-x64.dll"
+    $<TARGET_FILE_DIR:${PROJECT_NAME}>/libcrypto-3-x64.dll
+
+    # libssl-3-x64.dll 복사
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    "${VCPKG_INSTALLED_DIR}/bin/libssl-3-x64.dll"
+    $<TARGET_FILE_DIR:${PROJECT_NAME}>/libssl-3-x64.dll
+    
+    COMMENT "Copying required DLLs to output directory"
 )
 
 # 디버깅 정보 출력 - 파일 존재 확인
