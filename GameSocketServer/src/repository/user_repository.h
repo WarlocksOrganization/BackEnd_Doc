@@ -22,7 +22,6 @@ namespace game_server {
         virtual bool updateStats(int userId, bool isWin) = 0;
         virtual std::vector<User> getTopPlayers(int limit) = 0;
 
-        // 팩토리 메서드
         static std::unique_ptr<UserRepository> create(DbPool* dbPool);
     };
 

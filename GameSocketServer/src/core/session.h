@@ -27,7 +27,7 @@ namespace game_server {
         std::map<std::string, std::shared_ptr<Controller>>& controllers_;
         std::array<char, 8192> buffer_;
         std::string message_;
-        int user_id_; // 현재 세션의 사용자 ID (0 = 인증 안됨)
+        int user_id_;
     };
 
 } // namespace game_server

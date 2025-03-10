@@ -17,7 +17,6 @@ namespace game_server {
         virtual RegisterResponse registerUser(const RegisterRequest& request) = 0;
         virtual LoginResponse loginUser(const LoginRequest& request) = 0;
 
-        // 팩토리 메서드
         static std::unique_ptr<AuthService> create(std::shared_ptr<UserRepository> userRepo);
     };
 

@@ -6,7 +6,7 @@
 
 namespace game_server {
 
-    // 리포지토리 구현
+    // Repository implementation
     class UserRepositoryImpl : public UserRepository {
     public:
         explicit UserRepositoryImpl(DbPool* dbPool) : dbPool_(dbPool) {}
@@ -228,7 +228,7 @@ namespace game_server {
         DbPool* dbPool_;
     };
 
-    // 팩토리 메서드 구현
+    // Factory method implementation
     std::unique_ptr<UserRepository> UserRepository::create(DbPool* dbPool) {
         return std::make_unique<UserRepositoryImpl>(dbPool);
     }

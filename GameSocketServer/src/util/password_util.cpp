@@ -8,7 +8,7 @@
 namespace game_server {
 
     std::string PasswordUtil::hashPassword(const std::string& password) {
-        // SECURITY NOTE: 프로덕션에서는 더 안전한 해싱 알고리즘 사용 필요
+        // SECURITY NOTE: Use a more secure hashing algorithm in production
         unsigned char hash[SHA256_DIGEST_LENGTH];
         SHA256(reinterpret_cast<const unsigned char*>(password.c_str()),
             password.length(), hash);
@@ -23,7 +23,7 @@ namespace game_server {
     }
 
     bool PasswordUtil::verifyPassword(const std::string& password, const std::string& hashedPassword) {
-        // 해시된 비밀번호와 입력된 비밀번호의 해시를 비교
+        // Compare hashed password with hash of input password
         std::string computedHash = hashPassword(password);
         return computedHash == hashedPassword;
     }

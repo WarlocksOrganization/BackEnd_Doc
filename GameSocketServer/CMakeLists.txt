@@ -16,7 +16,17 @@ add_definitions(
 # Visual Studio 관련 컴파일러 옵션 설정
 if(MSVC)
     # UTF-8 지원 추가
-    add_compile_options(/utf-8)
+    # add_compile_options(/utf-8)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /source-charset:utf-8 /execution-charset:utf-8")
+    add_compile_options(/wd4819)  # 코드 페이지 경고 무시
+    
+    # 추가 경고 억제
+    add_compile_options(/wd4996)  # 보안 경고 억제
+    add_compile_options(/wd4267)  # 'size_t'에서 'type'으로의 변환 가능한 데이터 손실 경고 억제
+    
+    # 전처리기 정의 추가
+    add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+    add_definitions(-D_UNICODE -DUNICODE)
 endif()
 
 # 소스 디렉토리 설정
@@ -32,8 +42,11 @@ set(SOURCE_FILES
     "${SRC_DIR}/core/server.cpp"
     "${SRC_DIR}/core/session.cpp"
     "${SRC_DIR}/controller/auth_controller.cpp"
+    "${SRC_DIR}/controller/room_controller.cpp"
     "${SRC_DIR}/service/auth_service.cpp"
+    "${SRC_DIR}/service/room_service.cpp"
     "${SRC_DIR}/repository/user_repository.cpp"
+    "${SRC_DIR}/repository/room_repository.cpp"
     "${SRC_DIR}/util/db_pool.cpp"
     "${SRC_DIR}/util/password_util.cpp"
 )

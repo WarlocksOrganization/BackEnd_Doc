@@ -47,21 +47,21 @@ public:
             boost::asio::write(socket_, boost::asio::buffer(http_request));
             cout << "Send request done\n";
 
-            // ÀÀ´ä µ¥ÀÌÅÍ¸¦ ÀúÀåÇÒ º¯¼ö
+            // ì‘ë‹µ ë°ì´í„°ë¥¼ ì €ìž¥í•  ë³€ìˆ˜
             std::string response_data;
             char buffer[1024];
             boost::system::error_code error;
             size_t bytes_read;
 
-            // ´õ °£´ÜÇÑ ¹æ¹ý: ¼ÒÄÏÀ» ³íºí·ÎÅ·À¸·Î ¼³Á¤
+            // ë” ê°„ë‹¨í•œ ë°©ë²•: ì†Œì¼“ì„ ë…¼ë¸”ë¡œí‚¹ìœ¼ë¡œ ì„¤ì •
             socket_.non_blocking(true);
 
-            // 10ÃÊ Å¸ÀÓ¾Æ¿ô
+            // 10ì´ˆ íƒ€ìž„ì•„ì›ƒ
             auto start_time = std::chrono::steady_clock::now();
             auto timeout = std::chrono::seconds(10);
 
             while (true) {
-                // ½Ã°£ ÃÊ°ú È®ÀÎ
+                // ì‹œê°„ ì´ˆê³¼ í™•ì¸
                 auto now = std::chrono::steady_clock::now();
                 if (now - start_time > timeout) {
                     cout << "Response timeout\n";
@@ -72,13 +72,13 @@ public:
                     bytes_read = socket_.read_some(boost::asio::buffer(buffer), error);
 
                     if (error == boost::asio::error::would_block) {
-                        // µ¥ÀÌÅÍ°¡ ¾ÆÁ÷ ¾øÀ½, Àá½Ã ´ë±â ÈÄ ´Ù½Ã ½Ãµµ
+                        // ë°ì´í„°ê°€ ì•„ì§ ì—†ìŒ, ìž ì‹œ ëŒ€ê¸° í›„ ë‹¤ì‹œ ì‹œë„
                         std::this_thread::sleep_for(std::chrono::milliseconds(100));
                         continue;
                     }
 
                     if (error) {
-                        break; // ´Ù¸¥ ¿À·ù°¡ ¹ß»ýÇÏ¸é ·çÇÁ Á¾·á
+                        break; // ë‹¤ë¥¸ ì˜¤ë¥˜ê°€ ë°œìƒí•˜ë©´ ë£¨í”„ ì¢…ë£Œ
                     }
 
                     if (bytes_read > 0) {
@@ -86,19 +86,19 @@ public:
                         cout << "Read " << bytes_read << " bytes\n";
                     }
 
-                    // ÃæºÐÈ÷ ÀÐ¾ú´ÂÁö È®ÀÎ
+                    // ì¶©ë¶„ížˆ ì½ì—ˆëŠ”ì§€ í™•ì¸
                     if (response_data.find("\r\n\r\n") != std::string::npos) {
                         size_t header_end = response_data.find("\r\n\r\n");
                         std::string header = response_data.substr(0, header_end);
 
-                        // Çì´õ¿¡¼­ Content-Length ÃßÃâ
+                        // í—¤ë”ì—ì„œ Content-Length ì¶”ì¶œ
                         size_t cl_pos = header.find("Content-Length: ");
                         if (cl_pos != std::string::npos) {
                             size_t cl_end = header.find("\r\n", cl_pos);
                             std::string cl_str = header.substr(cl_pos + 16, cl_end - (cl_pos + 16));
                             size_t content_length = std::stoul(cl_str);
 
-                            // º»¹®ÀÌ ÀÌ¹Ì ÃæºÐÈ÷ ÀÐÇû´ÂÁö È®ÀÎ
+                            // ë³¸ë¬¸ì´ ì´ë¯¸ ì¶©ë¶„ížˆ ì½í˜”ëŠ”ì§€ í™•ì¸
                             if (response_data.length() >= header_end + 4 + content_length) {
                                 cout << "Complete response received\n";
                                 break;
@@ -106,7 +106,7 @@ public:
                         }
                         else if (header.find("Transfer-Encoding: chunked") != std::string::npos ||
                             header.find("Connection: close") != std::string::npos) {
-                            // Ã»Å© ÀÎÄÚµùÀÌ³ª ¿¬°á ´Ý±â¸¦ È®ÀÎÇßÀ¸¸é Æ¯º° Ã³¸® ÇÊ¿ä
+                            // ì²­í¬ ì¸ì½”ë”©ì´ë‚˜ ì—°ê²° ë‹«ê¸°ë¥¼ í™•ì¸í–ˆìœ¼ë©´ íŠ¹ë³„ ì²˜ë¦¬ í•„ìš”
                             if (error == boost::asio::error::eof) {
                                 cout << "Connection closed by server\n";
                                 break;
@@ -120,24 +120,24 @@ public:
                 }
             }
 
-            // ³íºí·ÎÅ· ¸ðµå ÇØÁ¦
+            // ë…¼ë¸”ë¡œí‚¹ ëª¨ë“œ í•´ì œ
             socket_.non_blocking(false);
 
-            // ÀÀ´ä Ã³¸®
+            // ì‘ë‹µ ì²˜ë¦¬
             cout << "Total response data (" << response_data.length() << " bytes)\n";
 
             if (response_data.empty()) {
                 return json{ {"status", "error"}, {"message", "No response from server"} };
             }
 
-            // Çì´õ¿Í º»¹® ºÐ¸®
+            // í—¤ë”ì™€ ë³¸ë¬¸ ë¶„ë¦¬
             size_t header_end = response_data.find("\r\n\r\n");
             if (header_end == std::string::npos) {
                 cout << "Invalid HTTP response format\n";
                 return json{ {"status", "error"}, {"message", "Invalid response format"} };
             }
 
-            // º»¹® ÃßÃâ
+            // ë³¸ë¬¸ ì¶”ì¶œ
             std::string body = response_data.substr(header_end + 4);
             cout << "Body content (" << body.length() << " bytes): " << body << "\n";
 
@@ -216,71 +216,71 @@ int main() {
     while (1) {
         string IP;
         int Port;
-        cout << "¼­¹ö IP¸¦ ÀÔ·ÂÇØ ÁÖ¼¼¿ä : ";
+        cout << "ì„œë²„ IPë¥¼ ìž…ë ¥í•´ ì£¼ì„¸ìš” : ";
         cin >> IP;
-        cout << "Æ÷Æ® ¹øÈ£¸¦ ÀÔ·ÂÇØ ÁÖ¼¼¿ä : ";
+        cout << "í¬íŠ¸ ë²ˆí˜¸ë¥¼ ìž…ë ¥í•´ ì£¼ì„¸ìš” : ";
         cin >> Port;
         cin.ignore();
-        cout << "¿¬°áÀ» ½ÃµµÇÕ´Ï´Ù...\n";
+        cout << "ì—°ê²°ì„ ì‹œë„í•©ë‹ˆë‹¤...\n";
         GameTestClient client(IP, Port);
 
         try {
             if (client.connect()) {
-                cout << "¿¬°á ¼º°ø!\n";
+                cout << "ì—°ê²° ì„±ê³µ!\n";
                 string auth_input;
                 while (1) {
-                    cout << "ÀÛ¾÷À» ¼±ÅÃÇØ ÁÖ¼¼¿ä(È¸¿ø°¡ÀÔ, ·Î±×ÀÎ, Á¾·á) : ";
+                    cout << "ìž‘ì—…ì„ ì„ íƒí•´ ì£¼ì„¸ìš”(íšŒì›ê°€ìž…, ë¡œê·¸ì¸, ì¢…ë£Œ) : ";
                     getline(cin, auth_input);
-                    if (auth_input == "È¸¿ø°¡ÀÔ") {
+                    if (auth_input == "íšŒì›ê°€ìž…") {
                         string id, pw;
-                        cout << "»ç¿ëÇÒ ID¸¦ ÀÔ·ÂÇØ ÁÖ¼¼¿ä : ";
+                        cout << "ì‚¬ìš©í•  IDë¥¼ ìž…ë ¥í•´ ì£¼ì„¸ìš” : ";
                         cin >> id;
-                        cout << "»ç¿ëÇÒ ºñ¹Ð¹øÈ£¸¦ ÀÔ·ÂÇØ ÁÖ¼¼¿ä : ";
+                        cout << "ì‚¬ìš©í•  ë¹„ë°€ë²ˆí˜¸ë¥¼ ìž…ë ¥í•´ ì£¼ì„¸ìš” : ";
                         cin >> pw;
-                        cout << "È¸¿ø °¡ÀÔÀ» ½ÃµµÇÕ´Ï´Ù...\n";
+                        cout << "íšŒì› ê°€ìž…ì„ ì‹œë„í•©ë‹ˆë‹¤...\n";
                         // Test user registration
                         client.registerUser(id, pw);
                     }
-                    else if (auth_input == "·Î±×ÀÎ") {
+                    else if (auth_input == "ë¡œê·¸ì¸") {
                         string id, pw;
-                        cout << "ID¸¦ ÀÔ·ÂÇØ ÁÖ¼¼¿ä : ";
+                        cout << "IDë¥¼ ìž…ë ¥í•´ ì£¼ì„¸ìš” : ";
                         getline(cin, id);
-                        cout << "ºñ¹Ð¹øÈ£¸¦ ÀÔ·ÂÇØ ÁÖ¼¼¿ä : ";
+                        cout << "ë¹„ë°€ë²ˆí˜¸ë¥¼ ìž…ë ¥í•´ ì£¼ì„¸ìš” : ";
                         getline(cin, pw);
-                        cout << "·Î±×ÀÎÀ» ½ÃµµÇÕ´Ï´Ù...\n";
+                        cout << "ë¡œê·¸ì¸ì„ ì‹œë„í•©ë‹ˆë‹¤...\n";
                         if (client.login(id, pw)) {
                             std::cout << "Login successful!" << std::endl;
                             string session_input;
                             while (1) {
-                                cout << "ÀÛ¾÷À» ¼±ÅÃÇØ ÁÖ¼¼¿ä(ID È®ÀÎ, ¹æ »ý¼º, ¹æ Âü°¡, ·Î±×¾Æ¿ô) : ";
+                                cout << "ìž‘ì—…ì„ ì„ íƒí•´ ì£¼ì„¸ìš”(ID í™•ì¸, ë°© ìƒì„±, ë°© ì°¸ê°€, ë¡œê·¸ì•„ì›ƒ) : ";
                                 getline(cin, session_input);
-                                if (session_input == "ID È®ÀÎ") {
+                                if (session_input == "ID í™•ì¸") {
                                     cout << client.checkMyID() << "\n";
                                 }
-                                else if (session_input == "¹æ »ý¼º") {
+                                else if (session_input == "ë°© ìƒì„±") {
 
                                 }
-                                else if (session_input == "¹æ Âü°¡") {
+                                else if (session_input == "ë°© ì°¸ê°€") {
 
                                 }
-                                else if (session_input == "·Î±×¾Æ¿ô") {
-                                    cout << "¼¼¼Ç ¿¬°áÀ» Á¾·áÇÕ´Ï´Ù,\n";
+                                else if (session_input == "ë¡œê·¸ì•„ì›ƒ") {
+                                    cout << "ì„¸ì…˜ ì—°ê²°ì„ ì¢…ë£Œí•©ë‹ˆë‹¤,\n";
                                     client.logout();
                                     break;
                                 }
                                 else {
-                                    cout << "¿Ã¹Ù¸¥ °ªÀ» ÀÔ·ÂÇØ ÁÖ¼¼¿ä\n";
+                                    cout << "ì˜¬ë°”ë¥¸ ê°’ì„ ìž…ë ¥í•´ ì£¼ì„¸ìš”\n";
                                 }
                             }
                         }
                     }
-                    else if (auth_input == "Á¾·á") {
-                        cout << "¼ÒÄÏ ¼­¹ö¿Í ¿¬°áÀ» Á¾·áÇÕ´Ï´Ù.\n";
+                    else if (auth_input == "ì¢…ë£Œ") {
+                        cout << "ì†Œì¼“ ì„œë²„ì™€ ì—°ê²°ì„ ì¢…ë£Œí•©ë‹ˆë‹¤.\n";
                         client.disconnect();
                         break;
                     }
                     else {
-                        cout << "¿Ã¹Ù¸¥ °ªÀ» ÀÔ·ÂÇØ ÁÖ¼¼¿ä\n";
+                        cout << "ì˜¬ë°”ë¥¸ ê°’ì„ ìž…ë ¥í•´ ì£¼ì„¸ìš”\n";
                     }
                 }
             }
