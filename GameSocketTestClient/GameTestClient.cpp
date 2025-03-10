@@ -193,6 +193,16 @@ public:
         }
     }
 
+    int checkMyID() {
+        return user_id_;
+    }
+
+    void logout() {
+        user_id_ = 0;
+        username_.clear();
+        return;
+    }
+
 private:
     boost::asio::io_context io_context_;
     tcp::socket socket_;
@@ -206,48 +216,71 @@ int main() {
     while (1) {
         string IP;
         int Port;
-        cout << "\n서버 IP를 입력해 주세요 : ";
+        cout << "서버 IP를 입력해 주세요 : ";
         cin >> IP;
-        cout << "\n포트 번호를 입력해 주세요 : ";
+        cout << "포트 번호를 입력해 주세요 : ";
         cin >> Port;
-        cout << "\n연결을 시도합니다...\n";
+        cin.ignore();
+        cout << "연결을 시도합니다...\n";
         GameTestClient client(IP, Port);
 
         try {
             if (client.connect()) {
                 cout << "연결 성공!\n";
-                string s;
+                string auth_input;
                 while (1) {
-                    cout << "\n작업을 선택해 주세요(회원가입, 로그인, 종료) : ";
-                    cin >> s;
-                    if (s == "회원가입") {
+                    cout << "작업을 선택해 주세요(회원가입, 로그인, 종료) : ";
+                    getline(cin, auth_input);
+                    if (auth_input == "회원가입") {
                         string id, pw;
-                        cout << "\n사용할 ID를 입력해 주세요 : ";
+                        cout << "사용할 ID를 입력해 주세요 : ";
                         cin >> id;
-                        cout << "\n사용할 비밀번호를 입력해 주세요 : ";
+                        cout << "사용할 비밀번호를 입력해 주세요 : ";
                         cin >> pw;
-                        cout << "\n회원 가입을 시도합니다...\n";
+                        cout << "회원 가입을 시도합니다...\n";
                         // Test user registration
                         client.registerUser(id, pw);
                     }
-                    else if (s == "로그인") {
+                    else if (auth_input == "로그인") {
                         string id, pw;
-                        cout << "\nID를 입력해 주세요 : ";
-                        cin >> id;
-                        cout << "\n비밀번호를 입력해 주세요 : ";
-                        cin >> pw;
-                        cout << "\n로그인을 시도합니다...\n";
+                        cout << "ID를 입력해 주세요 : ";
+                        getline(cin, id);
+                        cout << "비밀번호를 입력해 주세요 : ";
+                        getline(cin, pw);
+                        cout << "로그인을 시도합니다...\n";
                         if (client.login(id, pw)) {
                             std::cout << "Login successful!" << std::endl;
+                            string session_input;
+                            while (1) {
+                                cout << "작업을 선택해 주세요(ID 확인, 방 생성, 방 참가, 로그아웃) : ";
+                                getline(cin, session_input);
+                                if (session_input == "ID 확인") {
+                                    cout << client.checkMyID() << "\n";
+                                }
+                                else if (session_input == "방 생성") {
+
+                                }
+                                else if (session_input == "방 참가") {
+
+                                }
+                                else if (session_input == "로그아웃") {
+                                    cout << "세션 연결을 종료합니다,\n";
+                                    client.logout();
+                                    break;
+                                }
+                                else {
+                                    cout << "올바른 값을 입력해 주세요\n";
+                                }
+                            }
                         }
                     }
-                    else if (s == "종료") {
-                        cout << "\n소켓 서버와 연결을 종료합니다.\n";
+                    else if (auth_input == "종료") {
+                        cout << "소켓 서버와 연결을 종료합니다.\n";
                         client.disconnect();
                         break;
                     }
                     else {
-                        cout << "\n올바른 값을 입력해 주세요\n";
+                        cout << "올바른 값을 입력해 주세요\n";
                     }
                 }
             }
