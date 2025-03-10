@@ -33,16 +33,16 @@ namespace game_server {
 
     std::string AuthController::handleRegister(const json& request) {
         try {
-            // 요청 데이터 추출
+            // Extract request data
             RegisterRequest registerRequest{
                 request["username"].get<std::string>(),
                 request["password"].get<std::string>()
             };
 
-            // 서비스 호출
+            // Call service
             auto response = authService_->registerUser(registerRequest);
 
-            // 응답 생성
+            // Create response
             json jsonResponse = {
                 {"status", response.success ? "success" : "error"},
                 {"message", response.message}
@@ -67,16 +67,16 @@ namespace game_server {
 
     std::string AuthController::handleLogin(const json& request) {
         try {
-            // 요청 데이터 추출
+            // Extract request data
             LoginRequest loginRequest{
                 request["username"].get<std::string>(),
                 request["password"].get<std::string>()
             };
 
-            // 서비스 호출 
+            // Call service 
             auto response = authService_->loginUser(loginRequest);
 
-            // 응답 생성
+            // Create response
             json jsonResponse = {
                 {"status", response.success ? "success" : "error"},
                 {"message", response.message}

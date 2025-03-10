@@ -6,7 +6,7 @@
 
 namespace game_server {
 
-    // 서비스 구현
+    // Service implementation
     class AuthServiceImpl : public AuthService {
     public:
         explicit AuthServiceImpl(std::shared_ptr<UserRepository> userRepo)
@@ -16,7 +16,7 @@ namespace game_server {
         RegisterResponse registerUser(const RegisterRequest& request) override {
             RegisterResponse response;
 
-            // 사용자명 검증
+            // Validate username
             if (request.username.empty() || request.username.length() < 3 ||
                 request.username.length() > 20) {
                 response.success = false;
@@ -24,14 +24,14 @@ namespace game_server {
                 return response;
             }
 
-            // 비밀번호 검증
+            // Validate password
             if (request.password.empty() || request.password.length() < 6) {
                 response.success = false;
                 response.message = "Password must be at least 6 characters";
                 return response;
             }
 
-            // 사용자명 중복 확인
+            // Check for username duplication
             auto existingUser = userRepo_->findByUsername(request.username);
             if (existingUser) {
                 response.success = false;
@@ -39,10 +39,10 @@ namespace game_server {
                 return response;
             }
 
-            // 비밀번호 해싱 - PasswordUtil 사용
+            // Hash password using PasswordUtil
             std::string hashedPassword = PasswordUtil::hashPassword(request.password);
 
-            // 새 사용자 생성
+            // Create new user
             int userId = userRepo_->create(request.username, hashedPassword);
             if (userId < 0) {
                 response.success = false;
@@ -50,7 +50,7 @@ namespace game_server {
                 return response;
             }
 
-            // 성공 응답 생성
+            // Create success response
             response.success = true;
             response.message = "Registration successful";
             response.userId = userId;
@@ -63,7 +63,7 @@ namespace game_server {
         LoginResponse loginUser(const LoginRequest& request) override {
             LoginResponse response;
 
-            // 사용자 찾기
+            // Find user
             auto user = userRepo_->findByUsername(request.username);
             if (!user) {
                 response.success = false;
@@ -71,17 +71,17 @@ namespace game_server {
                 return response;
             }
 
-            // 비밀번호 검증 - PasswordUtil 사용
+            // Verify password using PasswordUtil
             if (!PasswordUtil::verifyPassword(request.password, user->passwordHash)) {
                 response.success = false;
                 response.message = "Invalid username or password";
                 return response;
             }
 
-            // 로그인 시간 업데이트
+            // Update login time
             userRepo_->updateLastLogin(user->userId);
 
-            // 성공 응답 생성
+            // Create success response
             response.success = true;
             response.message = "Login successful";
             response.userId = user->userId;
@@ -98,7 +98,7 @@ namespace game_server {
         std::shared_ptr<UserRepository> userRepo_;
     };
 
-    // 팩토리 메서드 구현
+    // Factory method implementation
     std::unique_ptr<AuthService> AuthService::create(std::shared_ptr<UserRepository> userRepo) {
         return std::make_unique<AuthServiceImpl>(userRepo);
     }

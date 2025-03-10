@@ -2,8 +2,11 @@
 #include "server.h"
 #include "session.h"
 #include "../controller/auth_controller.h"
+#include "../controller/room_controller.h"
 #include "../service/auth_service.h"
+#include "../service/room_service.h"
 #include "../repository/user_repository.h"
+#include "../repository/room_repository.h"
 #include <iostream>
 #include <spdlog/spdlog.h>
 
@@ -16,10 +19,10 @@ namespace game_server {
         acceptor_(io_context, boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), port)),
         running_(false)
     {
-        // 데이터베이스 연결 풀 초기화
-        db_pool_ = std::make_unique<DbPool>(db_connection_string, 5); // 5개의 연결 생성
+        // Create database connection pool
+        db_pool_ = std::make_unique<DbPool>(db_connection_string, 5); // Create 5 connections
 
-        // 컨트롤러 초기화
+        // Initialize controllers
         init_controllers();
 
         spdlog::info("Server initialized on port {}", port);
@@ -33,15 +36,20 @@ namespace game_server {
     }
 
     void Server::init_controllers() {
-        // 리포지토리 생성
+        // Create repositories
         auto userRepo = UserRepository::create(db_pool_.get());
+        auto roomRepo = RoomRepository::create(db_pool_.get());
+
         std::shared_ptr<UserRepository> sharedUserRepo = std::move(userRepo);
+        std::shared_ptr<RoomRepository> sharedRoomRepo = std::move(roomRepo);
 
-        // 서비스 생성
+        // Create services
         auto authService = AuthService::create(sharedUserRepo);
+        auto roomService = RoomService::create(sharedRoomRepo);
 
-        // 컨트롤러 생성 및 등록
+        // Create and register controllers
         controllers_["auth"] = std::make_shared<AuthController>(std::move(authService));
+        controllers_["room"] = std::make_shared<RoomController>(std::move(roomService));
 
         spdlog::info("Controllers initialized");
     }
@@ -65,14 +73,14 @@ namespace game_server {
         acceptor_.async_accept(
             [this](boost::system::error_code ec, boost::asio::ip::tcp::socket socket) {
                 if (!ec) {
-                    // 새 세션 생성 및 시작
+                    // Create and start session
                     std::make_shared<Session>(std::move(socket), controllers_)->start();
                 }
                 else {
-                    spdlog::error("Error accepting connection: {}", ec.message());
+                    spdlog::error("Connection acceptance error: {}", ec.message());
                 }
 
-                // 계속해서 연결 수락 (서버가 실행 중인 경우)
+                // Continue accepting connections (if server is still running)
                 if (running_) {
                     do_accept();
                 }

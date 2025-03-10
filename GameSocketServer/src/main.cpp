@@ -6,10 +6,10 @@
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <csignal>
 
-// 글로벌 서버 변수 (시그널 핸들러용)
+// Global server variable (for signal handler)
 std::unique_ptr<game_server::Server> server;
 
-// 시그널 핸들러 함수
+// Signal handler function
 void signal_handler(int signal)
 {
     spdlog::info("Received signal {}, shutting down...", signal);
@@ -22,22 +22,22 @@ void signal_handler(int signal)
 int main(int argc, char* argv[])
 {
     try {
-        // 로거 초기화
+        // Initialize logger
         auto console = spdlog::stdout_color_mt("console");
         spdlog::set_default_logger(console);
         spdlog::set_level(spdlog::level::info);
         spdlog::info("Starting Game Socket Server");
 
-        // 시그널 핸들러 등록
+        // Register signal handlers
         std::signal(SIGINT, signal_handler);
         std::signal(SIGTERM, signal_handler);
 
-        // 기본 설정
+        // Default configuration
         short port = 8080;
         std::string db_connection_string =
             "dbname=GameData user=admin password=admin host=localhost port=5432 client_encoding=UTF8";
 
-        // 커맨드 라인 인자 처리
+        // Process command line arguments
         for (int i = 1; i < argc; ++i) {
             std::string arg = argv[i];
             if (arg == "--port" && i + 1 < argc) {
@@ -56,15 +56,15 @@ int main(int argc, char* argv[])
             }
         }
 
-        // IO 컨텍스트 및 서버 생성
+        // Create IO context and server
         boost::asio::io_context io_context;
         server = std::make_unique<game_server::Server>(
             io_context, port, db_connection_string);
 
-        // 서버 실행
+        // Run server
         server->run();
 
-        // IO 컨텍스트 실행 (이벤트 루프)
+        // Run IO context (event loop)
         spdlog::info("Server running on port {}", port);
         io_context.run();
     }
