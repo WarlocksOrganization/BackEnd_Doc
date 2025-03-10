@@ -36,62 +36,122 @@ public:
             // Create HTTP request
             std::string http_request =
                 "POST / HTTP/1.1\r\n"
+                "Host: " + host_ + ":" + std::to_string(port_) + "\r\n"
                 "Content-Type: application/json\r\n"
                 "Content-Length: " + std::to_string(json_str.length()) + "\r\n"
+                "Connection: close\r\n"
                 "\r\n" +
                 json_str;
 
             // Send request
             boost::asio::write(socket_, boost::asio::buffer(http_request));
+            cout << "Send request done\n";
 
-            // Read response
-            boost::asio::streambuf response;
+            // 응답 데이터를 저장할 변수
+            std::string response_data;
+            char buffer[1024];
             boost::system::error_code error;
-            boost::asio::read_until(socket_, response, "\r\n\r\n", error);
+            size_t bytes_read;
 
-            if (error) {
-                std::cerr << "Error reading headers: " << error.message() << std::endl;
-                return json();
-            }
+            // 더 간단한 방법: 소켓을 논블로킹으로 설정
+            socket_.non_blocking(true);
 
-            // Extract content length from headers
-            std::string header_str(
-                boost::asio::buffers_begin(response.data()),
-                boost::asio::buffers_begin(response.data()) + response.size());
+            // 10초 타임아웃
+            auto start_time = std::chrono::steady_clock::now();
+            auto timeout = std::chrono::seconds(10);
 
-            std::size_t content_length = 0;
-            std::string cl_header = "Content-Length: ";
-            auto pos = header_str.find(cl_header);
-            if (pos != std::string::npos) {
-                auto end_pos = header_str.find("\r\n", pos);
-                if (end_pos != std::string::npos) {
-                    std::string length_str = header_str.substr(
-                        pos + cl_header.length(),
-                        end_pos - (pos + cl_header.length()));
-                    content_length = std::stoul(length_str);
+            while (true) {
+                // 시간 초과 확인
+                auto now = std::chrono::steady_clock::now();
+                if (now - start_time > timeout) {
+                    cout << "Response timeout\n";
+                    break;
+                }
+
+                try {
+                    bytes_read = socket_.read_some(boost::asio::buffer(buffer), error);
+
+                    if (error == boost::asio::error::would_block) {
+                        // 데이터가 아직 없음, 잠시 대기 후 다시 시도
+                        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                        continue;
+                    }
+
+                    if (error) {
+                        break; // 다른 오류가 발생하면 루프 종료
+                    }
+
+                    if (bytes_read > 0) {
+                        response_data.append(buffer, bytes_read);
+                        cout << "Read " << bytes_read << " bytes\n";
+                    }
+
+                    // 충분히 읽었는지 확인
+                    if (response_data.find("\r\n\r\n") != std::string::npos) {
+                        size_t header_end = response_data.find("\r\n\r\n");
+                        std::string header = response_data.substr(0, header_end);
+
+                        // 헤더에서 Content-Length 추출
+                        size_t cl_pos = header.find("Content-Length: ");
+                        if (cl_pos != std::string::npos) {
+                            size_t cl_end = header.find("\r\n", cl_pos);
+                            std::string cl_str = header.substr(cl_pos + 16, cl_end - (cl_pos + 16));
+                            size_t content_length = std::stoul(cl_str);
+
+                            // 본문이 이미 충분히 읽혔는지 확인
+                            if (response_data.length() >= header_end + 4 + content_length) {
+                                cout << "Complete response received\n";
+                                break;
+                            }
+                        }
+                        else if (header.find("Transfer-Encoding: chunked") != std::string::npos ||
+                            header.find("Connection: close") != std::string::npos) {
+                            // 청크 인코딩이나 연결 닫기를 확인했으면 특별 처리 필요
+                            if (error == boost::asio::error::eof) {
+                                cout << "Connection closed by server\n";
+                                break;
+                            }
+                        }
+                    }
+                }
+                catch (const std::exception& e) {
+                    cout << "Read exception: " << e.what() << "\n";
+                    break;
                 }
             }
 
-            // Read body
-            response.consume(response.size());
-            boost::asio::read(socket_, response,
-                boost::asio::transfer_exactly(content_length), error);
+            // 논블로킹 모드 해제
+            socket_.non_blocking(false);
 
-            if (error && error != boost::asio::error::eof) {
-                std::cerr << "Error reading body: " << error.message() << std::endl;
-                return json();
+            // 응답 처리
+            cout << "Total response data (" << response_data.length() << " bytes)\n";
+
+            if (response_data.empty()) {
+                return json{ {"status", "error"}, {"message", "No response from server"} };
             }
 
-            // Convert response to JSON
-            std::string body(
-                boost::asio::buffers_begin(response.data()),
-                boost::asio::buffers_begin(response.data()) + response.size());
+            // 헤더와 본문 분리
+            size_t header_end = response_data.find("\r\n\r\n");
+            if (header_end == std::string::npos) {
+                cout << "Invalid HTTP response format\n";
+                return json{ {"status", "error"}, {"message", "Invalid response format"} };
+            }
 
-            return json::parse(body);
+            // 본문 추출
+            std::string body = response_data.substr(header_end + 4);
+            cout << "Body content (" << body.length() << " bytes): " << body << "\n";
+
+            try {
+                return json::parse(body);
+            }
+            catch (const std::exception& e) {
+                cout << "JSON parse error: " << e.what() << "\n";
+                return json{ {"status", "error"}, {"message", "Invalid JSON in response"} };
+            }
         }
         catch (const std::exception& e) {
             std::cerr << "Request error: " << e.what() << std::endl;
-            return json();
+            return json{ {"status", "error"}, {"message", std::string("Request failed: ") + e.what()} };
         }
     }
 
