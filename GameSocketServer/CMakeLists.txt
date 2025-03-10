@@ -21,8 +21,13 @@ if(MSVC)
     add_compile_options(/wd4819)  # 코드 페이지 경고 무시
     
     # 추가 경고 억제
+    add_compile_options(/wd4819)  # 코드 페이지 경고 무시
     add_compile_options(/wd4996)  # 보안 경고 억제
-    add_compile_options(/wd4267)  # 'size_t'에서 'type'으로의 변환 가능한 데이터 손실 경고 억제
+    add_compile_options(/wd4267)  # 'size_t'에서 'type'으로의 변환 가능 데이터 손실 경고 억제
+    add_compile_options(/wd4828)  # 잘못된 문자 경고(C4828) 무시
+    add_compile_options(/wd4005)  # 매크로 재정의 경고(C4005) 무시
+    add_compile_options(/wd5030)  # [[assume]] 특성 인식 불가(C5030) 무시
+    add_compile_options(/wd4038)  # C++20 이상에서만 사용 가능한 기능 경고(C4038) 무시
     
     # 전처리기 정의 추가
     add_definitions(-D_CRT_SECURE_NO_WARNINGS)
