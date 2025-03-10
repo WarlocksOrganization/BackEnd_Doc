@@ -1,8 +1,10 @@
-// test_client.cpp
 #include <boost/asio.hpp>
 #include <iostream>
 #include <string>
 #include <nlohmann/json.hpp>
+#include <thread>
+#include <chrono>
+#include <limits>
 
 using json = nlohmann::json;
 using boost::asio::ip::tcp;
@@ -179,8 +181,7 @@ public:
         std::cout << "Login response: " << response.dump(2) << std::endl;
 
         if (response.contains("status") && response["status"] == "success") {
-            user_id_ = response["user_id"];
-            username_ = response["username"];
+            myInfo_ = response;
             return true;
         }
         return false;
@@ -194,12 +195,11 @@ public:
     }
 
     int checkMyID() {
-        return user_id_;
+        return myInfo_;
     }
 
     void logout() {
-        user_id_ = 0;
-        username_.clear();
+        myInfo_.clear();
         return;
     }
 
@@ -208,63 +208,68 @@ private:
     tcp::socket socket_;
     std::string host_;
     int port_;
-    int user_id_ = 0;
-    std::string username_;
+    json myInfo_;
 };
 
 int main() {
     while (1) {
-        string IP;
+        string IP, id, pw, auth_input, session_input;
         int Port;
+
         cout << "서버 IP를 입력해 주세요 : ";
         cin >> IP;
         cout << "포트 번호를 입력해 주세요 : ";
         cin >> Port;
-        cin.ignore();
+        cin.ignore(numeric_limits<streamsize>::max(), '\n');
+
         cout << "연결을 시도합니다...\n";
         GameTestClient client(IP, Port);
 
         try {
             if (client.connect()) {
                 cout << "연결 성공!\n";
-                string auth_input;
+
                 while (1) {
                     cout << "작업을 선택해 주세요(회원가입, 로그인, 종료) : ";
                     getline(cin, auth_input);
+
                     if (auth_input == "회원가입") {
-                        string id, pw;
                         cout << "사용할 ID를 입력해 주세요 : ";
-                        cin >> id;
+                        getline(cin, id);
                         cout << "사용할 비밀번호를 입력해 주세요 : ";
-                        cin >> pw;
+                        getline(cin, pw);
+
                         cout << "회원 가입을 시도합니다...\n";
-                        // Test user registration
                         client.registerUser(id, pw);
                     }
                     else if (auth_input == "로그인") {
-                        string id, pw;
                         cout << "ID를 입력해 주세요 : ";
                         getline(cin, id);
                         cout << "비밀번호를 입력해 주세요 : ";
                         getline(cin, pw);
+
                         cout << "로그인을 시도합니다...\n";
                         if (client.login(id, pw)) {
-                            std::cout << "Login successful!" << std::endl;
-                            string session_input;
+                            cout << "Login successful!" << endl;
+
                             while (1) {
-                                cout << "작업을 선택해 주세요(ID 확인, 방 생성, 방 참가, 로그아웃) : ";
+                                cout << "작업을 선택해 주세요(내 정보, 방 생성, 방 참가, 로그아웃) : ";
                                 getline(cin, session_input);
-                                if (session_input == "ID 확인") {
-                                    cout << client.checkMyID() << "\n";
+
+                                if (session_input == "내 정보") {
+                                    json myInfo = client.checkMyID();
+                                    cout << "ID : " << myInfo["username"] << "\n";
                                 }
                                 else if (session_input == "방 생성") {
-
+                                    // 방 생성 기능 구현 예정
+                                    cout << "방 생성 기능이 아직 구현되지 않았습니다.\n";
                                 }
                                 else if (session_input == "방 참가") {
-
+                                    // 방 참가 기능 구현 예정
+                                    cout << "방 참가 기능이 아직 구현되지 않았습니다.\n";
                                 }
                                 else if (session_input == "로그아웃") {
-                                    cout << "세션 연결을 종료합니다,\n";
+                                    cout << "세션 연결을 종료합니다.\n";
                                     client.logout();
                                     break;
                                 }
@@ -286,10 +291,9 @@ int main() {
             }
         }
         catch (const std::exception& e) {
-            std::cerr << "Exception: " << e.what() << std::endl;
+            std::cerr << "예외 발생: " << e.what() << std::endl;
         }
     }
-    
 
     return 0;
 }
