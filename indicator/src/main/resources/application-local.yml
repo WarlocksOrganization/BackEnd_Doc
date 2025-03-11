@@ -1,0 +1,66 @@
+# application-local.yml (로컬 개발 설정)
+# 로컬 환경 설정
+spring:
+  data:
+    # Redis 설정
+    redis:
+      host: ${LOCAL_REDIS_HOST:localhost}
+      port: ${LOCAL_REDIS_PORT:6379}
+      password: ${LOCAL_REDIS_PASSWORD:} # 로컬에서 필요한 경우 추가
+    # MongoDB 설정
+    mongodb:
+      database: ${LOCAL_MONGODB_DATABASE:indicator_db}
+      uri: mongodb://${LOCAL_MONGODB_USERNAME}:${LOCAL_MONGODB_PASSWORD}@${LOCAL_MONGODB_HOST:localhost}:${LOCAL_MONGODB_PORT:27017}/${LOCAL_MONGODB_DATABASE}?authSource=admin
+  # MySQL 설정
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://${LOCAL_DB_HOST:localhost}:${LOCAL_DB_PORT:3306}/${LOCAL_DB_NAME}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&useUniCode=yes&characterEncoding=UTF-8
+    username: ${LOCAL_DB_USERNAME}
+    password: ${LOCAL_DB_PASSWORD}
+  # JPA 설정 추가
+  jpa:
+    database-platform: org.hibernate.dialect.MySQLDialect
+    show-sql: false               # 개발 환경에서는 활성화
+    hibernate:
+      ddl-auto: update            # 개발 환경에서는 validate 권장
+    properties:
+      hibernate:
+        format_sql: true          # 개발 환경에서는 활성화
+        show_sql: true            # 개발 환경에서는 활성화
+        use_sql_comments: true    # 개발 환경에서는 활성화
+        highlight_sql: true       # 개발 환경에서는 활성화. SQL 로그 하이라이팅
+
+# 로컬 환경 로깅 설정
+logging:
+  config: classpath:log4j2-local.xml
+  level:
+    root: DEBUG
+    org:
+      springframework:
+        web: DEBUG
+        security: DEBUG
+        orm:
+          jpa: DEBUG
+        transaction: DEBUG
+    com:
+      .smashup.indicator: DEBUG  # 패키지명
+      zaxxer:
+        hikari:
+          pool: INFO
+    sun:
+      rmi: WARN
+    # JPA 로깅 설정
+    org.hibernate:
+      SQL: DEBUG
+      type:
+        descriptor:
+          sql: TRACE
+          sql.BasicBinder: TRACE
+  pattern:
+    console: '%style{%d{HH:mm:ss.SSS}}{cyan} %highlight{[%t] %-5level %logger{36} - %msg%n}'
+
+#app:
+#  domain: http://localhost:8080
+#  frontend-url: http://localhost:5173
+#  invitation:
+#    expiry-hours: 48  # 초대장 유효 시간 (시간)

@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- log4j2-prod.xml -->
+<Configuration status="WARN">
+    <Properties>
+        <Property name="LOG_PATTERN">%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</Property>
+        <Property name="APP_LOG_ROOT">/var/log/pplelog</Property>
+    </Properties>
+
+    <Appenders>
+        <Console name="LogToConsole" target="SYSTEM_OUT">
+            <PatternLayout pattern="${LOG_PATTERN}"/>
+        </Console>
+
+        <RollingFile name="LogToRollingFile" fileName="${APP_LOG_ROOT}/app.log"
+                     filePattern="${APP_LOG_ROOT}/app-%d{yyyy-MM-dd}-%i.log">
+            <PatternLayout pattern="${LOG_PATTERN}"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1"/>
+                <SizeBasedTriggeringPolicy size="100MB"/>
+            </Policies>
+            <DefaultRolloverStrategy max="30">
+                <Delete basePath="${APP_LOG_ROOT}" maxDepth="1">
+                    <IfFileName glob="app-*.log" />
+                    <IfLastModified age="30d" />
+                </Delete>
+            </DefaultRolloverStrategy>
+        </RollingFile>
+
+        <RollingFile name="SqlRollingFile" fileName="${APP_LOG_ROOT}/sql.log"
+                     filePattern="${APP_LOG_ROOT}/sql-%d{yyyy-MM-dd}-%i.log">
+            <PatternLayout pattern="${LOG_PATTERN}"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1"/>
+                <SizeBasedTriggeringPolicy size="100MB"/>
+            </Policies>
+            <DefaultRolloverStrategy max="10">
+                <Delete basePath="${APP_LOG_ROOT}" maxDepth="1">
+                    <IfFileName glob="sql-*.log" />
+                    <IfLastModified age="7d" />
+                </Delete>
+            </DefaultRolloverStrategy>
+        </RollingFile>
+
+        <RollingFile name="ErrorFile" fileName="${APP_LOG_ROOT}/error.log"
+                     filePattern="${APP_LOG_ROOT}/error-%d{yyyy-MM-dd}-%i.log">
+            <PatternLayout pattern="${LOG_PATTERN}"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1"/>
+                <SizeBasedTriggeringPolicy size="50MB"/>
+            </Policies>
+            <DefaultRolloverStrategy max="30">
+                <Delete basePath="${APP_LOG_ROOT}" maxDepth="1">
+                    <IfFileName glob="error-*.log" />
+                    <IfLastModified age="60d" />
+                </Delete>
+            </DefaultRolloverStrategy>
+        </RollingFile>
+    </Appenders>
+
+    <Loggers>
+        <!-- Application Loggers -->
+        <Logger name="com.playground.fitlog" level="INFO" additivity="false">
+            <AppenderRef ref="LogToRollingFile"/>
+            <AppenderRef ref="ErrorFile" level="ERROR"/>
+        </Logger>
+
+        <!-- Framework Loggers -->
+        <Logger name="org.springframework" level="INFO" additivity="false">
+            <AppenderRef ref="LogToRollingFile"/>
+            <AppenderRef ref="ErrorFile" level="ERROR"/>
+        </Logger>
+
+        <!-- JPA/Hibernate SQL 로깅 - 중요 쿼리와 에러만 기록 -->
+        <Logger name="org.hibernate.SQL" level="WARN" additivity="false">
+            <AppenderRef ref="SqlRollingFile"/>
+        </Logger>
+        <Logger name="org.hibernate.type.descriptor.sql" level="ERROR" additivity="false">
+            <AppenderRef ref="SqlRollingFile"/>
+        </Logger>
+        
+        <!-- JPA 관련 에러 로깅 -->
+        <Logger name="org.hibernate.engine.jdbc.spi.SqlExceptionHelper" level="ERROR" additivity="false">
+            <AppenderRef ref="ErrorFile"/>
+        </Logger>
+
+        <!-- 트랜잭션 에러 로깅 -->
+        <Logger name="org.springframework.orm.jpa" level="ERROR" additivity="false">
+            <AppenderRef ref="ErrorFile"/>
+        </Logger>
+        <Logger name="org.springframework.transaction" level="ERROR" additivity="false">
+            <AppenderRef ref="ErrorFile"/>
+        </Logger>
+
+        <!-- Connection Pool -->
+        <Logger name="com.zaxxer.hikari" level="WARN" additivity="false">
+            <AppenderRef ref="LogToRollingFile"/>
+            <AppenderRef ref="ErrorFile" level="ERROR"/>
+        </Logger>
+
+        <Root level="INFO">
+            <AppenderRef ref="LogToRollingFile"/>
+            <AppenderRef ref="ErrorFile" level="ERROR"/>
+        </Root>
+    </Loggers>
+</Configuration>
