@@ -56,7 +56,6 @@ namespace game_server {
             CreateRoomRequest createRoomRequest{
                 request["room_name"].get<std::string>(),
                 request["max_players"].get<int>(),
-                request["game_mode"].get<std::string>(),
             };
 
             // 서비스 계층 호출

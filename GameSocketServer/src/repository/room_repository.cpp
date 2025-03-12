@@ -21,7 +21,7 @@ namespace game_server {
                 // ID로 방 정보 조회
                 pqxx::result result = txn.exec_params(
                     "SELECT room_id, room_name, creator_id, created_at, closed_at, "
-                    "max_players, map_id, game_mode, status "
+                    "max_players, map_id, status "
                     "FROM Rooms WHERE room_id = $1",
                     roomId);
 
@@ -45,7 +45,6 @@ namespace game_server {
 
                 room.maxPlayers = result[0][5].as<int>();
                 room.mapId = result[0][6].as<int>();
-                room.gameMode = result[0][7].as<std::string>();
                 room.status = result[0][8].as<std::string>();
 
                 return room;
@@ -65,7 +64,7 @@ namespace game_server {
                 // 이름으로 방 정보 조회
                 pqxx::result result = txn.exec_params(
                     "SELECT room_id, room_name, creator_id, created_at, closed_at, "
-                    "max_players, map_id, game_mode, status "
+                    "max_players, map_id, status "
                     "FROM Rooms WHERE room_name = $1",
                     roomName);
 
@@ -89,7 +88,6 @@ namespace game_server {
 
                 room.maxPlayers = result[0][5].as<int>();
                 room.mapId = result[0][6].as<int>();
-                room.gameMode = result[0][7].as<std::string>();
                 room.status = result[0][8].as<std::string>();
 
                 return room;
@@ -110,7 +108,7 @@ namespace game_server {
                 // 열린 방 목록 조회 (최근 생성순)
                 pqxx::result result = txn.exec_params(
                     "SELECT room_id, room_name, creator_id, created_at, closed_at, "
-                    "max_players, map_id, game_mode, status "
+                    "max_players, map_id, status "
                     "FROM Rooms WHERE status = 'open' "
                     "ORDER BY created_at DESC LIMIT $1",
                     limit);
@@ -132,7 +130,6 @@ namespace game_server {
 
                     room.maxPlayers = row[5].as<int>();
                     room.mapId = row[6].as<int>();
-                    room.gameMode = row[7].as<std::string>();
                     room.status = row[8].as<std::string>();
 
                     rooms.push_back(room);
@@ -146,7 +143,7 @@ namespace game_server {
             return rooms;
         }
 
-        int create(const std::string& roomName, int creatorId, int maxPlayers, const std::string& gameMode) override {
+        int create(const std::string& roomName, int creatorId, int maxPlayers) override {
             auto conn = dbPool_->get_connection();
             try {
                 pqxx::work txn(*conn);
@@ -156,7 +153,7 @@ namespace game_server {
                     "INSERT INTO Rooms (room_name, creator_id, created_at, max_players, "
                     "game_mode, status) "
                     "VALUES ($1, $2, CURRENT_TIMESTAMP, $3, $4, 'open') RETURNING room_id",
-                    roomName, creatorId, maxPlayers, gameMode);
+                    roomName, creatorId, maxPlayers);
 
                 txn.commit();
                 dbPool_->return_connection(conn);
@@ -169,7 +166,7 @@ namespace game_server {
             }
             catch (const std::exception& e) {
                 spdlog::error("Error creating room: {}", e.what());
-                auto conn = dbPool_->get_connection();
+                dbPool_->return_connection(conn);
                 return -1;
             }
         }
