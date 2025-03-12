@@ -57,22 +57,26 @@ public:
         }
     }
 
-    bool registerUser(const std::string& username, const std::string& password) {
+    json registerUser(const std::string& username, const std::string& password) {
         json request = { {"action", "register"}, {"username", username}, {"password", password} };
         json response = sendRequest(request);
-        cout << "회원가입 응답: " << response.dump(2) << endl;
-        return response.contains("status") && response["status"] == "success";
+        return response;
     }
 
-    bool login(const std::string& username, const std::string& password) {
+    json login(const std::string& username, const std::string& password) {
         json request = { {"action", "login"}, {"username", username}, {"password", password} };
         json response = sendRequest(request);
 
         if (response.contains("status") && response["status"] == "success") {
             user_info_ = response;
-            return true;
         }
-        return false;
+        return response;
+    }
+
+    json createRoom(const std::string& roomname, const int& maxplayers) {
+        json request = { {"action", "create_room"}, {"room_name", roomname}, {"maxplayes", maxplayers} };
+        json response = sendRequest(request);
+        return response;
     }
 
     void disconnect() {
@@ -121,52 +125,7 @@ int main() {
                 getline(cin, auth_input);
 
                 if (auth_input == "회원가입") {
-                    cout << "사용할 ID: ";
-                    getline(cin, id);
-                    cout << "비밀번호: ";
-                    getline(cin, pw);
-                    if (client->registerUser(id, pw)) {
-                        cout << "회원가입 성공!\n";
-                    }
-                }
-                else if (auth_input == "로그인") {
-                    cout << "ID: ";
-                    getline(cin, id);
-                    cout << "비밀번호: ";
-                    getline(cin, pw);
 
-                    if (client->login(id, pw)) {
-                        cout << "로그인 성공!\n";
-
-                        while (true) {
-                            cout << "\n[메뉴] 내 정보 / 방 생성 / 방 참가 / 로그아웃\n입력: ";
-                            getline(cin, session_input);
-
-                            if (session_input == "내 정보") {
-                                cout << "내 ID: " << client->getUserId() << "\n";
-                            }
-                            else if (session_input == "방 생성") {
-                                cout << "방 생성 기능 준비 중...\n";
-                            }
-                            else if (session_input == "방 참가") {
-                                cout << "방 참가 기능 준비 중...\n";
-                            }
-                            else if (session_input == "로그아웃") {
-                                client->logout();
-                                break;
-                            }
-                            else {
-                                cout << "잘못된 입력입니다.\n";
-                            }
-                        }
-                    }
-                }
-                else if (auth_input == "종료") {
-                    client->disconnect();
-                    return 0;
-                }
-                else {
-                    cout << "올바른 입력이 아닙니다.\n";
                 }
             }
         }

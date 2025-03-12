@@ -54,6 +54,7 @@ set(SOURCE_FILES
     "${SRC_DIR}/repository/room_repository.cpp"
     "${SRC_DIR}/util/db_pool.cpp"
     "${SRC_DIR}/util/password_util.cpp"
+    "${SRC_DIR}/util/session_pool.cpp"
 )
 
 # 모든 헤더 디렉토리를 명시적으로 추가
