@@ -1,16 +1,16 @@
 #include "db_pool.h"
 
-// Include standard library headers
+// 표준 라이브러리 헤더 포함
 #include <memory>
 #include <mutex>
 #include <string>
 #include <vector>
 #include <stdexcept>
 
-// Logging library
+// 로깅 라이브러리
 #include <spdlog/spdlog.h>
 
-// PostgreSQL client library
+// PostgreSQL 클라이언트 라이브러리
 #include <pqxx/pqxx>
 
 namespace game_server {
@@ -19,11 +19,12 @@ namespace game_server {
         : connection_string_(connection_string)
     {
         try {
+            // 연결 풀 초기화
             connections_.reserve(pool_size);
             in_use_.reserve(pool_size);
 
             for (int i = 0; i < pool_size; ++i) {
-                // Create new connection and add to pool
+                // 새 연결 생성 및 풀에 추가
                 auto conn = std::make_shared<pqxx::connection>(connection_string);
                 connections_.push_back(conn);
                 in_use_.push_back(false);
@@ -41,7 +42,7 @@ namespace game_server {
 
     DbPool::~DbPool()
     {
-        // Close all connections
+        // 모든 연결 종료
         connections_.clear();
         spdlog::info("Database connection pool destroyed");
     }
@@ -50,12 +51,12 @@ namespace game_server {
     {
         std::lock_guard<std::mutex> lock(mutex_);
 
-        // Find available connection
+        // 사용 가능한 연결 찾기
         for (size_t i = 0; i < connections_.size(); ++i) {
             if (!in_use_[i]) {
                 in_use_[i] = true;
 
-                // Check if connection is valid
+                // 연결이 유효한지 확인
                 if (!connections_[i]->is_open()) {
                     spdlog::warn("Connection {} was closed, reconnecting...", i);
                     try {
@@ -72,7 +73,7 @@ namespace game_server {
             }
         }
 
-        // If no available connections, create a new one
+        // 사용 가능한 연결이 없으면 새 연결 생성
         spdlog::warn("No available connections in pool, creating a new one");
         try {
             auto conn = std::make_shared<pqxx::connection>(connection_string_);
@@ -90,6 +91,7 @@ namespace game_server {
     {
         std::lock_guard<std::mutex> lock(mutex_);
 
+        // 반환된 연결 찾아서 사용 가능 상태로 변경
         for (size_t i = 0; i < connections_.size(); ++i) {
             if (connections_[i] == conn) {
                 in_use_[i] = false;

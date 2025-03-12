@@ -1,18 +1,18 @@
-#include <boost/asio.hpp>
+﻿#include <boost/asio.hpp>
 #include <iostream>
 #include <string>
 #include <nlohmann/json.hpp>
 #include <thread>
 #include <chrono>
-#include <limits>
+#include <memory>
 
 using json = nlohmann::json;
 using boost::asio::ip::tcp;
 using namespace std;
 
-class GameTestClient {
+class GameClient {
 public:
-    GameTestClient(const std::string& host, int port)
+    GameClient(const std::string& host, int port)
         : io_context_(), socket_(io_context_), host_(host), port_(port) {
     }
 
@@ -21,22 +21,19 @@ public:
             tcp::resolver resolver(io_context_);
             auto endpoints = resolver.resolve(host_, std::to_string(port_));
             boost::asio::connect(socket_, endpoints);
-            std::cout << "Connected to " << host_ << ":" << port_ << std::endl;
+            cout << "서버 연결 성공: " << host_ << ":" << port_ << endl;
             return true;
         }
         catch (const std::exception& e) {
-            std::cerr << "Connect error: " << e.what() << std::endl;
+            cerr << "연결 오류: " << e.what() << endl;
             return false;
         }
     }
 
     json sendRequest(const json& request_data) {
         try {
-            // Convert JSON to string
             std::string json_str = request_data.dump();
-
-            // Create HTTP request
-            std::string http_request =
+            std::string request =
                 "POST / HTTP/1.1\r\n"
                 "Host: " + host_ + ":" + std::to_string(port_) + "\r\n"
                 "Content-Type: application/json\r\n"
@@ -45,143 +42,53 @@ public:
                 "\r\n" +
                 json_str;
 
-            // Send request
-            boost::asio::write(socket_, boost::asio::buffer(http_request));
-            cout << "Send request done\n";
+            boost::asio::write(socket_, boost::asio::buffer(request));
+            cout << "요청 전송 완료\n";
 
-            // 응답 데이터를 저장할 변수
-            std::string response_data;
-            char buffer[1024];
-            boost::system::error_code error;
-            size_t bytes_read;
+            // 응답 데이터 저장
+            boost::asio::streambuf response_buffer;
+            boost::asio::read_until(socket_, response_buffer, "\r\n\r\n");
 
-            // 더 간단한 방법: 소켓을 논블로킹으로 설정
-            socket_.non_blocking(true);
+            // 스트림 버퍼를 문자열로 변환
+            std::istream response_stream(&response_buffer);
+            std::string response_data((std::istreambuf_iterator<char>(response_stream)), std::istreambuf_iterator<char>());
 
-            // 10초 타임아웃
-            auto start_time = std::chrono::steady_clock::now();
-            auto timeout = std::chrono::seconds(10);
-
-            while (true) {
-                // 시간 초과 확인
-                auto now = std::chrono::steady_clock::now();
-                if (now - start_time > timeout) {
-                    cout << "Response timeout\n";
-                    break;
-                }
-
-                try {
-                    bytes_read = socket_.read_some(boost::asio::buffer(buffer), error);
-
-                    if (error == boost::asio::error::would_block) {
-                        // 데이터가 아직 없음, 잠시 대기 후 다시 시도
-                        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-                        continue;
-                    }
-
-                    if (error) {
-                        break; // 다른 오류가 발생하면 루프 종료
-                    }
-
-                    if (bytes_read > 0) {
-                        response_data.append(buffer, bytes_read);
-                        cout << "Read " << bytes_read << " bytes\n";
-                    }
-
-                    // 충분히 읽었는지 확인
-                    if (response_data.find("\r\n\r\n") != std::string::npos) {
-                        size_t header_end = response_data.find("\r\n\r\n");
-                        std::string header = response_data.substr(0, header_end);
-
-                        // 헤더에서 Content-Length 추출
-                        size_t cl_pos = header.find("Content-Length: ");
-                        if (cl_pos != std::string::npos) {
-                            size_t cl_end = header.find("\r\n", cl_pos);
-                            std::string cl_str = header.substr(cl_pos + 16, cl_end - (cl_pos + 16));
-                            size_t content_length = std::stoul(cl_str);
-
-                            // 본문이 이미 충분히 읽혔는지 확인
-                            if (response_data.length() >= header_end + 4 + content_length) {
-                                cout << "Complete response received\n";
-                                break;
-                            }
-                        }
-                        else if (header.find("Transfer-Encoding: chunked") != std::string::npos ||
-                            header.find("Connection: close") != std::string::npos) {
-                            // 청크 인코딩이나 연결 닫기를 확인했으면 특별 처리 필요
-                            if (error == boost::asio::error::eof) {
-                                cout << "Connection closed by server\n";
-                                break;
-                            }
-                        }
-                    }
-                }
-                catch (const std::exception& e) {
-                    cout << "Read exception: " << e.what() << "\n";
-                    break;
-                }
-            }
-
-            // 논블로킹 모드 해제
-            socket_.non_blocking(false);
-
-            // 응답 처리
-            cout << "Total response data (" << response_data.length() << " bytes)\n";
+            cout << "응답 수신 (" << response_data.length() << " bytes)" << endl;
 
             if (response_data.empty()) {
-                return json{ {"status", "error"}, {"message", "No response from server"} };
+                return json{ {"status", "error"}, {"message", "서버 응답 없음"} };
             }
 
-            // 헤더와 본문 분리
+            // HTTP 헤더와 본문 분리
             size_t header_end = response_data.find("\r\n\r\n");
             if (header_end == std::string::npos) {
-                cout << "Invalid HTTP response format\n";
-                return json{ {"status", "error"}, {"message", "Invalid response format"} };
+                return json{ {"status", "error"}, {"message", "잘못된 응답 형식"} };
             }
 
-            // 본문 추출
             std::string body = response_data.substr(header_end + 4);
-            cout << "Body content (" << body.length() << " bytes): " << body << "\n";
+            return json::parse(body);
 
-            try {
-                return json::parse(body);
-            }
-            catch (const std::exception& e) {
-                cout << "JSON parse error: " << e.what() << "\n";
-                return json{ {"status", "error"}, {"message", "Invalid JSON in response"} };
-            }
         }
         catch (const std::exception& e) {
-            std::cerr << "Request error: " << e.what() << std::endl;
-            return json{ {"status", "error"}, {"message", std::string("Request failed: ") + e.what()} };
+            cerr << "요청 오류: " << e.what() << endl;
+            return json{ {"status", "error"}, {"message", "요청 실패"} };
         }
     }
 
     bool registerUser(const std::string& username, const std::string& password) {
-        json request = {
-            {"action", "register"},
-            {"username", username},
-            {"password", password}
-        };
-
+        json request = { {"action", "register"}, {"username", username}, {"password", password} };
         json response = sendRequest(request);
-        std::cout << "Register response: " << response.dump(2) << std::endl;
-
+        cout << "회원가입 응답: " << response.dump(2) << endl;
         return response.contains("status") && response["status"] == "success";
     }
 
     bool login(const std::string& username, const std::string& password) {
-        json request = {
-            {"action", "login"},
-            {"username", username},
-            {"password", password}
-        };
-
+        json request = { {"action", "login"}, {"username", username}, {"password", password} };
         json response = sendRequest(request);
-        std::cout << "Login response: " << response.dump(2) << std::endl;
+        cout << "로그인 응답: " << response.dump(2) << endl;
 
         if (response.contains("status") && response["status"] == "success") {
-            myInfo_ = response;
+            user_info_ = response;
             return true;
         }
         return false;
@@ -190,17 +97,17 @@ public:
     void disconnect() {
         if (socket_.is_open()) {
             socket_.close();
-            std::cout << "Disconnected from server" << std::endl;
+            cout << "서버 연결 종료\n";
         }
     }
 
-    int checkMyID() {
-        return myInfo_;
+    int getUserId() {
+        return user_info_["user_id"];
     }
 
     void logout() {
-        myInfo_.clear();
-        return;
+        user_info_.clear();
+        cout << "로그아웃 완료\n";
     }
 
 private:
@@ -208,92 +115,82 @@ private:
     tcp::socket socket_;
     std::string host_;
     int port_;
-    json myInfo_;
+    json user_info_;
 };
 
 int main() {
-    while (1) {
+    while (true) {
         string IP, id, pw, auth_input, session_input;
         int Port;
 
-        cout << "서버 IP를 입력해 주세요 : ";
-        cin >> IP;
-        cout << "포트 번호를 입력해 주세요 : ";
-        cin >> Port;
-        cin.ignore(numeric_limits<streamsize>::max(), '\n');
+        //cout << "서버 IP를 입력하세요: ";
+        //cin >> IP;
+        //cout << "포트 번호를 입력하세요: ";
+        //cin >> Port;
+        //cin.ignore();
 
-        cout << "연결을 시도합니다...\n";
-        GameTestClient client(IP, Port);
+        cout << "서버에 연결 중...\n";
+        auto client = std::make_unique<GameClient>("127.0.0.1", 8080);
 
         try {
-            if (client.connect()) {
-                cout << "연결 성공!\n";
+            if (!client->connect()) continue;
 
-                while (1) {
-                    cout << "작업을 선택해 주세요(회원가입, 로그인, 종료) : ";
-                    getline(cin, auth_input);
+            while (true) {
+                cout << "\n[메뉴] 회원가입 / 로그인 / 종료\n입력: ";
+                getline(cin, auth_input);
 
-                    if (auth_input == "회원가입") {
-                        cout << "사용할 ID를 입력해 주세요 : ";
-                        getline(cin, id);
-                        cout << "사용할 비밀번호를 입력해 주세요 : ";
-                        getline(cin, pw);
-
-                        cout << "회원 가입을 시도합니다...\n";
-                        client.registerUser(id, pw);
+                if (auth_input == "회원가입") {
+                    cout << "사용할 ID: ";
+                    getline(cin, id);
+                    cout << "비밀번호: ";
+                    getline(cin, pw);
+                    if (client->registerUser(id, pw)) {
+                        cout << "회원가입 성공!\n";
                     }
-                    else if (auth_input == "로그인") {
-                        cout << "ID를 입력해 주세요 : ";
-                        getline(cin, id);
-                        cout << "비밀번호를 입력해 주세요 : ";
-                        getline(cin, pw);
+                }
+                else if (auth_input == "로그인") {
+                    cout << "ID: ";
+                    getline(cin, id);
+                    cout << "비밀번호: ";
+                    getline(cin, pw);
 
-                        cout << "로그인을 시도합니다...\n";
-                        if (client.login(id, pw)) {
-                            cout << "Login successful!" << endl;
+                    if (client->login(id, pw)) {
+                        cout << "로그인 성공!\n";
 
-                            while (1) {
-                                cout << "작업을 선택해 주세요(내 정보, 방 생성, 방 참가, 로그아웃) : ";
-                                getline(cin, session_input);
+                        while (true) {
+                            cout << "\n[메뉴] 내 정보 / 방 생성 / 방 참가 / 로그아웃\n입력: ";
+                            getline(cin, session_input);
 
-                                if (session_input == "내 정보") {
-                                    json myInfo = client.checkMyID();
-                                    cout << "ID : " << myInfo["username"] << "\n";
-                                }
-                                else if (session_input == "방 생성") {
-                                    // 방 생성 기능 구현 예정
-                                    cout << "방 생성 기능이 아직 구현되지 않았습니다.\n";
-                                }
-                                else if (session_input == "방 참가") {
-                                    // 방 참가 기능 구현 예정
-                                    cout << "방 참가 기능이 아직 구현되지 않았습니다.\n";
-                                }
-                                else if (session_input == "로그아웃") {
-                                    cout << "세션 연결을 종료합니다.\n";
-                                    client.logout();
-                                    break;
-                                }
-                                else {
-                                    cout << "올바른 값을 입력해 주세요\n";
-                                }
+                            if (session_input == "내 정보") {
+                                cout << "내 ID: " << client->getUserId() << "\n";
+                            }
+                            else if (session_input == "방 생성") {
+                                cout << "방 생성 기능 준비 중...\n";
+                            }
+                            else if (session_input == "방 참가") {
+                                cout << "방 참가 기능 준비 중...\n";
+                            }
+                            else if (session_input == "로그아웃") {
+                                client->logout();
+                                break;
+                            }
+                            else {
+                                cout << "잘못된 입력입니다.\n";
                             }
                         }
                     }
-                    else if (auth_input == "종료") {
-                        cout << "소켓 서버와 연결을 종료합니다.\n";
-                        client.disconnect();
-                        break;
-                    }
-                    else {
-                        cout << "올바른 값을 입력해 주세요\n";
-                    }
+                }
+                else if (auth_input == "종료") {
+                    client->disconnect();
+                    return 0;
+                }
+                else {
+                    cout << "올바른 입력이 아닙니다.\n";
                 }
             }
         }
         catch (const std::exception& e) {
-            std::cerr << "예외 발생: " << e.what() << std::endl;
+            cerr << "오류 발생: " << e.what() << endl;
         }
     }
-
-    return 0;
 }

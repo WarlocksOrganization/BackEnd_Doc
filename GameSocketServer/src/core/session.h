@@ -5,9 +5,12 @@
 #include <string>
 #include <array>
 #include <map>
+#include <nlohmann/json.hpp>
 #include "../controller/controller.h"
 
 namespace game_server {
+
+    using json = nlohmann::json;
 
     class Session : public std::enable_shared_from_this<Session> {
     public:
@@ -17,9 +20,8 @@ namespace game_server {
         void start();
 
     private:
-        void read_header();
-        void read_body(std::size_t content_length);
-        void process_request(const std::string& request_data);
+        void read_message();
+        void process_request(const json& request);
         void write_response(const std::string& response);
         void handle_error(const std::string& error_message);
 

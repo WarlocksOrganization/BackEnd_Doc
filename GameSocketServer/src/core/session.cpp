@@ -1,4 +1,6 @@
 // core/session.cpp
+// 세션 관리 클래스 구현
+// 클라이언트와의 통신 세션을 처리하는 핵심 파일
 #include "session.h"
 #include <iostream>
 #include <nlohmann/json.hpp>
@@ -20,101 +22,69 @@ namespace game_server {
     }
 
     void Session::start() {
-        read_header();
+        read_message();
     }
 
-    void Session::read_header() {
-        auto self = shared_from_this();
+    void Session::read_message() {
+        auto self(shared_from_this());
 
+        // 비동기적으로 데이터 읽기
         socket_.async_read_some(
             boost::asio::buffer(buffer_),
             [this, self](boost::system::error_code ec, std::size_t length) {
                 if (!ec) {
-                    // Simple HTTP header parsing (find Content-Length)
-                    std::string header(buffer_.data(), length);
-                    std::size_t content_length = 0;
+                    try {
+                        // 수신된 데이터를 문자열로 변환
+                        std::string data(buffer_.data(), length);
 
-                    // Find Content-Length header
-                    std::string cl_header = "Content-Length: ";
-                    auto pos = header.find(cl_header);
-                    if (pos != std::string::npos) {
-                        auto end_pos = header.find("\r\n", pos);
-                        if (end_pos != std::string::npos) {
-                            std::string length_str = header.substr(
-                                pos + cl_header.length(),
-                                end_pos - (pos + cl_header.length())
-                            );
-                            content_length = std::stoul(length_str);
-                        }
+                        // JSON 파싱
+                        json request = json::parse(data);
+
+                        // 요청 처리
+                        process_request(request);
                     }
-
-                    // Find body separator
-                    auto body_start = header.find("\r\n\r\n");
-                    if (body_start != std::string::npos) {
-                        body_start += 4; // After "\r\n\r\n"
-
-                        // Already received body part
-                        std::string body_part = header.substr(body_start);
-
-                        if (body_part.length() >= content_length) {
-                            // Body fully received
-                            process_request(body_part.substr(0, content_length));
-                        }
-                        else {
-                            // Need to read rest of body
-                            message_ = body_part;
-                            read_body(content_length - body_part.length());
-                        }
+                    catch (const std::exception& e) {
+                        // JSON 파싱 오류 등 예외 처리
+                        spdlog::error("Error processing request data: {}", e.what());
+                        json error_response = {
+                            {"status", "error"},
+                            {"message", "Invalid request format"}
+                        };
+                        write_response(error_response.dump());
                     }
                 }
                 else {
-                    handle_error("Header reading error: " + ec.message());
+                    handle_error("Message reading error: " + ec.message());
                 }
             });
     }
 
-    void Session::read_body(std::size_t remaining_length) {
-        auto self = shared_from_this();
-
-        socket_.async_read_some(
-            boost::asio::buffer(buffer_),
-            [this, self, remaining_length](boost::system::error_code ec, std::size_t length) {
-                if (!ec) {
-                    message_.append(buffer_.data(), length);
-
-                    if (length >= remaining_length) {
-                        // Body fully received
-                        process_request(message_);
-                    }
-                    else {
-                        // Need to read more
-                        read_body(remaining_length - length);
-                    }
-                }
-                else {
-                    handle_error("Body reading error: " + ec.message());
-                }
-            });
-    }
-
-    void Session::process_request(const std::string& request_data) {
+    void Session::process_request(const json& request) {
         try {
-            // Parse JSON
-            json request = json::parse(request_data);
-
-            // Route request
+            // action 필드로 요청 타입 확인
             std::string action = request["action"];
             std::string controller_type;
 
+            // 컨트롤러 타입 결정
             if (action == "register" || action == "login") {
                 controller_type = "auth";
             }
             else if (action == "create_room" || action == "join_room" || action == "list_rooms") {
-                request["user_id"] = user_id_;
+                // 방 관련 컨트롤러에는 사용자 ID 추가
+                json mutable_request = request;
+                mutable_request["user_id"] = user_id_;
                 controller_type = "room";
+
+                // 변경된 요청으로 컨트롤러 호출
+                auto controller_it = controllers_.find(controller_type);
+                if (controller_it != controllers_.end()) {
+                    std::string response = controller_it->second->handleRequest(mutable_request);
+                    write_response(response);
+                    return;
+                }
             }
             else {
-                // Add routing for other API actions
+                // 알 수 없는 액션 처리
                 spdlog::warn("Unknown action: {}", action);
                 json error_response = {
                     {"status", "error"},
@@ -124,17 +94,17 @@ namespace game_server {
                 return;
             }
 
-            // Find appropriate controller
+            // 인증 컨트롤러 처리 (user_id 수정이 필요 없음)
             auto controller_it = controllers_.find(controller_type);
             if (controller_it != controllers_.end()) {
-                // Forward request to controller
+                // 요청을 컨트롤러로 전달
                 std::string response = controller_it->second->handleRequest(request);
 
-                // Update authentication info (on successful login)
+                // 로그인 성공 시 사용자 ID 저장
                 if (action == "login" && json::parse(response)["status"] == "success") {
                     json resp_json = json::parse(response);
                     user_id_ = resp_json["user_id"];
-                    spdlog::info("User {} logged in", user_id_);
+                    spdlog::info("User logged in: {}", user_id_);
                 }
 
                 write_response(response);
@@ -159,25 +129,16 @@ namespace game_server {
     }
 
     void Session::write_response(const std::string& response) {
-        auto self = shared_from_this();
+        auto self(shared_from_this());
 
-        // Create HTTP response header
-        std::string response_header =
-            "HTTP/1.1 200 OK\r\n"
-            "Content-Type: application/json\r\n"
-            "Content-Length: " + std::to_string(response.length()) + "\r\n"
-            "Connection: keep-alive\r\n"
-            "\r\n";
-
-        std::string full_response = response_header + response;
-
+        // 클라이언트로 응답 데이터 전송
         boost::asio::async_write(
             socket_,
-            boost::asio::buffer(full_response),
+            boost::asio::buffer(response),
             [this, self](boost::system::error_code ec, std::size_t /*length*/) {
                 if (!ec) {
-                    // Wait for next request
-                    read_header();
+                    // 다음 요청 대기
+                    read_message();
                 }
                 else {
                     handle_error("Response writing error: " + ec.message());
@@ -186,10 +147,10 @@ namespace game_server {
     }
 
     void Session::handle_error(const std::string& error_message) {
-        // Log error
+        // 오류 로깅 및 리소스 정리
         spdlog::error(error_message);
 
-        // Clean up resources if needed
+        // 필요한 경우 리소스 정리
         if (socket_.is_open()) {
             boost::system::error_code ec;
             socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_both, ec);

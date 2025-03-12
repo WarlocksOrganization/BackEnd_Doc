@@ -1,4 +1,6 @@
 // service/room_service.cpp
+// 방 서비스 구현 파일
+// 방 생성, 참가, 목록 조회 등의 비즈니스 로직을 처리
 #include "room_service.h"
 #include "../repository/room_repository.h"
 #include <spdlog/spdlog.h>
@@ -8,21 +10,21 @@
 namespace game_server {
 
     namespace {
-        // Validate room name function
+        // 방 이름 유효성 검증 함수
         bool isValidRoomName(const std::string& name) {
-            // Empty name is invalid
+            // 빈 이름은 유효하지 않음
             if (name.empty()) {
                 return false;
             }
 
-            // Check if within 40 bytes (UTF-8 standard)
+            // 40바이트(UTF-8 표준) 이내인지 확인
             if (name.size() > 40) {
                 return false;
             }
 
-            // Check if only contains English, Korean, numbers
+            // 영어, 한글, 숫자만 포함하는지 확인
             for (unsigned char c : name) {
-                // Check ASCII English and numbers
+                // ASCII 영어와 숫자 확인
                 if ((c >= 'A' && c <= 'Z') ||
                     (c >= 'a' && c <= 'z') ||
                     (c >= '0' && c <= '9') ||
@@ -30,18 +32,18 @@ namespace game_server {
                     continue;
                 }
 
-                // Check UTF-8 Korean range (first byte in 0xEA~0xED range)
+                // UTF-8 한글 범위 확인 (첫 바이트가 0xEA~0xED 범위)
                 if ((c & 0xF0) == 0xE0) {
-                    // Possible first byte of Korean character, more precise check needed
+                    // 한글 문자의 첫 바이트 가능성, 좀 더 정확한 확인 필요
                     continue;
                 }
 
-                // Possible continuation byte of Korean character (0x80~0xBF range)
+                // 한글 문자의 연속 바이트 (0x80~0xBF 범위)
                 if ((c & 0xC0) == 0x80) {
                     continue;
                 }
 
-                // Disallowed character
+                // 허용되지 않는 문자
                 return false;
             }
 
@@ -49,7 +51,7 @@ namespace game_server {
         }
     }
 
-    // Service implementation
+    // 서비스 구현체
     class RoomServiceImpl : public RoomService {
     public:
         explicit RoomServiceImpl(std::shared_ptr<RoomRepository> roomRepo)
@@ -59,7 +61,7 @@ namespace game_server {
         CreateRoomResponse createRoom(const CreateRoomRequest& request, int userId) override {
             CreateRoomResponse response;
 
-            // Validate request
+            // 요청 유효성 검증
             if (!isValidRoomName(request.roomName)) {
                 response.success = false;
                 response.message = "Room name must be 1-40 bytes long and contain only English, Korean, or numbers";
@@ -72,14 +74,14 @@ namespace game_server {
                 return response;
             }
 
-            // Check if room with same name already exists
+            // 같은 이름의 방이 이미 존재하는지 확인
             if (roomRepo_->findByName(request.roomName)) {
                 response.success = false;
                 response.message = "A room with this name already exists";
                 return response;
             }
 
-            // Create room
+            // 방 생성
             int roomId = roomRepo_->create(request.roomName, userId, request.maxPlayers, request.gameMode);
             if (roomId <= 0) {
                 response.success = false;
@@ -87,14 +89,14 @@ namespace game_server {
                 return response;
             }
 
-            // Add creator to room
+            // 방 생성자를 방에 추가
             if (!roomRepo_->addPlayer(roomId, userId)) {
                 response.success = false;
                 response.message = "Failed to add room creator to room";
                 return response;
             }
 
-            // Create successful response
+            // 성공 응답 생성
             response.success = true;
             response.message = "Room successfully created";
             response.roomId = roomId;
@@ -109,7 +111,7 @@ namespace game_server {
         JoinRoomResponse joinRoom(const JoinRoomRequest& request, int userId) override {
             JoinRoomResponse response;
 
-            // Find room
+            // 방 찾기
             auto room = roomRepo_->findById(request.roomId);
             if (!room) {
                 response.success = false;
@@ -117,14 +119,14 @@ namespace game_server {
                 return response;
             }
 
-            // Check room status
+            // 방 상태 확인
             if (room->status != "open") {
                 response.success = false;
                 response.message = "Room is not currently available";
                 return response;
             }
 
-            // Check current player count
+            // 현재 참가자 수 확인
             int currentPlayers = roomRepo_->getPlayerCount(room->roomId);
             if (currentPlayers >= room->maxPlayers) {
                 response.success = false;
@@ -132,22 +134,22 @@ namespace game_server {
                 return response;
             }
 
-            // Add player to room
+            // 사용자를 방에 추가
             if (!roomRepo_->addPlayer(room->roomId, userId)) {
                 response.success = false;
                 response.message = "Failed to join room";
                 return response;
             }
 
-            // Get room player list
+            // 방 참가자 목록 가져오기
             auto playerIds = roomRepo_->getPlayersInRoom(room->roomId);
 
-            // Create successful response
+            // 성공 응답 생성
             response.success = true;
             response.message = "Successfully joined room";
             response.roomId = room->roomId;
             response.roomName = room->roomName;
-            response.currentPlayers = currentPlayers + 1; // Including newly joined player
+            response.currentPlayers = currentPlayers + 1; // 새로 참가한 사용자 포함
             response.maxPlayers = room->maxPlayers;
             response.gameMode = room->gameMode;
             response.playerIds = playerIds;
@@ -163,10 +165,10 @@ namespace game_server {
         ListRoomsResponse listRooms() override {
             ListRoomsResponse response;
 
-            // Get open rooms list
+            // 열린 방 목록 가져오기
             auto rooms = roomRepo_->findAllOpen();
 
-            // Create response
+            // 응답 생성
             response.success = true;
             response.message = "Successfully retrieved room list";
 
@@ -195,7 +197,7 @@ namespace game_server {
         std::shared_ptr<RoomRepository> roomRepo_;
     };
 
-    // Factory method implementation
+    // 팩토리 메서드 구현
     std::unique_ptr<RoomService> RoomService::create(std::shared_ptr<RoomRepository> roomRepo) {
         return std::make_unique<RoomServiceImpl>(roomRepo);
     }

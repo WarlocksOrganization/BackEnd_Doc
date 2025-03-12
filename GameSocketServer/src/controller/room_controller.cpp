@@ -1,4 +1,6 @@
 // controller/room_controller.cpp
+// 방 컨트롤러 구현 파일
+// 방 생성, 참가, 목록 조회 등의 요청을 처리하는 컨트롤러
 #include "room_controller.h"
 #include "../dto/request/create_room_request.h"
 #include "../dto/request/join_room_request.h"
@@ -14,6 +16,7 @@ namespace game_server {
     }
 
     std::string RoomController::handleRequest(const json& request) {
+        // 요청의 action 필드에 따라 적절한 핸들러 호출
         std::string action = request["action"];
 
         if (action == "create_room") {
@@ -36,6 +39,7 @@ namespace game_server {
 
     std::string RoomController::handleCreateRoom(const json& request) {
         try {
+            // 사용자 ID 확인
             int userId = 0;
             if (request.contains("user_id")) {
                 userId = request["user_id"];
@@ -48,22 +52,23 @@ namespace game_server {
                 return error_response.dump();
             }
 
-            // Create room request object
+            // 방 생성 요청 객체 생성
             CreateRoomRequest createRoomRequest{
                 request["room_name"].get<std::string>(),
                 request["max_players"].get<int>(),
                 request["game_mode"].get<std::string>(),
             };
 
-            // Call service
+            // 서비스 계층 호출
             auto response = roomService_->createRoom(createRoomRequest, userId);
 
-            // Create response
+            // 응답 생성
             json jsonResponse = {
                 {"status", response.success ? "success" : "error"},
                 {"message", response.message}
             };
 
+            // 성공 시 방 정보 포함
             if (response.success) {
                 jsonResponse["room_id"] = response.roomId;
                 jsonResponse["room_name"] = response.roomName;
@@ -83,6 +88,7 @@ namespace game_server {
 
     std::string RoomController::handleJoinRoom(const json& request) {
         try {
+            // 사용자 ID 확인
             int userId = 0;
             if (request.contains("user_id")) {
                 userId = request["user_id"];
@@ -95,20 +101,21 @@ namespace game_server {
                 return error_response.dump();
             }
 
-            // Create join room request object
+            // 방 참가 요청 객체 생성
             JoinRoomRequest joinRoomRequest{
                 request["room_id"].get<int>()
             };
 
-            // Call service
+            // 서비스 계층 호출
             auto response = roomService_->joinRoom(joinRoomRequest, userId);
 
-            // Create response
+            // 응답 생성
             json jsonResponse = {
                 {"status", response.success ? "success" : "error"},
                 {"message", response.message}
             };
 
+            // 성공 시 방 정보 및 참가자 목록 포함
             if (response.success) {
                 jsonResponse["room_id"] = response.roomId;
                 jsonResponse["room_name"] = response.roomName;
@@ -132,10 +139,10 @@ namespace game_server {
 
     std::string RoomController::handleListRooms(const json& request) {
         try {
-            // Call service
+            // 서비스 계층 호출하여 방 목록 조회
             auto response = roomService_->listRooms();
 
-            // Convert to JSON response
+            // JSON 응답으로 변환
             return response.toJson().dump();
         }
         catch (const std::exception& e) {
