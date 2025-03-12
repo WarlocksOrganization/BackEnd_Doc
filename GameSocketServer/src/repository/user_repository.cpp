@@ -1,4 +1,6 @@
 // repository/user_repository.cpp
+// 사용자 리포지토리 구현 파일
+// 사용자 관련 데이터베이스 작업을 처리하는 리포지토리
 #include "user_repository.h"
 #include "../util/db_pool.h"
 #include <pqxx/pqxx>
@@ -6,7 +8,7 @@
 
 namespace game_server {
 
-    // Repository implementation
+    // 리포지토리 구현체
     class UserRepositoryImpl : public UserRepository {
     public:
         explicit UserRepositoryImpl(DbPool* dbPool) : dbPool_(dbPool) {}
@@ -16,6 +18,7 @@ namespace game_server {
             try {
                 pqxx::work txn(*conn);
 
+                // ID로 사용자 정보 조회
                 pqxx::result result = txn.exec_params(
                     "SELECT user_id, username, password, rating, total_games, total_wins, "
                     "       created_at, last_login "
@@ -29,6 +32,7 @@ namespace game_server {
                     return std::nullopt;
                 }
 
+                // 조회 결과로 User 객체 생성
                 User user;
                 user.userId = result[0][0].as<int>();
                 user.username = result[0][1].as<std::string>();
@@ -56,6 +60,7 @@ namespace game_server {
             try {
                 pqxx::work txn(*conn);
 
+                // 사용자명으로 사용자 정보 조회
                 pqxx::result result = txn.exec_params(
                     "SELECT user_id, username, password, rating, total_games, total_wins, "
                     "       created_at, last_login "
@@ -69,6 +74,7 @@ namespace game_server {
                     return std::nullopt;
                 }
 
+                // 조회 결과로 User 객체 생성
                 User user;
                 user.userId = result[0][0].as<int>();
                 user.username = result[0][1].as<std::string>();
@@ -96,6 +102,7 @@ namespace game_server {
             try {
                 pqxx::work txn(*conn);
 
+                // 새 사용자 생성
                 pqxx::result result = txn.exec_params(
                     "INSERT INTO Users (username, password, created_at) "
                     "VALUES ($1, $2, CURRENT_TIMESTAMP) RETURNING user_id",
@@ -122,6 +129,7 @@ namespace game_server {
             try {
                 pqxx::work txn(*conn);
 
+                // 마지막 로그인 시간 업데이트
                 pqxx::result result = txn.exec_params(
                     "UPDATE Users SET last_login = CURRENT_TIMESTAMP "
                     "WHERE user_id = $1 RETURNING user_id",
@@ -144,6 +152,7 @@ namespace game_server {
             try {
                 pqxx::work txn(*conn);
 
+                // 사용자 레이팅 업데이트
                 pqxx::result result = txn.exec_params(
                     "UPDATE Users SET rating = $1 WHERE user_id = $2 RETURNING user_id",
                     newRating, userId);
@@ -165,6 +174,7 @@ namespace game_server {
             try {
                 pqxx::work txn(*conn);
 
+                // 게임 통계 업데이트
                 std::string query;
                 if (isWin) {
                     query = "UPDATE Users SET total_games = total_games + 1, "
@@ -196,6 +206,7 @@ namespace game_server {
             try {
                 pqxx::work txn(*conn);
 
+                // 상위 플레이어 목록 조회 (레이팅 기준)
                 pqxx::result result = txn.exec_params(
                     "SELECT user_id, username, password, rating, total_games, total_wins, "
                     "       created_at, last_login "
@@ -205,6 +216,7 @@ namespace game_server {
                 txn.commit();
                 dbPool_->return_connection(conn);
 
+                // 조회 결과를 User 객체 리스트로 변환
                 for (const auto& row : result) {
                     User user;
                     user.userId = row[0].as<int>();
@@ -234,7 +246,7 @@ namespace game_server {
         DbPool* dbPool_;
     };
 
-    // Factory method implementation
+    // 팩토리 메서드 구현
     std::unique_ptr<UserRepository> UserRepository::create(DbPool* dbPool) {
         return std::make_unique<UserRepositoryImpl>(dbPool);
     }

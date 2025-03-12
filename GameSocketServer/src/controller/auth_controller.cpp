@@ -1,4 +1,6 @@
 // controller/auth_controller.cpp
+// 인증 컨트롤러 구현 파일
+// 사용자 등록 및 로그인 요청을 처리하는 컨트롤러
 #include "auth_controller.h"
 #include "../dto/request/login_request.h"
 #include "../dto/request/register_request.h"
@@ -14,6 +16,7 @@ namespace game_server {
     }
 
     std::string AuthController::handleRequest(const json& request) {
+        // 요청의 action 필드에 따라 적절한 핸들러 호출
         std::string action = request["action"];
 
         if (action == "register") {
@@ -33,21 +36,22 @@ namespace game_server {
 
     std::string AuthController::handleRegister(const json& request) {
         try {
-            // Extract request data
+            // 요청 데이터 추출 및 DTO 생성
             RegisterRequest registerRequest{
                 request["username"].get<std::string>(),
                 request["password"].get<std::string>()
             };
 
-            // Call service
+            // 서비스 계층 호출하여 사용자 등록 수행
             auto response = authService_->registerUser(registerRequest);
 
-            // Create response
+            // 응답 생성
             json jsonResponse = {
                 {"status", response.success ? "success" : "error"},
                 {"message", response.message}
             };
 
+            // 성공 시 추가 정보 포함
             if (response.success) {
                 jsonResponse["user_id"] = response.userId;
                 jsonResponse["username"] = response.username;
@@ -67,21 +71,22 @@ namespace game_server {
 
     std::string AuthController::handleLogin(const json& request) {
         try {
-            // Extract request data
+            // 요청 데이터 추출 및 DTO 생성
             LoginRequest loginRequest{
                 request["username"].get<std::string>(),
                 request["password"].get<std::string>()
             };
 
-            // Call service 
+            // 서비스 계층 호출하여 로그인 수행
             auto response = authService_->loginUser(loginRequest);
 
-            // Create response
+            // 응답 생성
             json jsonResponse = {
                 {"status", response.success ? "success" : "error"},
                 {"message", response.message}
             };
 
+            // 성공 시 사용자 정보 포함
             if (response.success) {
                 jsonResponse["user_id"] = response.userId;
                 jsonResponse["username"] = response.username;
