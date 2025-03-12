@@ -25,6 +25,9 @@ namespace game_server {
         else if (action == "join_room") {
             return handleJoinRoom(request);
         }
+        else if (action == "exit_room") {
+            return handleExitRoom(request);
+        }
         else if (action == "list_rooms") {
             return handleListRooms(request);
         }
@@ -120,7 +123,6 @@ namespace game_server {
                 jsonResponse["room_name"] = response.roomName;
                 jsonResponse["current_players"] = response.currentPlayers;
                 jsonResponse["max_players"] = response.maxPlayers;
-                jsonResponse["game_mode"] = response.gameMode;
                 jsonResponse["player_ids"] = response.playerIds;
             }
 
