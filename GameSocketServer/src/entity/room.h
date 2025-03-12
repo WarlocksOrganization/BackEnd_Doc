@@ -13,7 +13,6 @@ namespace game_server {
         std::optional<std::string> closedAt;
         int maxPlayers;
         int mapId;
-        std::string gameMode;
         std::string status;  // 'open', 'closed', 'in_game'
     };
 

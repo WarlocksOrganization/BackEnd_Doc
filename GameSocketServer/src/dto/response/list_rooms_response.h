@@ -12,7 +12,6 @@ namespace game_server {
         int creatorId;
         int currentPlayers;
         int maxPlayers;
-        std::string gameMode;
         std::string status;
         std::string createdAt;
     };
@@ -36,7 +35,6 @@ namespace game_server {
                     {"creator_id", room.creatorId},
                     {"current_players", room.currentPlayers},
                     {"max_players", room.maxPlayers},
-                    {"game_mode", room.gameMode},
                     {"status", room.status},
                     {"created_at", room.createdAt}
                     });

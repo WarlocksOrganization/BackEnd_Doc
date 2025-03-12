@@ -2,7 +2,7 @@
 DROP INDEX IF EXISTS 
     idx_users_username,
     idx_users_rating,
-    idx_gamesessions_lobby,
+    idx_gamesessions_room,
     idx_gamesessions_status_time,
     idx_rounds_session,
     idx_roundplayers_round_placement,
@@ -12,23 +12,23 @@ DROP INDEX IF EXISTS
     idx_gameevents_round_time,
     idx_gameevents_player_type,
     idx_gameevents_type_time,
-    idx_lobbies_status,
-    idx_lobbies_creator,
-    idx_lobbyplayers_user,
-    idx_lobbyevents_lobby_time,
-    idx_lobbyevents_user_type,
+    idx_rooms_status,
+    idx_rooms_creator,
+    idx_roomplayers_user,
+    idx_roomevents_room_time,
+    idx_roomevents_user_type,
     idx_gameevents_jsonb,
-    idx_lobbyevents_jsonb;
+    idx_roomevents_jsonb;
 
 -- 기존 테이블 삭제 (의존성 역순으로)
-DROP TABLE IF EXISTS LobbyEvents CASCADE;
-DROP TABLE IF EXISTS LobbyPlayers CASCADE;
+DROP TABLE IF EXISTS roomEvents CASCADE;
+DROP TABLE IF EXISTS roomPlayers CASCADE;
 DROP TABLE IF EXISTS GameEvents CASCADE;
 DROP TABLE IF EXISTS RoundPlayers CASCADE;
 DROP TABLE IF EXISTS SessionPlayers CASCADE;
 DROP TABLE IF EXISTS GameRounds CASCADE;
 DROP TABLE IF EXISTS GameSessions CASCADE;
-DROP TABLE IF EXISTS Lobbies CASCADE;
+DROP TABLE IF EXISTS Rooms CASCADE;
 DROP TABLE IF EXISTS Users CASCADE;
 
 -- 테이블 생성
@@ -53,7 +53,6 @@ CREATE TABLE Rooms (
     closed_at TIMESTAMP,
     max_players INT DEFAULT 6,
     map_id INT,
-    game_mode VARCHAR(20),
     status VARCHAR(20) DEFAULT 'open'
 );
 

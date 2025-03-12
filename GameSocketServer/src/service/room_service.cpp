@@ -74,15 +74,15 @@ namespace game_server {
                 return response;
             }
 
-            // 같은 이름의 방이 이미 존재하는지 확인
-            if (roomRepo_->findByName(request.roomName)) {
-                response.success = false;
-                response.message = "A room with this name already exists";
-                return response;
-            }
+            //// 같은 이름의 방이 이미 존재하는지 확인
+            //if (roomRepo_->findByName(request.roomName)) {
+            //    response.success = false;
+            //    response.message = "A room with this name already exists";
+            //    return response;
+            //}
 
             // 방 생성
-            int roomId = roomRepo_->create(request.roomName, userId, request.maxPlayers, request.gameMode);
+            int roomId = roomRepo_->create(request.roomName, userId, request.maxPlayers);
             if (roomId <= 0) {
                 response.success = false;
                 response.message = "Failed to create room";
@@ -151,7 +151,6 @@ namespace game_server {
             response.roomName = room->roomName;
             response.currentPlayers = currentPlayers + 1; // 새로 참가한 사용자 포함
             response.maxPlayers = room->maxPlayers;
-            response.gameMode = room->gameMode;
             response.playerIds = playerIds;
 
             spdlog::info("User {} joined room {}",
@@ -181,7 +180,6 @@ namespace game_server {
                 roomInfo.creatorId = room.creatorId;
                 roomInfo.currentPlayers = currentPlayers;
                 roomInfo.maxPlayers = room.maxPlayers;
-                roomInfo.gameMode = room.gameMode;
                 roomInfo.status = room.status;
                 roomInfo.createdAt = room.createdAt;
 

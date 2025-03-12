@@ -32,41 +32,23 @@ public:
 
     json sendRequest(const json& request_data) {
         try {
-            std::string json_str = request_data.dump();
-            std::string request =
-                "POST / HTTP/1.1\r\n"
-                "Host: " + host_ + ":" + std::to_string(port_) + "\r\n"
-                "Content-Type: application/json\r\n"
-                "Content-Length: " + std::to_string(json_str.length()) + "\r\n"
-                "Connection: close\r\n"
-                "\r\n" +
-                json_str;
-
+            std::string request = request_data.dump();
             boost::asio::write(socket_, boost::asio::buffer(request));
             cout << "요청 전송 완료\n";
 
             // 응답 데이터 저장
             boost::asio::streambuf response_buffer;
-            boost::asio::read_until(socket_, response_buffer, "\r\n\r\n");
+            boost::asio::read_until(socket_, response_buffer, "\0");
 
             // 스트림 버퍼를 문자열로 변환
             std::istream response_stream(&response_buffer);
             std::string response_data((std::istreambuf_iterator<char>(response_stream)), std::istreambuf_iterator<char>());
 
-            cout << "응답 수신 (" << response_data.length() << " bytes)" << endl;
-
             if (response_data.empty()) {
                 return json{ {"status", "error"}, {"message", "서버 응답 없음"} };
             }
 
-            // HTTP 헤더와 본문 분리
-            size_t header_end = response_data.find("\r\n\r\n");
-            if (header_end == std::string::npos) {
-                return json{ {"status", "error"}, {"message", "잘못된 응답 형식"} };
-            }
-
-            std::string body = response_data.substr(header_end + 4);
-            return json::parse(body);
+            return json::parse(response_data);
 
         }
         catch (const std::exception& e) {
@@ -85,7 +67,6 @@ public:
     bool login(const std::string& username, const std::string& password) {
         json request = { {"action", "login"}, {"username", username}, {"password", password} };
         json response = sendRequest(request);
-        cout << "로그인 응답: " << response.dump(2) << endl;
 
         if (response.contains("status") && response["status"] == "success") {
             user_info_ = response;
