@@ -16,6 +16,7 @@ namespace game_server {
     private:
         std::string handleCreateRoom(const nlohmann::json& request);
         std::string handleJoinRoom(const nlohmann::json& request);
+        std::string handleExitRoom(const nlohmann::json& request);
         std::string handleListRooms(const nlohmann::json& request);
 
         std::shared_ptr<RoomService> roomService_;

@@ -18,6 +18,7 @@ namespace game_server {
 
         virtual CreateRoomResponse createRoom(const CreateRoomRequest& request, int userId) = 0;
         virtual JoinRoomResponse joinRoom(const JoinRoomRequest& request, int userId) = 0;
+        virtual JoinRoomResponse exitRoom() = 0;
         virtual ListRoomsResponse listRooms() = 0;
 
         static std::unique_ptr<RoomService> create(std::shared_ptr<RoomRepository> roomRepo);

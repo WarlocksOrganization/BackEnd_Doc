@@ -4,7 +4,7 @@
 
 namespace game_server {
 
-    struct JoinRoomRequest {
+    struct ExitRoomRequest {
         int userId;
         int roomId;
     };
