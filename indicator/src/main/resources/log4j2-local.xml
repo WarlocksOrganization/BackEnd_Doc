@@ -2,58 +2,72 @@
 <Configuration status="WARN">
     <Properties>
         <Property name="LOG_PATTERN">%style{%d{HH:mm:ss.SSS}}{cyan} %highlight{[%t] %-5level %logger{36} - %msg%n}</Property>
+        <Property name="LOG_FILE">logs/app.log</Property>
     </Properties>
 
     <Appenders>
+        <!-- 콘솔 로그 -->
         <Console name="LogToConsole" target="SYSTEM_OUT">
             <PatternLayout pattern="${LOG_PATTERN}"/>
         </Console>
+
+        <!-- 파일 로그 추가 -->
+        <File name="LogToFile" fileName="${LOG_FILE}">
+            <PatternLayout>
+                <Pattern>%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n</Pattern>
+            </PatternLayout>
+        </File>
     </Appenders>
 
     <Loggers>
         <!-- Application Loggers -->
-        <Logger name="com.antswer" level="INFO" additivity="false">
+        <Logger name="com.smashup.indicator" level="DEBUG" additivity="false">
             <AppenderRef ref="LogToConsole"/>
+            <AppenderRef ref="LogToFile"/>
         </Logger>
 
-        <!-- Framework Loggers -->
-        <Logger name="org.springframework" level="INFO" additivity="false">
+        <!-- Spring Framework Loggers -->
+        <Logger name="org.springframework" level="DEBUG" additivity="false">
             <AppenderRef ref="LogToConsole"/>
+            <AppenderRef ref="LogToFile"/>
         </Logger>
 
         <!-- JPA/Hibernate SQL 로깅 -->
-        <Logger name="org.hibernate.SQL" level="INFO" additivity="false">
+        <Logger name="org.hibernate.SQL" level="DEBUG" additivity="false">
             <AppenderRef ref="LogToConsole"/>
+            <AppenderRef ref="LogToFile"/>
         </Logger>
-        
+
         <Logger name="org.hibernate.type.descriptor.sql.BasicBinder" level="TRACE" additivity="false">
             <AppenderRef ref="LogToConsole"/>
+            <AppenderRef ref="LogToFile"/>
         </Logger>
 
         <Logger name="org.hibernate.type.descriptor.sql.BasicExtractor" level="TRACE" additivity="false">
             <AppenderRef ref="LogToConsole"/>
+            <AppenderRef ref="LogToFile"/>
         </Logger>
 
         <!-- Spring Data JPA 트랜잭션 로깅 -->
-        <Logger name="org.springframework.orm.jpa" level="INFO" additivity="false">
+        <Logger name="org.springframework.orm.jpa" level="DEBUG" additivity="false">
             <AppenderRef ref="LogToConsole"/>
+            <AppenderRef ref="LogToFile"/>
         </Logger>
 
-        <Logger name="org.springframework.transaction" level="INFO" additivity="false">
+        <Logger name="org.springframework.transaction" level="DEBUG" additivity="false">
             <AppenderRef ref="LogToConsole"/>
+            <AppenderRef ref="LogToFile"/>
         </Logger>
 
         <!-- Connection Pool 모니터링 -->
         <Logger name="com.zaxxer.hikari" level="INFO" additivity="false">
             <AppenderRef ref="LogToConsole"/>
+            <AppenderRef ref="LogToFile"/>
         </Logger>
 
-        <Logger name="io.lettuce.core" level="INFO" additivity="false">
-            <AppenderRef ref="LogToRollingFile"/>
-        </Logger>
-
-        <Root level="INFO">
+        <Root level="DEBUG">
             <AppenderRef ref="LogToConsole"/>
+            <AppenderRef ref="LogToFile"/>
         </Root>
     </Loggers>
 </Configuration>
