@@ -207,7 +207,7 @@ namespace game_server {
             }
         }
 
-        bool removePlayer(int roomId, int userId) override {
+        int removePlayer(int userId) override {
             auto conn = dbPool_->get_connection();
             try {
                 pqxx::work txn(*conn);
@@ -215,19 +215,23 @@ namespace game_server {
                 // 참가자 제거 (leave_time 설정)
                 pqxx::result result = txn.exec_params(
                     "UPDATE RoomPlayers SET leave_time = CURRENT_TIMESTAMP "
-                    "WHERE room_id = $1 AND user_id = $2 AND leave_time IS NULL "
-                    "RETURNING id",
-                    roomId, userId);
+                    "WHERE room_id = ("
+                    "   SELECT room_id "
+                    "   FROM RoomPlayers "
+                    "   WHERE user_id = $1 AND leave_time IS NULL "
+                    "   LIMIT 1) "
+                    "RETURNING room_id",
+                    userId);
 
                 txn.commit();
                 dbPool_->return_connection(conn);
 
-                return !result.empty();
+                return result.empty() ? -1 : result[0][0].as<int>();
             }
             catch (const std::exception& e) {
                 spdlog::error("Error processing player room leave: {}", e.what());
                 dbPool_->return_connection(conn);
-                return false;
+                return -1;
             }
         }
 

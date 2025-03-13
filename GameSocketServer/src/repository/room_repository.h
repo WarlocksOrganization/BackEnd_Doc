@@ -20,7 +20,7 @@ namespace game_server {
         virtual std::vector<Room> findAllOpen(int limit = 20) = 0;
         virtual int create(const std::string& roomName, int creatorId, int maxPlayers) = 0;
         virtual bool addPlayer(int roomId, int userId) = 0;
-        virtual bool removePlayer(int roomId, int userId) = 0;
+        virtual int removePlayer(int userId) = 0;
         virtual int getPlayerCount(int roomId) = 0;
         virtual std::vector<int> getPlayersInRoom(int roomId) = 0;
 

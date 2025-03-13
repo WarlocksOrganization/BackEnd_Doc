@@ -85,7 +85,7 @@ namespace game_server {
             if (action == "register" || action == "login") {
                 controller_type = "auth";
             }
-            else if (action == "create_room" || action == "join_room" || action == "list_rooms") {
+            else if (action == "create_room" || action == "join_room" || action == "exit_room" || action == "list_rooms") {
                 // 방 관련 컨트롤러에는 사용자 ID 추가
                 json mutable_request = request;
                 mutable_request["user_id"] = user_id_;

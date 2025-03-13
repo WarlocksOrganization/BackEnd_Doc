@@ -8,7 +8,6 @@ namespace game_server {
         bool success;
         std::string message;
         int roomId;
-        std::string roomName;
     };
 
 } // namespace game_server

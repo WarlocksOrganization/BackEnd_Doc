@@ -4,6 +4,7 @@
 #include "room_controller.h"
 #include "../dto/request/create_room_request.h"
 #include "../dto/request/join_room_request.h"
+#include "../dto/request/exit_room_request.h"
 #include <spdlog/spdlog.h>
 #include <nlohmann/json.hpp>
 
@@ -42,15 +43,13 @@ namespace game_server {
 
     std::string RoomController::handleCreateRoom(const json& request) {
         try {
-            // 사용자 ID 확인
-            int userId = 0;
-            if (request.contains("user_id")) {
-                userId = request["user_id"];
-            }
-            if (userId <= 0) {
+            // 명시적인 타입 및 필수 필드 검증
+            if (!request.contains("room_name") ||
+                !request.contains("max_players") ||
+                !request.contains("user_id")) {
                 json error_response = {
                     {"status", "error"},
-                    {"message", "Invalid user ID for room creation"}
+                    {"message", "arguments error"}
                 };
                 return error_response.dump();
             }
@@ -59,10 +58,11 @@ namespace game_server {
             CreateRoomRequest createRoomRequest{
                 request["room_name"].get<std::string>(),
                 request["max_players"].get<int>(),
+                request["user_id"].get<int>(),
             };
 
             // 서비스 계층 호출
-            auto response = roomService_->createRoom(createRoomRequest, userId);
+            auto response = roomService_->createRoom(createRoomRequest);
 
             // 응답 생성
             json jsonResponse = {
@@ -90,26 +90,24 @@ namespace game_server {
 
     std::string RoomController::handleJoinRoom(const json& request) {
         try {
-            // 사용자 ID 확인
-            int userId = 0;
-            if (request.contains("user_id")) {
-                userId = request["user_id"];
-            }
-            if (userId <= 0) {
+            // 명시적인 타입 및 필수 필드 검증
+            if (!request.contains("user_id") ||
+                !request.contains("room_id")) {
                 json error_response = {
                     {"status", "error"},
-                    {"message", "Invalid user ID for joining room"}
+                    {"message", "arguments error"}
                 };
                 return error_response.dump();
             }
 
             // 방 참가 요청 객체 생성
             JoinRoomRequest joinRoomRequest{
-                request["room_id"].get<int>()
+                request["user_id"].get<int>(),
+                request["room_id"].get<int>(),
             };
 
             // 서비스 계층 호출
-            auto response = roomService_->joinRoom(joinRoomRequest, userId);
+            auto response = roomService_->joinRoom(joinRoomRequest);
 
             // 응답 생성
             json jsonResponse = {
@@ -124,6 +122,48 @@ namespace game_server {
                 jsonResponse["current_players"] = response.currentPlayers;
                 jsonResponse["max_players"] = response.maxPlayers;
                 jsonResponse["player_ids"] = response.playerIds;
+            }
+
+            return jsonResponse.dump();
+        }
+        catch (const std::exception& e) {
+            spdlog::error("Error joining room: {}", e.what());
+            json error_response = {
+                {"status", "error"},
+                {"message", "Internal server error"}
+            };
+            return error_response.dump();
+        }
+    }
+
+    std::string RoomController::handleExitRoom(const json& request) {
+        try {
+            // 명시적인 타입 및 필수 필드 검증
+            if (!request.contains("user_id")) {
+                json error_response = {
+                    {"status", "error"},
+                    {"message", "arguments error"}
+                };
+                return error_response.dump();
+            }
+
+            // 방 퇴장 요청 객체 생성
+            ExitRoomRequest exitRoomRequest{
+                request["user_id"].get<int>()
+            };
+
+            // 서비스 계층 호출
+            auto response = roomService_->exitRoom(exitRoomRequest);
+
+            // 응답 생성
+            json jsonResponse = {
+                {"status", response.success ? "success" : "error"},
+                {"message", response.message}
+            };
+
+            // 성공 시 방 정보 및 참가자 목록 포함
+            if (response.success) {
+                jsonResponse["room_id"] = response.roomId;
             }
 
             return jsonResponse.dump();

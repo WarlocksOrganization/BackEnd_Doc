@@ -58,7 +58,7 @@ namespace game_server {
             : roomRepo_(roomRepo) {
         }
 
-        CreateRoomResponse createRoom(const CreateRoomRequest& request, int userId) override {
+        CreateRoomResponse createRoom(const CreateRoomRequest& request) override {
             CreateRoomResponse response;
 
             // 요청 유효성 검증
@@ -82,7 +82,7 @@ namespace game_server {
             //}
 
             // 방 생성
-            int roomId = roomRepo_->create(request.roomName, userId, request.maxPlayers);
+            int roomId = roomRepo_->create(request.roomName, request.userId, request.maxPlayers);
             if (roomId <= 0) {
                 response.success = false;
                 response.message = "Failed to create room";
@@ -90,7 +90,7 @@ namespace game_server {
             }
 
             // 방 생성자를 방에 추가
-            if (!roomRepo_->addPlayer(roomId, userId)) {
+            if (!roomRepo_->addPlayer(roomId, request.userId)) {
                 response.success = false;
                 response.message = "Failed to add room creator to room";
                 return response;
@@ -103,12 +103,12 @@ namespace game_server {
             response.roomName = request.roomName;
 
             spdlog::info("User {} created new room: {} (ID: {})",
-                userId, request.roomName, roomId);
+                request.userId, request.roomName, roomId);
 
             return response;
         }
 
-        JoinRoomResponse joinRoom(const JoinRoomRequest& request, int userId) override {
+        JoinRoomResponse joinRoom(const JoinRoomRequest& request) override {
             JoinRoomResponse response;
 
             // 방 찾기
@@ -135,7 +135,7 @@ namespace game_server {
             }
 
             // 사용자를 방에 추가
-            if (!roomRepo_->addPlayer(room->roomId, userId)) {
+            if (!roomRepo_->addPlayer(room->roomId, request.userId)) {
                 response.success = false;
                 response.message = "Failed to join room";
                 return response;
@@ -154,14 +154,33 @@ namespace game_server {
             response.playerIds = playerIds;
 
             spdlog::info("User {} joined room {}",
-                userId, room->roomId);
+                request.userId, room->roomId);
             spdlog::info("Room {} current players: {}/{}",
                 room->roomId, response.currentPlayers, response.maxPlayers);
 
             return response;
         }
 
+        ExitRoomResponse exitRoom(const ExitRoomRequest& request) override {
+            ExitRoomResponse response;
+            
+            // 방 찾기
+            int roomId = roomRepo_->removePlayer(request.userId);
+            if (roomId == -1) {
+                response.success = false;
+                response.message = "Room not found";
+                return response;
+            }
 
+            // 성공 응답 생성
+            response.success = true;
+            response.message = "Successfully exited room";
+            response.roomId = roomId;
+
+            spdlog::info("User {} exited room {}", request.userId, roomId);
+
+            return response;
+        }
 
         ListRoomsResponse listRooms() override {
             ListRoomsResponse response;
