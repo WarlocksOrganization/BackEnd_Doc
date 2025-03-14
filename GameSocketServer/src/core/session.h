@@ -10,7 +10,6 @@
 
 namespace game_server {
 
-    class SessionPool;
     using json = nlohmann::json;
 
     class Session : public std::enable_shared_from_this<Session> {
@@ -19,9 +18,6 @@ namespace game_server {
             std::map<std::string, std::shared_ptr<Controller>>& controllers);
 
         void start();
-
-        void set_session_pool(std::shared_ptr<SessionPool> pool);
-        void update_activity();
         boost::asio::ip::tcp::socket& get_socket();
 
     private:
@@ -34,8 +30,7 @@ namespace game_server {
         std::map<std::string, std::shared_ptr<Controller>>& controllers_;
         std::array<char, 8192> buffer_;
         std::string message_;
-        int user_id_;
-        std::shared_ptr<SessionPool> session_pool_;
+        int user_id_ = 0;
     };
 
 } // namespace game_server
