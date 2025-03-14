@@ -2,7 +2,6 @@
 // 세션 관리 클래스 구현
 // 클라이언트와의 통신 세션을 처리하는 핵심 파일
 #include "session.h"
-#include "../util/session_pool.h"
 #include <iostream>
 #include <nlohmann/json.hpp>
 #include <spdlog/spdlog.h>
@@ -24,21 +23,6 @@ namespace game_server {
 
     void Session::start() {
         read_message();
-    }
-
-    void Session::set_session_pool(std::shared_ptr<SessionPool> pool) {
-        session_pool_ = pool;
-        spdlog::info("Session pool initialized");
-    }
-
-    void Session::update_activity() {
-        if (session_pool_) {
-            session_pool_->update_activity(this);
-        }
-    }
-
-    boost::asio::ip::tcp::socket& Session::get_socket() {
-        return socket_;
     }
 
     void Session::read_message() {
