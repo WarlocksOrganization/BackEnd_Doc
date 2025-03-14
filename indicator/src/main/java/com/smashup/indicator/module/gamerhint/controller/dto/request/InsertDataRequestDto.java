@@ -18,6 +18,6 @@ public class InsertDataRequestDto {
     private List<Integer> round2Set;
     private List<Integer> round3Set;
 
-    private Integer rank;
-    private Integer score;
+    private Integer finalRank;
+    private Integer finalScore;
 }

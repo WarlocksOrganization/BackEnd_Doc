@@ -3,6 +3,7 @@ package com.smashup.indicator.module.gamerhint.controller.dto;
 import com.smashup.indicator.common.util.AbstractRestController;
 import com.smashup.indicator.module.gamerhint.controller.dto.request.InsertDataListRequestDto;
 import com.smashup.indicator.module.gamerhint.controller.dto.request.InsertDataRequestDto;
+import com.smashup.indicator.module.gamerhint.service.impl.GamerHintService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -18,18 +19,18 @@ import java.util.Map;
 @Slf4j
 public class GamerHintController extends AbstractRestController {
 
-//    private final MemberService memberService;
+    // 의존성 주입
+    private final GamerHintService gamerHintService;
 
-
-    // 테스트 => API 테스트 필요
+    // 데이터 수집 => API 테스트 필요
     @PutMapping("/data")
     public ResponseEntity<Map<String, Object>> insertData(
             @RequestBody InsertDataListRequestDto dto
     ) throws Exception {
         try {
 //            log.debug("insertData: {}", dto);
-            System.out.println(dto.toString());
-//            memberService.updateFolderChange(dto);
+//            System.out.println(dto.toString());
+            gamerHintService.insertData(dto);
             return handleSuccess(dto);
         } catch (Exception e) {
             return handleError(e.getMessage());

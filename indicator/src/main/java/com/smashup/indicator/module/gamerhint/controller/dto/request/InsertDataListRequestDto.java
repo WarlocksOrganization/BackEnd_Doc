@@ -12,5 +12,10 @@ import java.util.List;
 @NoArgsConstructor
 @Builder
 public class InsertDataListRequestDto {
+    // 게임당 공통데이터.
+    private String patchVersion;
+    private Integer mapId;
+    private Integer playerCount;
+    // 플레이어별 데이터
     private List<InsertDataRequestDto> list;
 }
