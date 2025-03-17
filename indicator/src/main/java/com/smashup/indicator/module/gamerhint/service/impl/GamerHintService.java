@@ -2,7 +2,8 @@ package com.smashup.indicator.module.gamerhint.service.impl;
 
 import com.smashup.indicator.module.gamerhint.controller.dto.request.InsertDataListRequestDto;
 import com.smashup.indicator.module.gamerhint.controller.dto.request.InsertDataRequestDto;
-import com.smashup.indicator.module.gamerhint.repository.GamerHintRepository;
+import com.smashup.indicator.module.gamerhint.domain.entity.GamerHintDocument1;
+import com.smashup.indicator.module.gamerhint.repository.GamerHintRepository1;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,7 +14,7 @@ import java.util.*;
 @RequiredArgsConstructor
 public class GamerHintService {
     // 의존성 주입
-    private final GamerHintRepository gamerHintRepository;
+    private final GamerHintRepository1 gamerHintRepository1;
 
     // 전역 변수 참조 // 임시 나중에 다 전역변수 역할의 bean, @Component로 빼는게 좋을듯
 //    private final String PATCH_VERSION = "1.0.0";
@@ -23,6 +24,9 @@ public class GamerHintService {
     private final List<Integer> cardPool = new ArrayList<>();
     // 전역 변수 : 카드 인덱싱 맵. Map<카드ID, 배열상의 인덱스> => cardPool 순회하면서 만들어야 함.
     private final Map<Integer, Integer> cardPoolIndex = new HashMap<>();
+    // 전역 변수 : 직업 코드풀. List<Integer:직업ID>
+    private final List<Integer> classPool = new ArrayList<>();
+
 
     // 데이터 수집
     @Transactional
@@ -32,31 +36,51 @@ public class GamerHintService {
         /// documentID 재료
         String documentId = String.join("/", dto.getPatchVersion(), BATCH_COUNT+"");
 
-        /// 결과 관리하는 Map<documentId, Map<deckId, 카드풀[]>>
-        Map<String, Map<String, int[]>> resultMap = new HashMap<>();
+        /// 전체 직업을 관리하는 Map<documentId, Map<deckId, List<카드ID> > > 세팅.
+        Map<String, Map<String, List<Integer> > > resultMap = new HashMap<>();
+        // 직업코드 풀을 순회하며 최종 documentId를 가져온다. 가져오고 나서 resultMap에 집어 넣는다.
+        // 가져온 값이 없으면 new HashMap<>();을 넣는다.
+        for (int i = 0; i < classPool.size(); i++) {
+            String finalDocumentId = String.join("/", documentId, classPool.get(i)+"");
+            GamerHintDocument1 classMap = gamerHintRepository1.findById(finalDocumentId)
+                    .orElseGet(() -> null); // class document가 있는데 못 찾으면 사고. 진짜 없는거면 새로 채울때인데, 빈맵 넣으면 됨.
+            if(classMap != null){
+                resultMap.putIfAbsent(finalDocumentId, classMap.getDecks());
+            } else{
+                resultMap.putIfAbsent(finalDocumentId, new HashMap<>());
+            }
+        }
 
 
-        // 개별 파트 => 직업 단위 작업 시작.
+        // 개별 파트 => 플레이어 단위 작업 시작.
 
         // dto에서 작업할 리스트 추출
         List<InsertDataRequestDto> workingList = dto.getList();
         for (InsertDataRequestDto data : workingList){
             // documentId 생성
-            String dataDocumentId = String.join("/",documentId,data.getClassCode()+"");
+            String dataDocumentId = String.join("/",documentId, data.getClassCode()+"");
 
             // documentId 에 대응되는 맵 없으면 생성.
             resultMap.putIfAbsent(dataDocumentId, new HashMap<>());
-            Map<String, int[]> classMap = resultMap.get(dataDocumentId);
+            Map<String, List<Integer>> classMap = resultMap.get(dataDocumentId);
 
             // round1 deck 처리 => round 0에서 뽑은 선택지 처리.
-            /// 덱ID와 대응되는 배열 없으면 생성.
-            classMap.putIfAbsent(NO_CARD, new int[cardPool.size()+1]);
+            /// 덱ID와 대응되는 리스트 없으면 생성.
+            if(classMap.containsKey(NO_CARD)==false){
+                List<Integer> temp = new ArrayList<>(cardPool.size() + 1); // 이렇게 초기화하면 내부는 초기화 아예 안되어있어서 size() 도 0임
+                for (int i = 0; i < cardPool.size() + 1; i++) {
+                    temp.add(0);
+                }
+                classMap.put(NO_CARD, temp);
+            }
 
             for (int i = 0; i < data.getRound1Set().size(); i++) {
                 int cardId = data.getRound1Set().get(i);    // 카드 선택
                 int cardIndex = cardPoolIndex.get(cardId);  // 카드 ID 기반으로 카드 인덱스 찾기.
-                classMap.get(NO_CARD)[cardIndex]++;         // 맵에서 덱을 찾고. 덱의 배열에서 카드 인덱스 집계량 +1
-                classMap.get(NO_CARD)[cardPool.size()]++;   // 맵에서 덱을 찾고. 덱의 배열에서 마지막 인덱스  집계량 +1
+                int oldValue = classMap.get(NO_CARD).get(cardIndex); // set에 필요한 값 미리 부팅
+                classMap.get(NO_CARD).set(cardIndex, oldValue+1);         // 맵에서 덱을 찾고. 덱의 배열에서 카드 인덱스 집계량 +1
+                int oldTotalValue = classMap.get(NO_CARD).get(cardPool.size()); // 디버깅할때 편리함을 위해. oldValue 재사용 안함.
+                classMap.get(NO_CARD).set(cardPool.size(), oldTotalValue+1);   // 맵에서 덱을 찾고. 덱의 배열에서 마지막 인덱스  집계량 +1
             }
 
             // round2 deck 처리 => round 1에서 뽑은 선택지 처리.
@@ -76,13 +100,24 @@ public class GamerHintService {
 
 
             /// 덱ID와 대응되는 배열 없으면 생성.
-            classMap.putIfAbsent(deckId2, new int[cardPool.size()+1]);
+            if(classMap.containsKey(deckId2)==false){
+                List<Integer> temp = new ArrayList<>(cardPool.size() + 1); // 이렇게 초기화하면 내부는 초기화 아예 안되어있어서 size() 도 0임
+                for (int i = 0; i < cardPool.size() + 1; i++) {
+                    temp.add(0);
+                }
+                classMap.put(deckId2, temp);
+            }
+
 
             for (int i = 0; i < data.getRound2Set().size(); i++) {
                 int cardId = data.getRound2Set().get(i);    // 카드 선택
                 int cardIndex = cardPoolIndex.get(cardId);  // 카드 ID 기반으로 카드 인덱스 찾기.
-                classMap.get(deckId2)[cardIndex]++;         // 맵에서 덱을 찾고. 덱의 배열에서 카드 인덱스 집계량 +1
-                classMap.get(deckId2)[cardPool.size()]++;   // 맵에서 덱을 찾고. 덱의 배열에서 마지막 인덱스  집계량 +1
+
+                int oldValue = classMap.get(deckId2).get(cardIndex); // set에 필요한 값 미리 부팅
+                classMap.get(deckId2).set(cardIndex, oldValue+1);       // 맵에서 덱을 찾고. 덱의 배열에서 카드 인덱스 집계량 +1
+
+                int oldTotalValue = classMap.get(deckId2).get(cardPool.size()); // 디버깅할때 편리함을 위해. oldValue 재사용 안함.
+                classMap.get(deckId2).set(cardPool.size(), oldTotalValue+1);  // 맵에서 덱을 찾고. 덱의 배열에서 마지막 인덱스  집계량 +1
             }
 
 
@@ -104,13 +139,24 @@ public class GamerHintService {
 
 
             /// 덱ID와 대응되는 배열 없으면 생성.
-            classMap.putIfAbsent(deckId3, new int[cardPool.size()+1]);
+            if(classMap.containsKey(deckId3)==false){
+                List<Integer> temp = new ArrayList<>(cardPool.size() + 1); // 이렇게 초기화하면 내부는 초기화 아예 안되어있어서 size() 도 0임
+                for (int i = 0; i < cardPool.size() + 1; i++) {
+                    temp.add(0);
+                }
+                classMap.put(deckId3, temp);
+            }
+
 
             for (int i = 0; i < data.getRound3Set().size(); i++) {
                 int cardId = data.getRound3Set().get(i);    // 카드 선택
                 int cardIndex = cardPoolIndex.get(cardId);  // 카드 ID 기반으로 카드 인덱스 찾기.
-                classMap.get(deckId3)[cardIndex]++;         // 맵에서 덱을 찾고. 덱의 배열에서 카드 인덱스 집계량 +1
-                classMap.get(deckId3)[cardPool.size()]++;   // 맵에서 덱을 찾고. 덱의 배열에서 마지막 인덱스  집계량 +1
+
+                int oldValue = classMap.get(deckId3).get(cardIndex); // set에 필요한 값 미리 부팅
+                classMap.get(deckId3).set(cardIndex, oldValue+1);       // 맵에서 덱을 찾고. 덱의 배열에서 카드 인덱스 집계량 +1
+
+                int oldTotalValue = classMap.get(deckId3).get(cardPool.size()); // 디버깅할때 편리함을 위해. oldValue 재사용 안함.
+                classMap.get(deckId3).set(cardPool.size(), oldTotalValue+1);  // 맵에서 덱을 찾고. 덱의 배열에서 마지막 인덱스  집계량 +1
             }
 
         }
