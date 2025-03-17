@@ -5,7 +5,8 @@
 namespace game_server {
 
     struct ExitRoomRequest {
-        int userId;
+        int user_Id;
+        int room_id;
     };
 
 } // namespace game_server

@@ -7,8 +7,13 @@ namespace game_server {
     struct CreateRoomResponse {
         bool success;
         std::string message;
-        int roomId;
-        std::string roomName;
+        int room_id;
+        std::string room_name;
+        int host_id;
+        std::string ip_address;
+        int port;
+        int max_players;
+        std::string created_at;
     };
 
 } // namespace game_server

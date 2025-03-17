@@ -5,8 +5,8 @@
 namespace game_server {
 
     struct JoinRoomRequest {
-        int userId;
-        int roomId;
+        int user_Id;
+        int room_Id;
     };
 
 } // namespace game_server

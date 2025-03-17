@@ -9,6 +9,11 @@ namespace game_server {
         std::string room_name;
         int host_id;
         std::string status;
+        std::string ip_address;
+        int port;
+        int max_players;
+        std::string status;
+        std::string created_at;
     };
 
 } // namespace game_server

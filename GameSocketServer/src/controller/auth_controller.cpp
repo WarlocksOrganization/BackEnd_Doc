@@ -38,7 +38,7 @@ namespace game_server {
         try {
             // 요청 데이터 추출 및 DTO 생성
             RegisterRequest registerRequest{
-                request["username"].get<std::string>(),
+                request["user_name"].get<std::string>(),
                 request["password"].get<std::string>()
             };
 
@@ -54,7 +54,7 @@ namespace game_server {
             // 성공 시 추가 정보 포함
             if (response.success) {
                 jsonResponse["user_id"] = response.userId;
-                jsonResponse["username"] = response.username;
+                jsonResponse["user_name"] = response.username;
             }
 
             return jsonResponse.dump();
@@ -73,7 +73,7 @@ namespace game_server {
         try {
             // 요청 데이터 추출 및 DTO 생성
             LoginRequest loginRequest{
-                request["username"].get<std::string>(),
+                request["user_name"].get<std::string>(),
                 request["password"].get<std::string>()
             };
 
@@ -89,7 +89,7 @@ namespace game_server {
             // 성공 시 사용자 정보 포함
             if (response.success) {
                 jsonResponse["user_id"] = response.userId;
-                jsonResponse["username"] = response.username;
+                jsonResponse["user_name"] = response.username;
                 jsonResponse["rating"] = response.rating;
                 jsonResponse["total_games"] = response.totalGames;
                 jsonResponse["total_wins"] = response.totalWins;

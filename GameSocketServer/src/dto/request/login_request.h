@@ -5,11 +5,11 @@
 namespace game_server {
 
     struct LoginRequest {
-        std::string username;
+        std::string user_name;
         std::string password;
 
         LoginRequest(const std::string& username, const std::string& password)
-            : username(username), password(password) {
+            : user_name(username), password(password) {
         }
     };
 
