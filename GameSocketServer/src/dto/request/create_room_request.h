@@ -5,9 +5,8 @@
 namespace game_server {
 
     struct CreateRoomRequest {
-        std::string roomName;
-        int maxPlayers;
-        int userId;
+        std::string room_name;
+        int user_id;
     };
 
 } // namespace game_server

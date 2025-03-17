@@ -14,8 +14,8 @@ namespace game_server {
         int total_deaths;
         int rating;
         int highest_rating;
-        std::string createdAt;
-        std::string lastLogin;
+        std::string created_at;
+        std::string last_login;
     };
 
 } // namespace game_server

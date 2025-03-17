@@ -3,23 +3,14 @@
 #include <string>
 #include <vector>
 #include <nlohmann/json.hpp>
+#include "../../entity/rooms.h"
 
 namespace game_server {
-
-    struct RoomInfo {
-        int roomId;
-        std::string roomName;
-        int creatorId;
-        int currentPlayers;
-        int maxPlayers;
-        std::string status;
-        std::string createdAt;
-    };
 
     struct ListRoomsResponse {
         bool success;
         std::string message;
-        std::vector<RoomInfo> rooms;
+        std::vector<Rooms> rooms;
 
         nlohmann::json toJson() const {
             nlohmann::json j = {
@@ -30,7 +21,7 @@ namespace game_server {
 
             for (const auto& room : rooms) {
                 j["rooms"].push_back({
-                    {"room_id", room.roomId},
+                    {"room_id", room.room_id},
                     {"room_name", room.roomName},
                     {"creator_id", room.creatorId},
                     {"current_players", room.currentPlayers},
