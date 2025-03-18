@@ -11,13 +11,13 @@ namespace game_server {
         explicit RoomController(std::shared_ptr<RoomService> roomService);
         ~RoomController() override = default;
 
-        std::string handleRequest(nlohmann::json& request) override;
+        nlohmann::json handleRequest(nlohmann::json& request) override;
 
     private:
-        std::string handleCreateRoom(nlohmann::json& request);
-        std::string handleJoinRoom(nlohmann::json& request);
-        std::string handleExitRoom(nlohmann::json& request);
-        std::string handleListRooms(nlohmann::json& request);
+        nlohmann::json handleCreateRoom(nlohmann::json& request);
+        nlohmann::json handleJoinRoom(nlohmann::json& request);
+        nlohmann::json handleExitRoom(nlohmann::json& request);
+        nlohmann::json handleListRooms(nlohmann::json& request);
 
         std::shared_ptr<RoomService> roomService_;
     };

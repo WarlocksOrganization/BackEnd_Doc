@@ -97,7 +97,10 @@ namespace game_server {
             auto controller_it = controllers_.find(controller_type);
             if (controller_it != controllers_.end()) {
                 // 요청을 컨트롤러로 전달
-                std::string response = controller_it->second->handleRequest(request);
+                json response = controller_it->second->handleRequest(request);
+                if (action == "login" && response["status"] == "success") {
+                    init_current_user(response);
+                }
                 write_response(response);
             }
             else {
@@ -151,6 +154,20 @@ namespace game_server {
                 spdlog::error("Socket closing error: {}", ec.message());
             }
         }
+    }
+
+    void Session::init_current_user(const json& response) {
+        if (response.contains("user_id")) user_id_ = response["user_id"];
+        if (response.contains("username")) user_name_ = response["username"];
+        if (response.contains("wins")) wins_ = response["wins"];
+        if (response.contains("games_played")) games_played_ = response["games_played"];
+        if (response.contains("total_kills")) total_kills_ = response["total_kills"];
+        if (response.contains("total_damages")) total_damages_ = response["total_damages"];
+        if (response.contains("total_deaths")) total_deaths_ = response["total_deaths"];
+        if (response.contains("rating")) rating_ = response["rating"];
+        if (response.contains("highest_rating")) highest_rating_ = response["highest_rating"];
+
+        spdlog::info("User logged in: {} (ID: {})", user_name_, user_id_);
     }
 
 } // namespace game_server
