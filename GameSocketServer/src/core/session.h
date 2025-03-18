@@ -25,6 +25,7 @@ namespace game_server {
         void process_request(json& request);
         void write_response(const std::string& response);
         void handle_error(const std::string& error_message);
+        void init_current_user(const json& response);
 
         boost::asio::ip::tcp::socket socket_;
         std::map<std::string, std::shared_ptr<Controller>>& controllers_;
