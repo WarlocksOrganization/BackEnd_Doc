@@ -22,7 +22,7 @@ namespace game_server {
 
     private:
         void read_message();
-        void process_request(const json& request);
+        void process_request(json& request);
         void write_response(const std::string& response);
         void handle_error(const std::string& error_message);
 
@@ -30,7 +30,15 @@ namespace game_server {
         std::map<std::string, std::shared_ptr<Controller>>& controllers_;
         std::array<char, 8192> buffer_;
         std::string message_;
-        int user_id_ = 0;
+        int user_id_;
+        std::string user_name_;
+        int wins_;
+        int games_played_;
+        int total_kills_;
+        int total_damages_;
+        int total_deaths_;
+        int rating_;
+        int highest_rating_;
     };
 
 } // namespace game_server
