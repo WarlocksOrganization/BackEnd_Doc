@@ -17,12 +17,12 @@ namespace game_server {
 
         //std::optional<json> findById(int userId) override {}
 
-        json findByUsername(const std::string& username) {
+        json findByUsername(const std::string& user_name) {
             auto conn = dbPool_->get_connection();
             try {
                 pqxx::work txn(*conn);
                 pqxx::result result = txn.exec_params(
-                    "SELECT * FROM users WHERE username = $1", username);
+                    "SELECT * FROM users WHERE user_name = $1", user_name);
 
                 if (result.empty()) {
                     // 사용자를 찾지 못함 - std::nullopt 반환
@@ -41,7 +41,7 @@ namespace game_server {
                 user["total_deaths"] = result[0]["total_deaths"].as<int>();
                 user["rating"] = result[0]["rating"].as<int>();
                 user["highest_rating"] = result[0]["highest_rating"].as<int>();
-                user["create_at"] = result[0]["create_at"].as<std::string>();
+                user["created_at"] = result[0]["created_at"].as<std::string>();
                 user["last_login"] = result[0]["last_login"].as<std::string>();
 
                 txn.commit();
@@ -55,7 +55,7 @@ namespace game_server {
             }
         }
 
-        int create(const std::string& username, const std::string& hashedPassword) override {
+        int create(const std::string& user_name, const std::string& hashedPassword) override {
             auto conn = dbPool_->get_connection();
             try {
                 pqxx::work txn(*conn);
@@ -64,7 +64,7 @@ namespace game_server {
                 pqxx::result result = txn.exec_params(
                     "INSERT INTO users (user_name, password_hash) "
                     "VALUES ($1, $2) RETURNING user_id",
-                    username, hashedPassword);
+                    user_name, hashedPassword);
 
                 txn.commit();
                 dbPool_->return_connection(conn);
@@ -186,7 +186,7 @@ namespace game_server {
                     user["total_deaths"] = row["total_deaths"].as<int>();
                     user["rating"] = row["rating"].as<int>();
                     user["highest_rating"] = row["highest_rating"].as<int>();
-                    user["create_at"] = row["create_at"].as<std::string>();
+                    user["created_at"] = row["created_at"].as<std::string>();
                     user["last_login"] = row["last_login"].as<std::string>();
 
                     users.push_back(user);
