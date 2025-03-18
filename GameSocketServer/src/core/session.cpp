@@ -149,6 +149,7 @@ namespace game_server {
             boost::system::error_code ec;
             socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_both, ec);
             socket_.close(ec);
+            spdlog::error("Socket closing error: {}", error_message);
 
             if (ec) {
                 spdlog::error("Socket closing error: {}", ec.message());
