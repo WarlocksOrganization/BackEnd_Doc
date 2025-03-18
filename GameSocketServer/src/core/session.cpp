@@ -59,7 +59,7 @@ namespace game_server {
             });
     }
 
-    void Session::process_request(const json& request) {
+    void Session::process_request(json& request) {
         try {
             // action 필드로 요청 타입 확인
             std::string action = request["action"];
@@ -70,18 +70,17 @@ namespace game_server {
                 controller_type = "auth";
             }
             else if (action == "create_room" || action == "join_room" || action == "exit_room" || action == "list_rooms") {
-                // 방 관련 컨트롤러에는 사용자 ID 추가
-                json mutable_request = request;
-                mutable_request["user_id"] = user_id_;
-                controller_type = "room";
-
-                // 변경된 요청으로 컨트롤러 호출
-                auto controller_it = controllers_.find(controller_type);
-                if (controller_it != controllers_.end()) {
-                    std::string response = controller_it->second->handleRequest(mutable_request);
-                    write_response(response);
+                if (user_id_ == 0) {
+                    json error_response = {
+                        {"status", "error"},
+                        {"message", "Authentication required"}
+                    };
+                    write_response(error_response.dump());
                     return;
                 }
+
+                request["user_id"] = user_id_;
+                controller_type = "room";
             }
             else {
                 // 알 수 없는 액션 처리
@@ -94,19 +93,11 @@ namespace game_server {
                 return;
             }
 
-            // 인증 컨트롤러 처리 (user_id 수정이 필요 없음)
+            // 인증 컨트롤러 처리
             auto controller_it = controllers_.find(controller_type);
             if (controller_it != controllers_.end()) {
                 // 요청을 컨트롤러로 전달
                 std::string response = controller_it->second->handleRequest(request);
-
-                // 로그인 성공 시 사용자 ID 저장
-                if (action == "login" && json::parse(response)["status"] == "success") {
-                    json resp_json = json::parse(response);
-                    user_id_ = resp_json["user_id"];
-                    spdlog::info("User logged in: {}", user_id_);
-                }
-
                 write_response(response);
             }
             else {

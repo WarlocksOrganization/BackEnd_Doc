@@ -11,11 +11,11 @@ namespace game_server {
         explicit AuthController(std::shared_ptr<AuthService> authService);
         ~AuthController() override = default;
 
-        std::string handleRequest(const nlohmann::json& request) override;
+        nlohmann::json handleRequest(nlohmann::json& request) override;
 
     private:
-        std::string handleRegister(const nlohmann::json& request);
-        std::string handleLogin(const nlohmann::json& request);
+        nlohmann::json handleRegister(nlohmann::json& request);
+        nlohmann::json handleLogin(nlohmann::json& request);
 
         std::shared_ptr<AuthService> authService_;
     };
