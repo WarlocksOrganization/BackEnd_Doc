@@ -17,7 +17,7 @@ public class GamerHintService {
     private final GamerHintRepository1 gamerHintRepository1;
 
     // 전역 변수 참조 // 임시 나중에 다 전역변수 역할의 bean, @Component로 빼는게 좋을듯
-//    private final String PATCH_VERSION = "1.0.0";
+    // private final String PATCH_VERSION = "1.0.0";
     private final int BATCH_COUNT = 1;
     private final String NO_CARD = "NO_CARD";
     // 전역 변수 : 정렬된 카드풀 배열. List<Integer:카드ID>
@@ -38,12 +38,14 @@ public class GamerHintService {
 
         /// 전체 직업을 관리하는 Map<documentId, Map<deckId, List<카드ID> > > 세팅.
         Map<String, Map<String, List<Integer> > > resultMap = new HashMap<>();
-        // 직업코드 풀을 순회하며 최종 documentId를 가져온다. 가져오고 나서 resultMap에 집어 넣는다.
+        // 직업코드 풀을 순회하며 최종 documentId를 생성한다.
+        // 생성 후 resultMap에 집어 넣는다.
         // 가져온 값이 없으면 new HashMap<>();을 넣는다.
         for (int i = 0; i < classPool.size(); i++) {
             String finalDocumentId = String.join("/", documentId, classPool.get(i)+"");
+            // class document가 있는데 못 찾으면 사고. 진짜 없는거면 새로 채울때인데, 빈맵 넣으면 됨.
             GamerHintDocument1 classMap = gamerHintRepository1.findById(finalDocumentId)
-                    .orElseGet(() -> null); // class document가 있는데 못 찾으면 사고. 진짜 없는거면 새로 채울때인데, 빈맵 넣으면 됨.
+                    .orElseGet(() -> null);
             if(classMap != null){
                 resultMap.putIfAbsent(finalDocumentId, classMap.getDecks());
             } else{
@@ -162,17 +164,19 @@ public class GamerHintService {
         }
         // 개별 파트 종료 => resultMap 순회하면서 Map<deckId, 카드풀[]> 고르고 덱별로 insert하기.
 
+        // resultMap 순회하면서 각각의 classMap을 GamerHintDocument1에 저장해서. 각각에 대해서
+        for (String classMapId: resultMap.keySet()) {
 
+            GamerHintDocument1 gamerHintDocument1 = GamerHintDocument1.builder()
+                    .id(classMapId)
+                    .cardPool(cardPool)
+                    .decks(resultMap.get(classMapId))
+                    .build();
 
+            gamerHintRepository1.save(gamerHintDocument1);
+        }
+        // GamerHintRepository1.save(각각의 GamerHintDocument1) 해버리기
 
-
-//        // entity 조회로 일관성 유지.
-//        MemberEntity selectedMemberEntity = memberRepository.findById( memberEntity.getMemberId() )
-//                .orElseThrow( ()-> new Exception() );
-//        // 새 닉네임 set
-//        selectedMemberEntity.setMemberNickname(memberEntity.getMemberNickname());
-//        // member update
-//        memberRepository.save(selectedMemberEntity);
     }
 
 
