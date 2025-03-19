@@ -86,15 +86,6 @@ public:
         }
     }
 
-    int getUserId() {
-        return user_info_["user_id"];
-    }
-
-    void logout() {
-        user_info_.clear();
-        cout << "로그아웃 완료\n";
-    }
-
 private:
     boost::asio::io_context io_context_;
     tcp::socket socket_;
@@ -105,7 +96,7 @@ private:
 
 int main() {
     while (true) {
-        string IP, id, pw, auth_input, session_input;
+        string IP, id, pw, auth_input, session_input, roomName, maxPlayers, roomId;
         int Port;
 
         //cout << "서버 IP를 입력하세요: ";
@@ -114,23 +105,69 @@ int main() {
         //cin >> Port;
         //cin.ignore();
 
-        cout << "서버에 연결 중...\n";
-        auto client = std::make_unique<GameClient>("127.0.0.1", 8080);
+        while (true) {
+            cout << "서버에 연결 중...\n";
+            auto client = std::make_unique<GameClient>("127.0.0.1", 8080);
 
-        try {
-            if (!client->connect()) continue;
+            try {
+                if (!client->connect()) continue;
 
-            while (true) {
-                cout << "\n[메뉴] 회원가입 / 로그인 / 종료\n입력: ";
-                getline(cin, auth_input);
+                while (true) {
+                    cout << "[메뉴] 회원가입 / 로그인 / 종료\n입력: ";
+                    getline(cin, auth_input);
 
-                if (auth_input == "회원가입") {
+                    if (auth_input == "회원가입") {
+                        cout << "ID : ";
+                        cin >> id;
+                        cout << "PW : ";
+                        cin >> pw;
+                        json response = client->registerUser(id, pw);
+                        if (response["status"] == "error") {
+                            cout << response["message"] << "\n";
+                            continue;
+                        }
+                        cout << "회원가입 성공!\n";
+                    }
+                    else if (auth_input == "로그인") {
+                        cout << "ID : ";
+                        cin >> id;
+                        cout << "PW : ";
+                        cin >> pw;
+                        json response = client->login(id, pw);
+                        if (response["status"] == "error") {
+                            cout << response["message"] << "\n";
+                            continue;
+                        }
+                        cout << "로그인 성공!\n";
+                        while (true) {
+                            cout << "[메뉴] 방 생성 / 방 참가 / 방 목록 / 로그아웃\n입력: ";
+                            getline(cin, session_input);
+                            if (session_input == "방 생성") {
+                                cout << "방 이름 : ";
+                                cin >> roomName;
+                                cout << "최대 플레이어 : ";
+                                cin >> maxPlayers;
+                                json response = client->createRoom(roomName, stoi(maxPlayers));
+                                if (response["status"] == "error") {
+                                    cout << response["message"] << "\n";
+                                    continue;
+                                }
+                                cout << "방 생성 성공! 방 번호 : " << response["room_id"] << ", 방 이름 : " << response["room_name"] << "\n";
+                                while (true) {
 
+                                }
+                            }
+                        }
+                    }
+                    else if (auth_input == "종료") {
+                        client->disconnect();
+                    }
+                    else cout << "알 수 없는 명령어 입니다.\n";
                 }
             }
-        }
-        catch (const std::exception& e) {
-            cerr << "오류 발생: " << e.what() << endl;
+            catch (const std::exception& e) {
+                cerr << "오류 발생: " << e.what() << endl;
+            }
         }
     }
 }

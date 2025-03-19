@@ -1,14 +1,10 @@
 {
-  "name": "game-socket-server",
+  "name": "api-gateway-server",
   "version": "1.0.0",
     "dependencies": [
         "boost-system",
         "boost-asio",
-        "boost-beast",
-        "libpqxx",
         "nlohmann-json",
         "spdlog",
-        "fmt",
-        "openssl"
     ]
 }
