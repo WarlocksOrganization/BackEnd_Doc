@@ -38,18 +38,18 @@ namespace game_server {
     void Server::init_controllers() {
         // Create repositories
         auto userRepo = UserRepository::create(db_pool_.get());
-        //auto roomRepo = RoomRepository::create(db_pool_.get());
+        auto roomRepo = RoomRepository::create(db_pool_.get());
 
         std::shared_ptr<UserRepository> sharedUserRepo = std::move(userRepo);
-        //std::shared_ptr<RoomRepository> sharedRoomRepo = std::move(roomRepo);
+        std::shared_ptr<RoomRepository> sharedRoomRepo = std::move(roomRepo);
 
         // Create services
         auto authService = AuthService::create(sharedUserRepo);
-        //auto roomService = RoomService::create(sharedRoomRepo);
+        auto roomService = RoomService::create(sharedRoomRepo);
 
         // Create and register controllers
         controllers_["auth"] = std::make_shared<AuthController>(std::move(authService));
-        //controllers_["room"] = std::make_shared<RoomController>(std::move(roomService));
+        controllers_["room"] = std::make_shared<RoomController>(std::move(roomService));
 
         spdlog::info("Controllers initialized");
     }

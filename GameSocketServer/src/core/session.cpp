@@ -69,19 +69,19 @@ namespace game_server {
             if (action == "register" || action == "login") {
                 controller_type = "auth";
             }
-            //else if (action == "create_room" || action == "join_room" || action == "exit_room" || action == "list_rooms") {
-            //    if (user_id_ == 0) {
-            //        json error_response = {
-            //            {"status", "error"},
-            //            {"message", "Authentication required"}
-            //        };
-            //        write_response(error_response.dump());
-            //        return;
-            //    }
+            else if (action == "create_room" || action == "join_room" || action == "exit_room" || action == "list_rooms") {
+                if (user_id_ == 0) {
+                    json error_response = {
+                        {"status", "error"},
+                        {"message", "Authentication required"}
+                    };
+                    write_response(error_response.dump());
+                    return;
+                }
 
-            //    request["user_id"] = user_id_;
-            //    controller_type = "room";
-            //}
+                request["user_id"] = user_id_;
+                controller_type = "room";
+            }
             else {
                 // 알 수 없는 액션 처리
                 spdlog::warn("Unknown action: {}", action);
