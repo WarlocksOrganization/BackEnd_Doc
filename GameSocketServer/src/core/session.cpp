@@ -1,4 +1,6 @@
 // core/session.cpp
+// ì„¸ì…˜ ê´€ë¦¬ í´ë˜ìŠ¤ êµ¬í˜„
+// í´ë¼ì´ì–¸íŠ¸ì™€ì˜ í†µì‹  ì„¸ì…˜ì„ ì²˜ë¦¬í•˜ëŠ” í•µì‹¬ íŒŒì¼
 #include "session.h"
 #include <iostream>
 #include <nlohmann/json.hpp>
@@ -20,97 +22,68 @@ namespace game_server {
     }
 
     void Session::start() {
-        read_header();
+        read_message();
     }
 
-    void Session::read_header() {
-        auto self = shared_from_this();
+    void Session::read_message() {
+        auto self(shared_from_this());
 
+        // ë¹„ë™ê¸°ì ìœ¼ë¡œ ë°ì´í„° ì½ê¸°
         socket_.async_read_some(
             boost::asio::buffer(buffer_),
             [this, self](boost::system::error_code ec, std::size_t length) {
                 if (!ec) {
-                    // °£´ÜÇÑ HTTP Çì´õ ÆÄ½Ì (Content-Length Ã£±â)
-                    std::string header(buffer_.data(), length);
-                    std::size_t content_length = 0;
+                    try {
+                        // ìˆ˜ì‹ ëœ ë°ì´í„°ë¥¼ ë¬¸ìì—´ë¡œ ë³€í™˜
+                        std::string data(buffer_.data(), length);
 
-                    // Content-Length Çì´õ Ã£±â
-                    std::string cl_header = "Content-Length: ";
-                    auto pos = header.find(cl_header);
-                    if (pos != std::string::npos) {
-                        auto end_pos = header.find("\r\n", pos);
-                        if (end_pos != std::string::npos) {
-                            std::string length_str = header.substr(
-                                pos + cl_header.length(),
-                                end_pos - (pos + cl_header.length())
-                            );
-                            content_length = std::stoul(length_str);
-                        }
+                        // JSON íŒŒì‹±
+                        json request = json::parse(data);
+
+                        // ìš”ì²­ ì²˜ë¦¬
+                        process_request(request);
                     }
-
-                    // º»¹®°ú Çì´õ ±¸ºĞÀÚ Ã£±â
-                    auto body_start = header.find("\r\n\r\n");
-                    if (body_start != std::string::npos) {
-                        body_start += 4; // "\r\n\r\n" ÀÌÈÄºÎÅÍ º»¹® ½ÃÀÛ
-
-                        // ÀÌ¹Ì ¹ŞÀº º»¹® ºÎºĞ
-                        std::string body_part = header.substr(body_start);
-
-                        if (body_part.length() >= content_length) {
-                            // º»¹®ÀÌ ÀÌ¹Ì ¿ÏÀüÈ÷ ¼ö½ÅµÊ
-                            process_request(body_part.substr(0, content_length));
-                        }
-                        else {
-                            // º»¹®ÀÇ ³ª¸ÓÁö ºÎºĞ ÀĞ±â ÇÊ¿ä
-                            message_ = body_part;
-                            read_body(content_length - body_part.length());
-                        }
+                    catch (const std::exception& e) {
+                        // JSON íŒŒì‹± ì˜¤ë¥˜ ë“± ì˜ˆì™¸ ì²˜ë¦¬
+                        spdlog::error("Error processing request data: {}", e.what());
+                        json error_response = {
+                            {"status", "error"},
+                            {"message", "Invalid request format"}
+                        };
+                        write_response(error_response.dump());
                     }
                 }
                 else {
-                    handle_error("Error reading header: " + ec.message());
+                    handle_error("Message reading error: " + ec.message());
                 }
             });
     }
 
-    void Session::read_body(std::size_t remaining_length) {
-        auto self = shared_from_this();
-
-        socket_.async_read_some(
-            boost::asio::buffer(buffer_),
-            [this, self, remaining_length](boost::system::error_code ec, std::size_t length) {
-                if (!ec) {
-                    message_.append(buffer_.data(), length);
-
-                    if (length >= remaining_length) {
-                        // º»¹® ¿ÏÀüÈ÷ ¼ö½Å
-                        process_request(message_);
-                    }
-                    else {
-                        // ´õ ÀĞ±â ÇÊ¿ä
-                        read_body(remaining_length - length);
-                    }
-                }
-                else {
-                    handle_error("Error reading body: " + ec.message());
-                }
-            });
-    }
-
-    void Session::process_request(const std::string& request_data) {
+    void Session::process_request(json& request) {
         try {
-            // JSON ÆÄ½Ì
-            json request = json::parse(request_data);
-
-            // ¿äÃ» ¶ó¿ìÆÃ
+            // action í•„ë“œë¡œ ìš”ì²­ íƒ€ì… í™•ì¸
             std::string action = request["action"];
             std::string controller_type;
 
+            // ì»¨íŠ¸ë¡¤ëŸ¬ íƒ€ì… ê²°ì •
             if (action == "register" || action == "login") {
                 controller_type = "auth";
             }
+            else if (action == "create_room" || action == "join_room" || action == "exit_room" || action == "list_rooms") {
+                if (user_id_ == 0) {
+                    json error_response = {
+                        {"status", "error"},
+                        {"message", "Authentication required"}
+                    };
+                    write_response(error_response.dump());
+                    return;
+                }
+
+                request["user_id"] = user_id_;
+                controller_type = "room";
+            }
             else {
-                // ´Ù¸¥ API ¾×¼Ç ¶ó¿ìÆÃ Ãß°¡
+                // ì•Œ ìˆ˜ ì—†ëŠ” ì•¡ì…˜ ì²˜ë¦¬
                 spdlog::warn("Unknown action: {}", action);
                 json error_response = {
                     {"status", "error"},
@@ -120,23 +93,18 @@ namespace game_server {
                 return;
             }
 
-            // ÀûÀıÇÑ ÄÁÆ®·Ñ·¯ Ã£±â
+            // ì¸ì¦ ì»¨íŠ¸ë¡¤ëŸ¬ ì²˜ë¦¬
             auto controller_it = controllers_.find(controller_type);
             if (controller_it != controllers_.end()) {
-                // ÄÁÆ®·Ñ·¯¿¡ ¿äÃ» Àü´Ş
-                std::string response = controller_it->second->handleRequest(request);
-
-                // ÀÎÁõ Á¤º¸ °»½Å (·Î±×ÀÎ ¼º°ø ½Ã)
-                if (action == "login" && json::parse(response)["status"] == "success") {
-                    json resp_json = json::parse(response);
-                    user_id_ = resp_json["user_id"];
-                    spdlog::info("User {} logged in", user_id_);
+                // ìš”ì²­ì„ ì»¨íŠ¸ë¡¤ëŸ¬ë¡œ ì „ë‹¬
+                json response = controller_it->second->handleRequest(request);
+                if (action == "login" && response["status"] == "success") {
+                    init_current_user(response);
                 }
-
                 write_response(response);
             }
             else {
-                spdlog::error("Controller not found for type: {}", controller_type);
+                spdlog::error("Controller not found: {}", controller_type);
                 json error_response = {
                     {"status", "error"},
                     {"message", "Internal server error"}
@@ -155,46 +123,52 @@ namespace game_server {
     }
 
     void Session::write_response(const std::string& response) {
-        auto self = shared_from_this();
+        auto self(shared_from_this());
 
-        // HTTP ÀÀ´ä Çì´õ »ı¼º
-        std::string response_header =
-            "HTTP/1.1 200 OK\r\n"
-            "Content-Type: application/json\r\n"
-            "Content-Length: " + std::to_string(response.length()) + "\r\n"
-            "Connection: keep-alive\r\n"
-            "\r\n";
-
-        std::string full_response = response_header + response;
-
+        // í´ë¼ì´ì–¸íŠ¸ë¡œ ì‘ë‹µ ë°ì´í„° ì „ì†¡
         boost::asio::async_write(
             socket_,
-            boost::asio::buffer(full_response),
+            boost::asio::buffer(response),
             [this, self](boost::system::error_code ec, std::size_t /*length*/) {
                 if (!ec) {
-                    // ÀÀ´ä ÈÄ, ´ÙÀ½ ¿äÃ» ´ë±â
-                    read_header();
+                    // ë‹¤ìŒ ìš”ì²­ ëŒ€ê¸°
+                    read_message();
                 }
                 else {
-                    handle_error("Error writing response: " + ec.message());
+                    handle_error("Response writing error: " + ec.message());
                 }
             });
     }
 
     void Session::handle_error(const std::string& error_message) {
-        // ¿¡·¯ ·Î±ë
+        // ì˜¤ë¥˜ ë¡œê¹… ë° ë¦¬ì†ŒìŠ¤ ì •ë¦¬
         spdlog::error(error_message);
 
-        // ÇÊ¿ä½Ã ¸®¼Ò½º Á¤¸®
+        // í•„ìš”í•œ ê²½ìš° ë¦¬ì†ŒìŠ¤ ì •ë¦¬
         if (socket_.is_open()) {
             boost::system::error_code ec;
             socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_both, ec);
             socket_.close(ec);
+            spdlog::error("Socket closing error: {}", error_message);
 
             if (ec) {
-                spdlog::error("Error closing socket: {}", ec.message());
+                spdlog::error("Socket closing error: {}", ec.message());
             }
         }
+    }
+
+    void Session::init_current_user(const json& response) {
+        if (response.contains("user_id")) user_id_ = response["user_id"];
+        if (response.contains("username")) user_name_ = response["username"];
+        if (response.contains("wins")) wins_ = response["wins"];
+        if (response.contains("games_played")) games_played_ = response["games_played"];
+        if (response.contains("total_kills")) total_kills_ = response["total_kills"];
+        if (response.contains("total_damages")) total_damages_ = response["total_damages"];
+        if (response.contains("total_deaths")) total_deaths_ = response["total_deaths"];
+        if (response.contains("rating")) rating_ = response["rating"];
+        if (response.contains("highest_rating")) highest_rating_ = response["highest_rating"];
+
+        spdlog::info("User logged in: {} (ID: {})", user_name_, user_id_);
     }
 
 } // namespace game_server

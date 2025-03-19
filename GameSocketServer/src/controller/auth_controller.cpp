@@ -1,7 +1,7 @@
 // controller/auth_controller.cpp
+// ì¸ì¦ ì»¨íŠ¸ë¡¤ëŸ¬ êµ¬í˜„ íŒŒì¼
+// ì‚¬ìš©ì ë“±ë¡ ë° ë¡œê·¸ì¸ ìš”ì²­ì„ ì²˜ë¦¬í•˜ëŠ” ì»¨íŠ¸ë¡¤ëŸ¬
 #include "auth_controller.h"
-#include "../dto/request/login_request.h"
-#include "../dto/request/register_request.h"
 #include <spdlog/spdlog.h>
 #include <nlohmann/json.hpp>
 
@@ -13,7 +13,8 @@ namespace game_server {
         : authService_(authService) {
     }
 
-    std::string AuthController::handleRequest(const json& request) {
+    nlohmann::json AuthController::handleRequest(json& request) {
+        // ìš”ì²­ì˜ action í•„ë“œì— ë”°ë¼ ì ì ˆí•œ í•¸ë“¤ëŸ¬ í˜¸ì¶œ
         std::string action = request["action"];
 
         if (action == "register") {
@@ -31,75 +32,15 @@ namespace game_server {
         }
     }
 
-    std::string AuthController::handleRegister(const json& request) {
-        try {
-            // ¿äÃ» µ¥ÀÌÅÍ ÃßÃâ
-            RegisterRequest registerRequest{
-                request["username"].get<std::string>(),
-                request["password"].get<std::string>()
-            };
-
-            // ¼­ºñ½º È£Ãâ
-            auto response = authService_->registerUser(registerRequest);
-
-            // ÀÀ´ä »ı¼º
-            json jsonResponse = {
-                {"status", response.success ? "success" : "error"},
-                {"message", response.message}
-            };
-
-            if (response.success) {
-                jsonResponse["user_id"] = response.userId;
-                jsonResponse["username"] = response.username;
-            }
-
-            return jsonResponse.dump();
-        }
-        catch (const std::exception& e) {
-            spdlog::error("Error during registration: {}", e.what());
-            json error_response = {
-                {"status", "error"},
-                {"message", "Internal server error"}
-            };
-            return error_response.dump();
-        }
+    nlohmann::json AuthController::handleRegister(json& request) {
+        // ì„œë¹„ìŠ¤ ê³„ì¸µ í˜¸ì¶œí•˜ì—¬ ì‚¬ìš©ì ë“±ë¡ ìˆ˜í–‰
+        json response = authService_->registerUser(request);
+        return response.dump();
     }
 
-    std::string AuthController::handleLogin(const json& request) {
-        try {
-            // ¿äÃ» µ¥ÀÌÅÍ ÃßÃâ
-            LoginRequest loginRequest{
-                request["username"].get<std::string>(),
-                request["password"].get<std::string>()
-            };
-
-            // ¼­ºñ½º È£Ãâ 
-            auto response = authService_->loginUser(loginRequest);
-
-            // ÀÀ´ä »ı¼º
-            json jsonResponse = {
-                {"status", response.success ? "success" : "error"},
-                {"message", response.message}
-            };
-
-            if (response.success) {
-                jsonResponse["user_id"] = response.userId;
-                jsonResponse["username"] = response.username;
-                jsonResponse["rating"] = response.rating;
-                jsonResponse["total_games"] = response.totalGames;
-                jsonResponse["total_wins"] = response.totalWins;
-            }
-
-            return jsonResponse.dump();
-        }
-        catch (const std::exception& e) {
-            spdlog::error("Error during login: {}", e.what());
-            json error_response = {
-                {"status", "error"},
-                {"message", "Internal server error"}
-            };
-            return error_response.dump();
-        }
+    nlohmann::json AuthController::handleLogin(json& request) {
+        json response = authService_->loginUser(request);
+        return response.dump();
     }
 
 } // namespace game_server
