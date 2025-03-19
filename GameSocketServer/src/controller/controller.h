@@ -9,7 +9,7 @@ namespace game_server {
     public:
         virtual ~Controller() = default;
 
-        virtual std::string handleRequest(const nlohmann::json& request) = 0;
+        virtual nlohmann::json handleRequest(nlohmann::json& request) = 0;
     };
 
 } // namespace game_server

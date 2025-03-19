@@ -8,105 +8,63 @@
 
 namespace game_server {
 
+    using json = nlohmann::json;
+
     // 리포지토리 구현체
     class UserRepositoryImpl : public UserRepository {
     public:
         explicit UserRepositoryImpl(DbPool* dbPool) : dbPool_(dbPool) {}
 
-        std::optional<User> findById(int userId) override {
+        //std::optional<json> findById(int userId) override {}
+
+        json findByUsername(const std::string& user_name) {
             auto conn = dbPool_->get_connection();
             try {
                 pqxx::work txn(*conn);
-
-                // ID로 사용자 정보 조회
                 pqxx::result result = txn.exec_params(
-                    "SELECT user_id, username, password, rating, total_games, total_wins, "
-                    "       created_at, last_login "
-                    "FROM Users WHERE user_id = $1",
-                    userId);
-
-                txn.commit();
-                dbPool_->return_connection(conn);
+                    "SELECT * FROM users WHERE user_name = $1", user_name);
 
                 if (result.empty()) {
-                    return std::nullopt;
+                    // 사용자를 찾지 못함 - std::nullopt 반환
+                    return { {"user_id", -1} };
                 }
 
-                // 조회 결과로 User 객체 생성
-                User user;
-                user.userId = result[0][0].as<int>();
-                user.username = result[0][1].as<std::string>();
-                user.passwordHash = result[0][2].as<std::string>();
-                user.rating = result[0][3].as<int>();
-                user.totalGames = result[0][4].as<int>();
-                user.totalWins = result[0][5].as<int>();
-                user.createdAt = result[0][6].as<std::string>();
-
-                if (!result[0][7].is_null()) {
-                    user.lastLogin = result[0][7].as<std::string>();
-                }
-
-                return user;
-            }
-            catch (const std::exception& e) {
-                spdlog::error("Error finding user by ID: {}", e.what());
-                dbPool_->return_connection(conn);
-                return std::nullopt;
-            }
-        }
-
-        std::optional<User> findByUsername(const std::string& username) override {
-            auto conn = dbPool_->get_connection();
-            try {
-                pqxx::work txn(*conn);
-
-                // 사용자명으로 사용자 정보 조회
-                pqxx::result result = txn.exec_params(
-                    "SELECT user_id, username, password, rating, total_games, total_wins, "
-                    "       created_at, last_login "
-                    "FROM Users WHERE username = $1",
-                    username);
+                // 결과를 JSON으로 변환
+                nlohmann::json user;
+                user["user_id"] = result[0]["user_id"].as<int>();
+                user["user_name"] = result[0]["user_name"].as<std::string>();
+                user["password_hash"] = result[0]["password_hash"].as<std::string>();
+                user["wins"] = result[0]["wins"].as<int>();
+                user["games_played"] = result[0]["games_played"].as<int>();
+                user["total_kills"] = result[0]["total_kills"].as<int>();
+                user["total_damages"] = result[0]["total_damages"].as<int>();
+                user["total_deaths"] = result[0]["total_deaths"].as<int>();
+                user["rating"] = result[0]["rating"].as<int>();
+                user["highest_rating"] = result[0]["highest_rating"].as<int>();
+                user["created_at"] = result[0]["created_at"].as<std::string>();
+                user["last_login"] = result[0]["last_login"].as<std::string>();
 
                 txn.commit();
-                dbPool_->return_connection(conn);
-
-                if (result.empty()) {
-                    return std::nullopt;
-                }
-
-                // 조회 결과로 User 객체 생성
-                User user;
-                user.userId = result[0][0].as<int>();
-                user.username = result[0][1].as<std::string>();
-                user.passwordHash = result[0][2].as<std::string>();
-                user.rating = result[0][3].as<int>();
-                user.totalGames = result[0][4].as<int>();
-                user.totalWins = result[0][5].as<int>();
-                user.createdAt = result[0][6].as<std::string>();
-
-                if (!result[0][7].is_null()) {
-                    user.lastLogin = result[0][7].as<std::string>();
-                }
                 dbPool_->return_connection(conn);
                 return user;
             }
             catch (const std::exception& e) {
-                spdlog::error("Error finding user by username: {}", e.what());
                 dbPool_->return_connection(conn);
-                return std::nullopt;
+                spdlog::error("Database error in findByUsername: {}", e.what());
+                return { {"user_id", -1} };
             }
         }
 
-        int create(const std::string& username, const std::string& hashedPassword) override {
+        int create(const std::string& user_name, const std::string& hashedPassword) override {
             auto conn = dbPool_->get_connection();
             try {
                 pqxx::work txn(*conn);
 
                 // 새 사용자 생성
                 pqxx::result result = txn.exec_params(
-                    "INSERT INTO Users (username, password, created_at) "
-                    "VALUES ($1, $2, CURRENT_TIMESTAMP) RETURNING user_id",
-                    username, hashedPassword);
+                    "INSERT INTO users (user_name, password_hash) "
+                    "VALUES ($1, $2) RETURNING user_id",
+                    user_name, hashedPassword);
 
                 txn.commit();
                 dbPool_->return_connection(conn);
@@ -131,7 +89,7 @@ namespace game_server {
 
                 // 마지막 로그인 시간 업데이트
                 pqxx::result result = txn.exec_params(
-                    "UPDATE Users SET last_login = CURRENT_TIMESTAMP "
+                    "UPDATE users SET last_login = CURRENT_TIMESTAMP "
                     "WHERE user_id = $1 RETURNING user_id",
                     userId);
 
@@ -154,7 +112,7 @@ namespace game_server {
 
                 // 사용자 레이팅 업데이트
                 pqxx::result result = txn.exec_params(
-                    "UPDATE Users SET rating = $1 WHERE user_id = $2 RETURNING user_id",
+                    "UPDATE users SET rating = $1 WHERE user_id = $2 RETURNING user_id",
                     newRating, userId);
 
                 txn.commit();
@@ -177,11 +135,11 @@ namespace game_server {
                 // 게임 통계 업데이트
                 std::string query;
                 if (isWin) {
-                    query = "UPDATE Users SET total_games = total_games + 1, "
-                        "total_wins = total_wins + 1 WHERE user_id = $1 RETURNING user_id";
+                    query = "UPDATE users SET games_played = games_played + 1, "
+                        "wins = wins + 1 WHERE user_id = $1 RETURNING user_id";
                 }
                 else {
-                    query = "UPDATE Users SET total_games = total_games + 1 "
+                    query = "UPDATE users SET games_played = games_played + 1 "
                         "WHERE user_id = $1 RETURNING user_id";
                 }
 
@@ -199,8 +157,8 @@ namespace game_server {
             }
         }
 
-        std::vector<User> getTopPlayers(int limit) override {
-            std::vector<User> users;
+        std::vector<json> getTopPlayers(int limit) override {
+            std::vector<json> users;
             auto conn = dbPool_->get_connection();
 
             try {
@@ -208,9 +166,8 @@ namespace game_server {
 
                 // 상위 플레이어 목록 조회 (레이팅 기준)
                 pqxx::result result = txn.exec_params(
-                    "SELECT user_id, username, password, rating, total_games, total_wins, "
-                    "       created_at, last_login "
-                    "FROM Users ORDER BY rating DESC LIMIT $1",
+                    "SELECT * "
+                    "FROM users ORDER BY rating DESC LIMIT $1",
                     limit);
 
                 txn.commit();
@@ -218,28 +175,29 @@ namespace game_server {
 
                 // 조회 결과를 User 객체 리스트로 변환
                 for (const auto& row : result) {
-                    User user;
-                    user.userId = row[0].as<int>();
-                    user.username = row[1].as<std::string>();
-                    user.passwordHash = row[2].as<std::string>();
-                    user.rating = row[3].as<int>();
-                    user.totalGames = row[4].as<int>();
-                    user.totalWins = row[5].as<int>();
-                    user.createdAt = row[6].as<std::string>();
-
-                    if (!row[7].is_null()) {
-                        user.lastLogin = row[7].as<std::string>();
-                    }
+                    nlohmann::json user;
+                    user["user_id"] = row["user_id"].as<int>();
+                    user["user_name"] = row["user_name"].as<std::string>();
+                    user["password_hash"] = row["password_hash"].as<std::string>();
+                    user["wins"] = row["wins"].as<int>();
+                    user["games_played"] = row["games_played"].as<int>();
+                    user["total_kills"] = row["total_kills"].as<int>();
+                    user["total_damages"] = row["total_damages"].as<int>();
+                    user["total_deaths"] = row["total_deaths"].as<int>();
+                    user["rating"] = row["rating"].as<int>();
+                    user["highest_rating"] = row["highest_rating"].as<int>();
+                    user["created_at"] = row["created_at"].as<std::string>();
+                    user["last_login"] = row["last_login"].as<std::string>();
 
                     users.push_back(user);
                 }
+                return users;
             }
             catch (const std::exception& e) {
                 spdlog::error("Error getting top players: {}", e.what());
                 dbPool_->return_connection(conn);
+                return users;
             }
-
-            return users;
         }
 
     private:

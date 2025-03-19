@@ -2,7 +2,6 @@
 // 세션 관리 클래스 구현
 // 클라이언트와의 통신 세션을 처리하는 핵심 파일
 #include "session.h"
-#include "../util/session_pool.h"
 #include <iostream>
 #include <nlohmann/json.hpp>
 #include <spdlog/spdlog.h>
@@ -24,21 +23,6 @@ namespace game_server {
 
     void Session::start() {
         read_message();
-    }
-
-    void Session::set_session_pool(std::shared_ptr<SessionPool> pool) {
-        session_pool_ = pool;
-        spdlog::info("Session pool initialized");
-    }
-
-    void Session::update_activity() {
-        if (session_pool_) {
-            session_pool_->update_activity(this);
-        }
-    }
-
-    boost::asio::ip::tcp::socket& Session::get_socket() {
-        return socket_;
     }
 
     void Session::read_message() {
@@ -75,7 +59,7 @@ namespace game_server {
             });
     }
 
-    void Session::process_request(const json& request) {
+    void Session::process_request(json& request) {
         try {
             // action 필드로 요청 타입 확인
             std::string action = request["action"];
@@ -86,18 +70,17 @@ namespace game_server {
                 controller_type = "auth";
             }
             else if (action == "create_room" || action == "join_room" || action == "exit_room" || action == "list_rooms") {
-                // 방 관련 컨트롤러에는 사용자 ID 추가
-                json mutable_request = request;
-                mutable_request["user_id"] = user_id_;
-                controller_type = "room";
-
-                // 변경된 요청으로 컨트롤러 호출
-                auto controller_it = controllers_.find(controller_type);
-                if (controller_it != controllers_.end()) {
-                    std::string response = controller_it->second->handleRequest(mutable_request);
-                    write_response(response);
+                if (user_id_ == 0) {
+                    json error_response = {
+                        {"status", "error"},
+                        {"message", "Authentication required"}
+                    };
+                    write_response(error_response.dump());
                     return;
                 }
+
+                request["user_id"] = user_id_;
+                controller_type = "room";
             }
             else {
                 // 알 수 없는 액션 처리
@@ -110,19 +93,14 @@ namespace game_server {
                 return;
             }
 
-            // 인증 컨트롤러 처리 (user_id 수정이 필요 없음)
+            // 인증 컨트롤러 처리
             auto controller_it = controllers_.find(controller_type);
             if (controller_it != controllers_.end()) {
                 // 요청을 컨트롤러로 전달
-                std::string response = controller_it->second->handleRequest(request);
-
-                // 로그인 성공 시 사용자 ID 저장
-                if (action == "login" && json::parse(response)["status"] == "success") {
-                    json resp_json = json::parse(response);
-                    user_id_ = resp_json["user_id"];
-                    spdlog::info("User logged in: {}", user_id_);
+                json response = controller_it->second->handleRequest(request);
+                if (action == "login" && response["status"] == "success") {
+                    init_current_user(response);
                 }
-
                 write_response(response);
             }
             else {
@@ -171,11 +149,26 @@ namespace game_server {
             boost::system::error_code ec;
             socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_both, ec);
             socket_.close(ec);
+            spdlog::error("Socket closing error: {}", error_message);
 
             if (ec) {
                 spdlog::error("Socket closing error: {}", ec.message());
             }
         }
+    }
+
+    void Session::init_current_user(const json& response) {
+        if (response.contains("user_id")) user_id_ = response["user_id"];
+        if (response.contains("username")) user_name_ = response["username"];
+        if (response.contains("wins")) wins_ = response["wins"];
+        if (response.contains("games_played")) games_played_ = response["games_played"];
+        if (response.contains("total_kills")) total_kills_ = response["total_kills"];
+        if (response.contains("total_damages")) total_damages_ = response["total_damages"];
+        if (response.contains("total_deaths")) total_deaths_ = response["total_deaths"];
+        if (response.contains("rating")) rating_ = response["rating"];
+        if (response.contains("highest_rating")) highest_rating_ = response["highest_rating"];
+
+        spdlog::info("User logged in: {} (ID: {})", user_name_, user_id_);
     }
 
 } // namespace game_server
