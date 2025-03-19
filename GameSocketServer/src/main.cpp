@@ -1,4 +1,5 @@
 // main.cpp
+// 프로그램 진입점 및 서버 실행 파일
 #include "core/server.h"
 #include <boost/asio.hpp>
 #include <iostream>
@@ -6,7 +7,7 @@
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <csignal>
 
-// 글로벌 서버 변수 (시그널 핸들러용)
+// 시그널 핸들러용 전역 서버 변수
 std::unique_ptr<game_server::Server> server;
 
 // 시그널 핸들러 함수
@@ -26,7 +27,7 @@ int main(int argc, char* argv[])
         auto console = spdlog::stdout_color_mt("console");
         spdlog::set_default_logger(console);
         spdlog::set_level(spdlog::level::info);
-        spdlog::info("Starting Game Socket Server");
+        spdlog::info("게임 서버 시작");
 
         // 시그널 핸들러 등록
         std::signal(SIGINT, signal_handler);
@@ -37,7 +38,7 @@ int main(int argc, char* argv[])
         std::string db_connection_string =
             "dbname=GameData user=admin password=admin host=localhost port=5432 client_encoding=UTF8";
 
-        // 커맨드 라인 인자 처리
+        // 명령줄 인수 처리
         for (int i = 1; i < argc; ++i) {
             std::string arg = argv[i];
             if (arg == "--port" && i + 1 < argc) {
@@ -47,11 +48,11 @@ int main(int argc, char* argv[])
                 db_connection_string = argv[++i];
             }
             else if (arg == "--help") {
-                std::cout << "Usage: " << argv[0] << " [options]\n"
-                    << "Options:\n"
-                    << "  --port PORT       Server port (default: 8080)\n"
-                    << "  --db CONNSTRING   Database connection string\n"
-                    << "  --help            Show this help message\n";
+                std::cout << "사용법: " << argv[0] << " [옵션]\n"
+                    << "옵션:\n"
+                    << "  --port PORT       서버 포트 (기본값: 8080)\n"
+                    << "  --db CONNSTRING   데이터베이스 연결 문자열\n"
+                    << "  --help            도움말 표시\n";
                 return 0;
             }
         }
