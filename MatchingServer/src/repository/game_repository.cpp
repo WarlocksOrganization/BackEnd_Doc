@@ -34,6 +34,13 @@ namespace game_server {
                 user["user_id"] = result[0]["user_id"].as<int>();
                 user["user_name"] = result[0]["user_name"].as<std::string>();
                 user["password_hash"] = result[0]["password_hash"].as<std::string>();
+                user["wins"] = result[0]["wins"].as<int>();
+                user["games_played"] = result[0]["games_played"].as<int>();
+                user["total_kills"] = result[0]["total_kills"].as<int>();
+                user["total_damages"] = result[0]["total_damages"].as<int>();
+                user["total_deaths"] = result[0]["total_deaths"].as<int>();
+                user["rating"] = result[0]["rating"].as<int>();
+                user["highest_rating"] = result[0]["highest_rating"].as<int>();
                 user["created_at"] = result[0]["created_at"].as<std::string>();
                 user["last_login"] = result[0]["last_login"].as<std::string>();
 
@@ -172,6 +179,13 @@ namespace game_server {
                     user["user_id"] = row["user_id"].as<int>();
                     user["user_name"] = row["user_name"].as<std::string>();
                     user["password_hash"] = row["password_hash"].as<std::string>();
+                    user["wins"] = row["wins"].as<int>();
+                    user["games_played"] = row["games_played"].as<int>();
+                    user["total_kills"] = row["total_kills"].as<int>();
+                    user["total_damages"] = row["total_damages"].as<int>();
+                    user["total_deaths"] = row["total_deaths"].as<int>();
+                    user["rating"] = row["rating"].as<int>();
+                    user["highest_rating"] = row["highest_rating"].as<int>();
                     user["created_at"] = row["created_at"].as<std::string>();
                     user["last_login"] = row["last_login"].as<std::string>();
 

@@ -100,13 +100,6 @@ namespace game_server {
             response["message"] = "Login successful";
             response["user_id"] = userInfo["user_id"];
             response["user_name"] = userInfo["user_name"];
-            response["wins"] = userInfo["wins"];
-            response["games_played"] = userInfo["games_played"];
-            response["total_kills"] = userInfo["total_kills"];
-            response["total_damages"] = userInfo["total_damages"];
-            response["total_deaths"] = userInfo["total_deaths"];
-            response["rating"] = userInfo["rating"];
-            response["highest_rating"] = userInfo["highest_rating"];
             response["created_at"] = userInfo["created_at"];
             response["last_login"] = userInfo["last_login"];
 

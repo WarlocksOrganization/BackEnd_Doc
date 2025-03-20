@@ -3,10 +3,13 @@
 #include "session.h"
 #include "../controller/auth_controller.h"
 #include "../controller/room_controller.h"
+#include "../controller/game_controller.h"
 #include "../service/auth_service.h"
 #include "../service/room_service.h"
+#include "../service/game_service.h"
 #include "../repository/user_repository.h"
 #include "../repository/room_repository.h"
+#include "../repository/game_repository.h"
 #include <iostream>
 #include <spdlog/spdlog.h>
 
@@ -39,17 +42,21 @@ namespace game_server {
         // Create repositories
         auto userRepo = UserRepository::create(db_pool_.get());
         auto roomRepo = RoomRepository::create(db_pool_.get());
+        auto gameRepo = GameRepository::create(db_pool_.get());
 
         std::shared_ptr<UserRepository> sharedUserRepo = std::move(userRepo);
         std::shared_ptr<RoomRepository> sharedRoomRepo = std::move(roomRepo);
+        std::shared_ptr<GameRepository> sharedGameRepo = std::move(gameRepo);
 
         // Create services
         auto authService = AuthService::create(sharedUserRepo);
         auto roomService = RoomService::create(sharedRoomRepo);
+        auto gameService = GameService::create(sharedGameRepo);
 
         // Create and register controllers
         controllers_["auth"] = std::make_shared<AuthController>(std::move(authService));
         controllers_["room"] = std::make_shared<RoomController>(std::move(roomService));
+        controllers_["game"] = std::make_shared<GameController>(std::move(gameService));
 
         spdlog::info("Controllers initialized");
     }
