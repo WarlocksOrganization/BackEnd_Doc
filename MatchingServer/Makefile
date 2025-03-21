@@ -11,10 +11,13 @@ SOURCES = $(SRC_DIR)/main.cpp \
           $(SRC_DIR)/core/session.cpp \
           $(SRC_DIR)/controller/auth_controller.cpp \
           $(SRC_DIR)/controller/room_controller.cpp \
+          $(SRC_DIR)/controller/game_controller.cpp \
           $(SRC_DIR)/service/auth_service.cpp \
           $(SRC_DIR)/service/room_service.cpp \
+          $(SRC_DIR)/service/game_service.cpp \
           $(SRC_DIR)/repository/user_repository.cpp \
           $(SRC_DIR)/repository/room_repository.cpp \
+          $(SRC_DIR)/repository/game_repository.cpp \
           $(SRC_DIR)/util/db_pool.cpp \
           $(SRC_DIR)/util/password_util.cpp \
           $(SRC_DIR)/util/session_pool.cpp
@@ -50,10 +53,13 @@ SOURCES = $(SRC_DIR)/main.cpp \
           $(SRC_DIR)/core/session.cpp \
           $(SRC_DIR)/controller/auth_controller.cpp \
           $(SRC_DIR)/controller/room_controller.cpp \
+          $(SRC_DIR)/controller/game_controller.cpp \
           $(SRC_DIR)/service/auth_service.cpp \
           $(SRC_DIR)/service/room_service.cpp \
+          $(SRC_DIR)/service/game_service.cpp \
           $(SRC_DIR)/repository/user_repository.cpp \
           $(SRC_DIR)/repository/room_repository.cpp \
+          $(SRC_DIR)/repository/game_repository.cpp \
           $(SRC_DIR)/util/db_pool.cpp \
           $(SRC_DIR)/util/password_util.cpp \
           $(SRC_DIR)/util/session_pool.cpp
