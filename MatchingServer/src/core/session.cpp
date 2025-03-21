@@ -92,7 +92,7 @@ namespace game_server {
                     return;
                 }
 
-                request["user_id"] = user_id_;
+                request["userId"] = user_id_;
                 controller_type = "game";
             }
             else {
@@ -171,8 +171,8 @@ namespace game_server {
     }
 
     void Session::init_current_user(const json& response) {
-        if (response.contains("user_id")) user_id_ = response["user_id"];
-        if (response.contains("username")) user_name_ = response["username"];
+        if (response.contains("userId")) user_id_ = response["userId"];
+        if (response.contains("userName")) user_name_ = response["userName"];
 
         spdlog::info("User logged in: {} (ID: {})", user_name_, user_id_);
     }
