@@ -1,8 +1,8 @@
 git clone https://github.com/microsoft/vcpkg.git
 cd vcpkg
-.\bootstrap-vcpkg.bat
+./bootstrap-vcpkg.bat
 
 cd ..
-\vcpkg\vcpkg install
+/vcpkg/vcpkg install
 
 make
