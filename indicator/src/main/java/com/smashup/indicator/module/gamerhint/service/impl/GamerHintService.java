@@ -4,6 +4,8 @@ import com.smashup.indicator.module.gamerhint.controller.dto.request.InsertDataL
 import com.smashup.indicator.module.gamerhint.controller.dto.request.InsertDataRequestDto;
 import com.smashup.indicator.module.gamerhint.domain.entity.GamerHintDocument1;
 import com.smashup.indicator.module.gamerhint.repository.GamerHintRepository1;
+import com.smashup.indicator.module.version.BatchCountManager;
+import com.smashup.indicator.module.version.CardPoolManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,26 +17,32 @@ import java.util.*;
 public class GamerHintService {
     // 의존성 주입
     private final GamerHintRepository1 gamerHintRepository1;
+    private final CardPoolManager cardPoolManager;
+    private final BatchCountManager batchCountManager;
 
-    // 전역 변수 참조 // 임시 나중에 다 전역변수 역할의 bean, @Component로 빼는게 좋을듯
+    // 전역 상수 참조 // 임시 나중에 다 전역변수 역할의 bean, @Component로 빼는게 좋을듯
     // private final String PATCH_VERSION = "1.0.0";
-    private final int BATCH_COUNT = 1;
+//    private final int BATCH_COUNT = batchCountManager.getBatchCount();
     private final String NO_CARD = "NO_CARD";
-    // 전역 변수 : 정렬된 카드풀 배열. List<Integer:카드ID>
-    private final List<Integer> cardPool = new ArrayList<>();
-    // 전역 변수 : 카드 인덱싱 맵. Map<카드ID, 배열상의 인덱스> => cardPool 순회하면서 만들어야 함.
-    private final Map<Integer, Integer> cardPoolIndex = new HashMap<>();
-    // 전역 변수 : 직업 코드풀. List<Integer:직업ID>
-    private final List<Integer> classPool = new ArrayList<>();
+    // 전역 상수 : 정렬된 카드풀 배열. List<Integer:카드ID>
+//    private final List<Integer> cardPool = cardPoolManager.getCardPool();
+    // 전역 상수 : 카드 인덱싱 맵. Map<카드ID, 배열상의 인덱스> => cardPool 순회하면서 만들어야 함.
+//    private final Map<Integer, Integer> cardPoolIndex = cardPoolManager.getCardPoolIndex();
+    // 전역 상수 : 직업 코드풀. List<Integer:직업ID> => 이것도 다른곳으로 빼든가 아예 안 쓰든가 해야함.
+//    private final List<Integer> classPool = Arrays.asList(0, 1, 2, 3, 4);
 
 
     // 데이터 수집
-    @Transactional
+//    @Transactional
     public void insertData(InsertDataListRequestDto dto) throws Exception {
         // 공통 파트
+        List<Integer> cardPool = cardPoolManager.getCardPool();
+        Map<Integer, Integer> cardPoolIndex = cardPoolManager.getCardPoolIndex();
+        List<Integer> classPool = Arrays.asList(0, 1, 2, 3, 4);
+
 
         /// documentID 재료
-        String documentId = String.join("/", dto.getPatchVersion(), BATCH_COUNT+"");
+        String documentId = String.join("/", dto.getPatchVersion(), batchCountManager.getBatchCount()+"");
 
         /// 전체 직업을 관리하는 Map<documentId, Map<deckId, List<카드ID> > > 세팅.
         Map<String, Map<String, List<Integer> > > resultMap = new HashMap<>();
@@ -81,9 +89,10 @@ public class GamerHintService {
                 int cardIndex = cardPoolIndex.get(cardId);  // 카드 ID 기반으로 카드 인덱스 찾기.
                 int oldValue = classMap.get(NO_CARD).get(cardIndex); // set에 필요한 값 미리 부팅
                 classMap.get(NO_CARD).set(cardIndex, oldValue+1);         // 맵에서 덱을 찾고. 덱의 배열에서 카드 인덱스 집계량 +1
-                int oldTotalValue = classMap.get(NO_CARD).get(cardPool.size()); // 디버깅할때 편리함을 위해. oldValue 재사용 안함.
-                classMap.get(NO_CARD).set(cardPool.size(), oldTotalValue+1);   // 맵에서 덱을 찾고. 덱의 배열에서 마지막 인덱스  집계량 +1
             }
+            // 디버깅 포인트. 이 덱이 플레이된 횟수인데 for문에서 더하고 있었음...플레이 횟수*3 하고 있었네.
+            int oldTotalValue = classMap.get(NO_CARD).get(cardPool.size()); // 디버깅할때 편리함을 위해. oldValue 재사용 안함.
+            classMap.get(NO_CARD).set(cardPool.size(), oldTotalValue+1);   // 맵에서 덱을 찾고. 덱의 배열에서 마지막 인덱스  집계량 +1
 
             // round2 deck 처리 => round 1에서 뽑은 선택지 처리.
             /// 덱ID 생성
@@ -118,9 +127,9 @@ public class GamerHintService {
                 int oldValue = classMap.get(deckId2).get(cardIndex); // set에 필요한 값 미리 부팅
                 classMap.get(deckId2).set(cardIndex, oldValue+1);       // 맵에서 덱을 찾고. 덱의 배열에서 카드 인덱스 집계량 +1
 
-                int oldTotalValue = classMap.get(deckId2).get(cardPool.size()); // 디버깅할때 편리함을 위해. oldValue 재사용 안함.
-                classMap.get(deckId2).set(cardPool.size(), oldTotalValue+1);  // 맵에서 덱을 찾고. 덱의 배열에서 마지막 인덱스  집계량 +1
             }
+            int oldTotalValue2 = classMap.get(deckId2).get(cardPool.size()); // 디버깅할때 편리함을 위해. oldValue 재사용 안함.
+            classMap.get(deckId2).set(cardPool.size(), oldTotalValue2+1);  // 맵에서 덱을 찾고. 덱의 배열에서 마지막 인덱스  집계량 +1
 
 
             // round3 deck 처리 => round 2에서 뽑은 선택지 처리.
@@ -157,9 +166,9 @@ public class GamerHintService {
                 int oldValue = classMap.get(deckId3).get(cardIndex); // set에 필요한 값 미리 부팅
                 classMap.get(deckId3).set(cardIndex, oldValue+1);       // 맵에서 덱을 찾고. 덱의 배열에서 카드 인덱스 집계량 +1
 
-                int oldTotalValue = classMap.get(deckId3).get(cardPool.size()); // 디버깅할때 편리함을 위해. oldValue 재사용 안함.
-                classMap.get(deckId3).set(cardPool.size(), oldTotalValue+1);  // 맵에서 덱을 찾고. 덱의 배열에서 마지막 인덱스  집계량 +1
             }
+            int oldTotalValue3 = classMap.get(deckId3).get(cardPool.size()); // 디버깅할때 편리함을 위해. oldValue 재사용 안함.
+            classMap.get(deckId3).set(cardPool.size(), oldTotalValue3+1);  // 맵에서 덱을 찾고. 덱의 배열에서 마지막 인덱스  집계량 +1
 
         }
         // 개별 파트 종료 => resultMap 순회하면서 Map<deckId, 카드풀[]> 고르고 덱별로 insert하기.

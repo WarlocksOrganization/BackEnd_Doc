@@ -29,26 +29,11 @@ public class GamerHintController extends AbstractRestController {
     ) throws Exception {
         try {
 //            log.debug("insertData: {}", dto);
-//            System.out.println(dto.toString());
             gamerHintService.insertData(dto);
             return handleSuccess(dto);
         } catch (Exception e) {
             return handleError(e.getMessage());
         }
     }
-//
-//    // 기능 : 모든 folder에 있는 프로젝트 조회 => API 테스트 성공
-//    @GetMapping("/folders/{UserId}")
-//    public ResponseEntity<Map<String, Object>> getProjectInFolder(
-//            @PathVariable Long UserId
-//    ) throws Exception {
-//        try {
-//            log.debug("getProjectInFolder: {}", UserId);
-//            List<ProjectMemberFolderResponseProjection> result = memberService.getProjectInFolder(UserId);
-//            return handleSuccess(result);
-//        } catch (Exception e) {
-//            return handleError(e.getMessage());
-//        }
-//    }
 
 }

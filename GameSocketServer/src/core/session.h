@@ -33,13 +33,6 @@ namespace game_server {
         std::string message_;
         int user_id_;
         std::string user_name_;
-        int wins_;
-        int games_played_;
-        int total_kills_;
-        int total_damages_;
-        int total_deaths_;
-        int rating_;
-        int highest_rating_;
     };
 
 } // namespace game_server

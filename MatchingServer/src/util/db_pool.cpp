@@ -15,24 +15,24 @@
 
 namespace game_server {
 
-    DbPool::DbPool(const std::string& connection_string, int pool_size)
-        : connection_string_(connection_string)
+    DbPool::DbPool(const std::string& connectionString, int poolSize)
+        : connection_string_(connectionString)
     {
         try {
             // 연결 풀 초기화
-            connections_.reserve(pool_size);
-            in_use_.reserve(pool_size);
+            connections_.reserve(poolSize);
+            in_use_.reserve(poolSize);
 
-            for (int i = 0; i < pool_size; ++i) {
+            for (int i = 0; i < poolSize; ++i) {
                 // 새 연결 생성 및 풀에 추가
-                auto conn = std::make_shared<pqxx::connection>(connection_string);
+                auto conn = std::make_shared<pqxx::connection>(connectionString);
                 connections_.push_back(conn);
                 in_use_.push_back(false);
 
-                spdlog::info("Created database connection {}/{}", i + 1, pool_size);
+                spdlog::info("Created database connection {}/{}", i + 1, poolSize);
             }
 
-            spdlog::info("Database connection pool initialized with {} connections", pool_size);
+            spdlog::info("Database connection pool initialized with {} connections", poolSize);
         }
         catch (const std::exception& e) {
             spdlog::error("Failed to initialize database connection pool: {}", e.what());

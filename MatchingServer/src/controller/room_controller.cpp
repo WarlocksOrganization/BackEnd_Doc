@@ -17,16 +17,16 @@ namespace game_server {
         // 요청의 action 필드에 따라 적절한 핸들러 호출
         std::string action = request["action"];
 
-        if (action == "create_room") {
+        if (action == "createRoom") {
             return handleCreateRoom(request);
         }
-        else if (action == "join_room") {
+        else if (action == "joinRoom") {
             return handleJoinRoom(request);
         }
-        else if (action == "exit_room") {
+        else if (action == "exitRoom") {
             return handleExitRoom(request);
         }
-        else if (action == "list_rooms") {
+        else if (action == "listRooms") {
             return handleListRooms(request);
         }
         else {

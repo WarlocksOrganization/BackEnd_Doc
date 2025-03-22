@@ -14,7 +14,7 @@ namespace game_server {
 
     class DbPool {
     public:
-        DbPool(const std::string& connection_string, int pool_size);
+        DbPool(const std::string& connectionString, int poolSize);
         ~DbPool();
 
         // Get a connection from pool
