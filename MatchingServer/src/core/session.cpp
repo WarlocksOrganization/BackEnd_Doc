@@ -114,7 +114,7 @@ namespace game_server {
                 if (action == "login" && response["status"] == "success") {
                     init_current_user(response);
                 }
-                write_response(response);
+                write_response(response.dump());
             }
             else {
                 spdlog::error("Controller not found: {}", controller_type);

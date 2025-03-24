@@ -96,8 +96,6 @@ namespace game_server {
             response["userName"] = userInfo["userName"];
             response["createdAt"] = userInfo["createdAt"];
             response["lastLogin"] = userInfo["lastLogin"];
-
-            spdlog::info("User logged in: {} (ID: {})", userInfo["userName"].get<std::string>(), userInfo["userId"].get<int>());
             return response;
         }
 
