@@ -31,10 +31,13 @@ namespace game_server {
         void removeSession(const std::string& token);
         std::shared_ptr<Session> getSession(const std::string& token);
         std::string generateSessionToken();
+        void setSessionTimeout(std::chrono::seconds timeout);
+        void startSessionTimeoutCheck();
 
     private:
         void do_accept();
         void init_controllers();
+        void check_inactive_sessions();
 
         boost::asio::io_context& io_context_;
         boost::asio::ip::tcp::acceptor acceptor_;
@@ -46,6 +49,9 @@ namespace game_server {
         std::unordered_map<std::string, std::shared_ptr<Session>> sessions_;
         std::mutex sessions_mutex_;
         boost::uuids::random_generator uuid_generator_;
+        std::chrono::seconds session_timeout_{ 30 }; // ±‚∫ª 30√ 
+        boost::asio::steady_timer session_check_timer_;
+        bool timeout_check_running_{ false };
     };
 
 } // namespace game_server

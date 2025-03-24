@@ -17,7 +17,8 @@ namespace game_server {
         : socket_(std::move(socket)),
         controllers_(controllers),
         user_id_(0),
-        server_(server)
+        server_(server),
+        last_activity_time_(std::chrono::steady_clock::now())
     {
         spdlog::info("New session created from {}:{}",
             socket_.remote_endpoint().address().to_string(),
@@ -34,6 +35,25 @@ namespace game_server {
         // 서버에 세션 등록 및 토큰 받기
         token_ = server_->registerSession(shared_from_this());
         spdlog::info("Session initialized with token {}", token_);
+    }
+
+    void Session::handlePing() {
+        last_activity_time_ = std::chrono::steady_clock::now();
+
+        json response = {
+            {"status", "success"},
+            {"message", "pong"},
+            {"sessionToken", token_}
+        };
+
+        write_response(response.dump());
+        spdlog::debug("Ping received, session {} updated", token_);
+    }
+
+    bool Session::isActive(std::chrono::seconds timeout) const {
+        auto now = std::chrono::steady_clock::now();
+        auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(now - last_activity_time_);
+        return elapsed < timeout;
     }
 
     const std::string& Session::getToken() const {
@@ -114,6 +134,10 @@ namespace game_server {
                 request["userId"] = user_id_;
                 controller_type = "game";
             }
+            else if (action == "ping") {
+                handlePing();
+                return;
+            }
             else {
                 // 알 수 없는 액션 처리
                 spdlog::warn("Unknown action: {}", action);
@@ -174,18 +198,29 @@ namespace game_server {
     }
 
     void Session::handle_error(const std::string& error_message) {
-        // 오류 로깅 및 리소스 정리
+        // 오류 로깅
         spdlog::error(error_message);
 
-        // 필요한 경우 리소스 정리
+        // 서버에서 세션 제거
+        if (!token_.empty() && server_) {
+            server_->removeSession(token_);
+            spdlog::info("Session {} removed from server", token_);
+        }
+
+        // 소켓 리소스 정리
         if (socket_.is_open()) {
             boost::system::error_code ec;
             socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_both, ec);
-            socket_.close(ec);
-            spdlog::error("Socket closing error: {}", error_message);
-
             if (ec) {
-                spdlog::error("Socket closing error: {}", ec.message());
+                spdlog::error("Socket shutdown error: {}", ec.message());
+            }
+
+            socket_.close(ec);
+            if (ec) {
+                spdlog::error("Socket close error: {}", ec.message());
+            }
+            else {
+                spdlog::info("Socket closed successfully");
             }
         }
     }

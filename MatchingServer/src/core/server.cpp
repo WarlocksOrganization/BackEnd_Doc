@@ -24,7 +24,8 @@ namespace game_server {
         : io_context_(io_context),
         acceptor_(io_context, boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), port)),
         running_(false),
-        uuid_generator_()
+        uuid_generator_(),
+        session_check_timer_(io_context)
     {
         // Create database connection pool
         db_pool_ = std::make_unique<DbPool>(db_connection_string, 5); // Create 5 connections
@@ -40,6 +41,49 @@ namespace game_server {
         if (running_) {
             stop();
         }
+    }
+
+    void Server::setSessionTimeout(std::chrono::seconds timeout) {
+        session_timeout_ = timeout;
+        spdlog::info("Session timeout set to {} seconds", timeout.count());
+    }
+
+    void Server::startSessionTimeoutCheck() {
+        if (timeout_check_running_) return;
+        timeout_check_running_ = true;
+        check_inactive_sessions();
+    }
+
+    void Server::check_inactive_sessions() {
+        if (!running_ || !timeout_check_running_) return;
+        spdlog::debug("Checking for inactive sessions...");
+
+        std::vector<std::string> sessionsToRemove;
+        {
+            std::lock_guard<std::mutex> lock(sessions_mutex_);
+
+            for (const auto& [token, session] : sessions_) {
+                if (!session->isActive(session_timeout_)) {
+                    spdlog::info("Session {} timed out after {} seconds of inactivity",
+                        token, session_timeout_.count());
+                    sessionsToRemove.push_back(token);
+                }
+            }
+        }
+
+        for (const auto& token : sessionsToRemove) {
+            auto session = getSession(token);
+            if (session) {
+                session->handle_error("Session timed out");
+            }
+        }
+
+        session_check_timer_.expires_after(std::chrono::seconds(60));
+        session_check_timer_.async_wait([this](const boost::system::error_code& ec) {
+            if (!ec) {
+                check_inactive_sessions();
+            }
+            });
     }
 
     std::string Server::generateSessionToken() {
@@ -110,12 +154,16 @@ namespace game_server {
     {
         running_ = true;
         do_accept();
+        startSessionTimeoutCheck();
         spdlog::info("Server is running and accepting connections...");
     }
 
     void Server::stop()
     {
         running_ = false;
+        timeout_check_running_ = false;
+
+        session_check_timer_.cancel();
         acceptor_.close();
         // 葛电 技记 沥府
         {
