@@ -217,7 +217,7 @@ namespace game_server {
                     roomInfo["currentPlayers"] = roomRepo_->getPlayerCount(room["roomId"]);
                     roomInfo["maxPlayers"] = room["maxPlayers"];
                     roomInfo["status"] = room["status"];
-                    roomInfo["created_at"] = room["createdAt"];
+                    roomInfo["createdAt"] = room["createdAt"];
 
                     response["rooms"].push_back(roomInfo);
                 }
