@@ -2,6 +2,7 @@
 // 세션 관리 클래스 구현
 // 클라이언트와의 통신 세션을 처리하는 핵심 파일
 #include "session.h"
+#include "server.h"
 #include <iostream>
 #include <nlohmann/json.hpp>
 #include <spdlog/spdlog.h>
@@ -11,14 +12,30 @@ namespace game_server {
     using json = nlohmann::json;
 
     Session::Session(boost::asio::ip::tcp::socket socket,
-        std::map<std::string, std::shared_ptr<Controller>>& controllers)
+        std::map<std::string, std::shared_ptr<Controller>>& controllers,
+        Server* server)
         : socket_(std::move(socket)),
         controllers_(controllers),
-        user_id_(0)
+        user_id_(0),
+        server_(server)
     {
-        spdlog::info("New session created from {}:{}",
+        // 서버에 세션 등록 및 토큰 받기
+        token_ = server_->registerSession(shared_from_this());
+
+        spdlog::info("New session created from {}:{} with token {}",
             socket_.remote_endpoint().address().to_string(),
-            socket_.remote_endpoint().port());
+            socket_.remote_endpoint().port(),
+            token_);
+    }
+
+    Session::~Session() {
+        if (server_ && !token_.empty()) {
+            server_->removeSession(token_);
+        }
+    }
+
+    const std::string& Session::getToken() const {
+        return token_;
     }
 
     void Session::start() {
@@ -113,6 +130,7 @@ namespace game_server {
                 json response = controller_it->second->handleRequest(request);
                 if (action == "login" && response["status"] == "success") {
                     init_current_user(response);
+                    server_->registerSession(shared_from_this());
                 }
                 write_response(response.dump());
             }

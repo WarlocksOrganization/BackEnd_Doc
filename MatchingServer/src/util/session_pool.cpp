@@ -1,6 +1,6 @@
 //// core/session_pool.cpp
 //#include "session_pool.h"
-//#include "session.h"
+//#include "../core/session.h"
 //#include <spdlog/spdlog.h>
 //
 //namespace game_server {
@@ -105,9 +105,8 @@
 //
 //            if (!expired_sessions.empty()) {
 //                spdlog::info("Removed {} expired sessions, remaining: {}",
-//                    expired_sessions.size(), session_by_ptr_.size());
+//                    (int)expired_sessions.size(), (int)session_by_ptr_.size());
 //            }
 //        }
 //    }
-//
 //} // namespace game_server

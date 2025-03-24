@@ -12,6 +12,9 @@
 #include "../repository/game_repository.h"
 #include <iostream>
 #include <spdlog/spdlog.h>
+#include <boost/uuid/uuid.hpp>
+#include <boost/uuid/uuid_generators.hpp>
+#include <boost/uuid/uuid_io.hpp>
 
 namespace game_server {
 
@@ -20,7 +23,8 @@ namespace game_server {
         const std::string& db_connection_string)
         : io_context_(io_context),
         acceptor_(io_context, boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), port)),
-        running_(false)
+        running_(false),
+        uuid_generator_()
     {
         // Create database connection pool
         db_pool_ = std::make_unique<DbPool>(db_connection_string, 5); // Create 5 connections
@@ -30,12 +34,53 @@ namespace game_server {
 
         spdlog::info("Server initialized on port {}", port);
     }
-
+    
     Server::~Server()
     {
         if (running_) {
             stop();
         }
+    }
+
+    std::string Server::generateSessionToken() {
+        boost::uuids::uuid uuid = uuid_generator_();
+        return boost::uuids::to_string(uuid);
+    }
+
+    std::string Server::registerSession(std::shared_ptr<Session> session) {
+        std::lock_guard<std::mutex> lock(sessions_mutex_);
+
+        // 기존 세션이 존재하면 제거
+        for (auto it = sessions_.begin(); it != sessions_.end(); ++it) {
+            if (it->second == session) {
+                spdlog::info("Existing session found, removing old token: {}", it->first);
+                sessions_.erase(it);
+                break;  // 한 개만 삭제하면 되므로 루프 종료
+            }
+        }
+
+        std::string token = generateSessionToken();
+        sessions_[token] = session;
+        spdlog::info("Session registered with token: {}", token);
+        return token;
+    }
+
+    void Server::removeSession(const std::string& token) {
+        std::lock_guard<std::mutex> lock(sessions_mutex_);
+        auto it = sessions_.find(token);
+        if (it != sessions_.end()) {
+            sessions_.erase(it);
+            spdlog::info("Session removed: {}", token);
+        }
+    }
+
+    std::shared_ptr<Session> Server::getSession(const std::string& token) {
+        std::lock_guard<std::mutex> lock(sessions_mutex_);
+        auto it = sessions_.find(token);
+        if (it != sessions_.end()) {
+            return it->second;
+        }
+        return nullptr;
     }
 
     void Server::init_controllers() {
@@ -72,6 +117,12 @@ namespace game_server {
     {
         running_ = false;
         acceptor_.close();
+        // 모든 세션 정리
+        {
+            std::lock_guard<std::mutex> lock(sessions_mutex_);
+            sessions_.clear();
+        }
+
         spdlog::info("Server stopped");
     }
 
@@ -81,7 +132,7 @@ namespace game_server {
             [this](boost::system::error_code ec, boost::asio::ip::tcp::socket socket) {
                 if (!ec) {
                     // Create and start session
-                    auto session = std::make_shared<Session>(std::move(socket), controllers_);
+                    auto session = std::make_shared<Session>(std::move(socket), controllers_, this);
                     session->start();
                 }
                 else {

@@ -20,7 +20,6 @@ SOURCES = $(SRC_DIR)/main.cpp \
           $(SRC_DIR)/repository/game_repository.cpp \
           $(SRC_DIR)/util/db_pool.cpp \
           $(SRC_DIR)/util/password_util.cpp \
-          $(SRC_DIR)/util/session_pool.cpp
 OBJECTS = $(SOURCES:$(SRC_DIR)/%.cpp=$(BUILD_DIR)/%.o)
 TARGET = $(BIN_DIR)/MatchingServer
 # 디렉토리 자동 생성
