@@ -20,7 +20,7 @@ namespace game_server {
         if (action == "createRoom") {
             return handleCreateRoom(request);
         }
-        else if (action == "joinRoom") {
+        else if (action == "joinRoom") { 
             return handleJoinRoom(request);
         }
         else if (action == "exitRoom") {
