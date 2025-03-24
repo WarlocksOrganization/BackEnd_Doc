@@ -11,14 +11,18 @@
 namespace game_server {
 
     using json = nlohmann::json;
+    class Server;
 
     class Session : public std::enable_shared_from_this<Session> {
     public:
         Session(boost::asio::ip::tcp::socket socket,
-            std::map<std::string, std::shared_ptr<Controller>>& controllers);
+            std::map<std::string, std::shared_ptr<Controller>>& controllers,
+            Server* server);
+        ~Session();
 
         void start();
         boost::asio::ip::tcp::socket& get_socket();
+        const std::string& getToken() const;
 
     private:
         void read_message();
@@ -33,6 +37,8 @@ namespace game_server {
         std::string message_;
         int user_id_;
         std::string user_name_;
+        std::string token_;
+        Server* server_;
     };
 
 } // namespace game_server
