@@ -23,6 +23,7 @@ namespace game_server {
         void start();
         boost::asio::ip::tcp::socket& get_socket();
         const std::string& getToken() const;
+        void initialize();
 
     private:
         void read_message();

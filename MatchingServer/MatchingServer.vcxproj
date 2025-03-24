@@ -33,7 +33,6 @@
     <ClCompile Include="src\service\room_service.cpp" />
     <ClCompile Include="src\util\db_pool.cpp" />
     <ClCompile Include="src\util\password_util.cpp" />
-    <ClCompile Include="src\util\session_pool.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\controller\auth_controller.h" />
@@ -50,7 +49,6 @@
     <ClInclude Include="src\service\room_service.h" />
     <ClInclude Include="src\util\db_pool.h" />
     <ClInclude Include="src\util\password_util.h" />
-    <ClInclude Include="src\util\session_pool.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>

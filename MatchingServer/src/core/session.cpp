@@ -19,19 +19,21 @@ namespace game_server {
         user_id_(0),
         server_(server)
     {
-        // 서버에 세션 등록 및 토큰 받기
-        token_ = server_->registerSession(shared_from_this());
-
-        spdlog::info("New session created from {}:{} with token {}",
+        spdlog::info("New session created from {}:{}",
             socket_.remote_endpoint().address().to_string(),
-            socket_.remote_endpoint().port(),
-            token_);
+            socket_.remote_endpoint().port());
     }
 
     Session::~Session() {
         if (server_ && !token_.empty()) {
             server_->removeSession(token_);
         }
+    }
+
+    void Session::initialize() {
+        // 서버에 세션 등록 및 토큰 받기
+        token_ = server_->registerSession(shared_from_this());
+        spdlog::info("Session initialized with token {}", token_);
     }
 
     const std::string& Session::getToken() const {

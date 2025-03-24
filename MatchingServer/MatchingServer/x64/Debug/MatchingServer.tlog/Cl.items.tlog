@@ -12,4 +12,3 @@ C:\Users\SSAFY\Desktop\github\BackEnd_Doc\MatchingServer\src\service\game_servic
 C:\Users\SSAFY\Desktop\github\BackEnd_Doc\MatchingServer\src\service\room_service.cpp;C:\Users\SSAFY\Desktop\github\BackEnd_Doc\MatchingServer\MatchingServer\x64\Debug\room_service.obj
 C:\Users\SSAFY\Desktop\github\BackEnd_Doc\MatchingServer\src\util\db_pool.cpp;C:\Users\SSAFY\Desktop\github\BackEnd_Doc\MatchingServer\MatchingServer\x64\Debug\db_pool.obj
 C:\Users\SSAFY\Desktop\github\BackEnd_Doc\MatchingServer\src\util\password_util.cpp;C:\Users\SSAFY\Desktop\github\BackEnd_Doc\MatchingServer\MatchingServer\x64\Debug\password_util.obj
-C:\Users\SSAFY\Desktop\github\BackEnd_Doc\MatchingServer\src\util\session_pool.cpp;C:\Users\SSAFY\Desktop\github\BackEnd_Doc\MatchingServer\MatchingServer\x64\Debug\session_pool.obj
