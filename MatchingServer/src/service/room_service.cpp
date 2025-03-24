@@ -222,7 +222,7 @@ namespace game_server {
                     response["rooms"].push_back(roomInfo);
                 }
 
-                spdlog::info("Retrieved {} open rooms", response["rooms"].size());
+                spdlog::info("Retrieved {} open room(s)", response["rooms"].size());
             }
             catch (const std::exception& e) {
                 response["status"] = "error";
