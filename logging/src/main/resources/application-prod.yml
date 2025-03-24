@@ -1,0 +1,6 @@
+spring.application.name: logging
+
+kafka:
+  url: kraft-cluster-kafka-bootstrap.kafka.svc:9092
+server:
+  port: 8001
