@@ -20,21 +20,9 @@ namespace game_server {
             json response;
             try {
                 // 요청 유효성 검증
-                if (!request.contains("roomId") || !request.contains("mapId") || !request.contains("users")) {
+                if (!request.contains("roomId") || !request.contains("mapId")) {
                     response["status"] = "error";
                     response["message"] = "Missing required fields in request";
-                    return response;
-                }
-
-                if (!request["users"].is_array()) {
-                    response["status"] = "error";
-                    response["message"] = "key users is must be a list type";
-                    return response;
-                }
-
-                if (request["users"].empty()) {
-                    response["status"] = "error";
-                    response["message"] = "the list is empty";
                     return response;
                 }
 
