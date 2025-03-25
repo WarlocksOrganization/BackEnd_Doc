@@ -72,7 +72,17 @@ namespace game_server {
         }
 
         for (const auto& token : sessionsToRemove) {
-            auto session = getSession(token);
+            std::shared_ptr<Session> session;
+            {
+                std::lock_guard<std::mutex> lock(sessions_mutex_);
+                auto it = sessions_.find(token);
+                if (it != sessions_.end()) {
+                    session = it->second;
+                    sessions_.erase(it);  // 컬렉션에서 세션 제거
+                    spdlog::info("Session {} removed from server", token);
+                }
+            }
+
             if (session) {
                 session->handle_error("Session timed out");
             }
@@ -158,17 +168,39 @@ namespace game_server {
         spdlog::info("Server is running and accepting connections...");
     }
 
-    void Server::stop()
-    {
+    void Server::stop() {
+        if (!running_) return;  // 이미 중지된 경우 중복 실행 방지
+
         running_ = false;
         timeout_check_running_ = false;
 
+        // 타이머 취소 및 대기
         session_check_timer_.cancel();
-        acceptor_.close();
-        // 모든 세션 정리
+
+        // 모든 세션에 종료 알림
         {
             std::lock_guard<std::mutex> lock(sessions_mutex_);
+            for (auto& [token, session] : sessions_) {
+                try {
+                    if (session) {
+                        session->handle_error("Server shutting down");
+                    }
+                }
+                catch (const std::exception& e) {
+                    spdlog::error("Error during session cleanup: {}", e.what());
+                }
+            }
             sessions_.clear();
+        }
+
+        // acceptor 닫기
+        try {
+            if (acceptor_.is_open()) {
+                acceptor_.close();
+            }
+        }
+        catch (const std::exception& e) {
+            spdlog::error("Error closing acceptor: {}", e.what());
         }
 
         spdlog::info("Server stopped");
