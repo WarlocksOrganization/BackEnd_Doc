@@ -32,34 +32,6 @@ namespace game_server {
                 }
                 int gameId = result[0][0].as<int>();
                 spdlog::info("Created game session completely! Game ID : {}", gameId);
-
-                int cnt = 0;
-                for (const auto& user : users) {
-                    if (!user.is_object()) {
-                        spdlog::error("value is not the object type");
-                        continue;
-                    }
-
-                    if (!user.contains("userId") || !user.contains("classId")) {
-                        spdlog::error("value has not the few keys");
-                        continue;
-                    }
-
-                    pqxx::result res = txn.exec_params(
-                        "INSERT INTO game_users (game_id, user_id, class_id) "
-                        "VALUES ($1, $2, $3) "
-                        "RETURNING 1",
-                        gameId, user["userId"].get<int>(), user["classId"].get<int>());
-
-                    if (res.empty()) {
-                        spdlog::error("Can't create gameUsers recode for user ID : {}", user["userId"].get<int>());
-                        continue;
-                    }
-                    spdlog::info("create gameUsers recode for user ID : {}", user["userId"].get<int>());
-                    cnt++;
-                }
-                spdlog::info("count of completely created gameUsers record(s) : {}", cnt);
-
                 txn.commit();
                 dbPool_->return_connection(conn);
                 return gameId;
