@@ -202,12 +202,6 @@ namespace game_server {
         // 오류 로깅
         spdlog::error(error_message);
 
-        // 서버에서 세션 제거
-        if (!token_.empty() && server_) {
-            server_->removeSession(token_);
-            spdlog::info("Session {} removed from server", token_);
-        }
-
         // 소켓 리소스 정리
         if (socket_.is_open()) {
             boost::system::error_code ec;

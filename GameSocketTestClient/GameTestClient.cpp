@@ -33,24 +33,49 @@ public:
             boost::asio::write(socket_, boost::asio::buffer(request));
             cout << "요청 전송 완료: " << request << endl;
 
-            // 응답 받기
+            // 응답 받기 - 개선된 방식
             boost::asio::streambuf response_buffer;
             boost::system::error_code ec;
-            size_t bytes_read = boost::asio::read(socket_, response_buffer, ec);
+
+            // 비동기 읽기 준비
+            bool read_completed = false;
+            std::size_t bytes_transferred = 0;
+
+            // 비동기 읽기 시작
+            socket_.async_read_some(
+                boost::asio::buffer(response_buffer.prepare(1024)),
+                [&](const boost::system::error_code& error, std::size_t bytes) {
+                    ec = error;
+                    bytes_transferred = bytes;
+                    response_buffer.commit(bytes);
+                    read_completed = true;
+                }
+            );
+
+            // 타임아웃을 위한 실행
+            for (int i = 0; i < 50 && !read_completed; ++i) {
+                io_context_.poll();
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            }
+
+            if (!read_completed) {
+                cerr << "응답 대기 시간 초과" << endl;
+                return json{ {"status", "error"}, {"message", "응답 대기 시간 초과"} };
+            }
 
             if (ec && ec != boost::asio::error::eof) {
                 throw boost::system::system_error(ec);
             }
 
             // 응답 데이터 처리
-            std::istream response_stream(&response_buffer);
-            std::string response_str;
-            std::getline(response_stream, response_str, '\0');
+            std::string response_str((std::istreambuf_iterator<char>(&response_buffer)),
+                std::istreambuf_iterator<char>());
 
             if (response_str.empty()) {
                 return json{ {"status", "error"}, {"message", "서버 응답 없음"} };
             }
 
+            cout << "받은 응답: " << response_str << endl;
             return json::parse(response_str);
         }
         catch (const std::exception& e) {
