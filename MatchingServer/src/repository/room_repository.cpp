@@ -16,7 +16,7 @@ namespace game_server {
     public:
         explicit RoomRepositoryImpl(DbPool* dbPool) : dbPool_(dbPool) {}
 
-        int findValidRoom() override {
+        json findValidRoom() override {
             auto conn = dbPool_->get_connection();
             pqxx::work txn(*conn);
             try {
@@ -24,7 +24,8 @@ namespace game_server {
                 pqxx::result result = txn.exec_params(
                     "SELECT room_id "
                     "FROM rooms WHERE status = 'TERMINATED' "
-                    "ORDER BY room_id LIMIT 1");
+                    "ORDER BY room_id LIMIT 1 "
+                    "RETURNING room_id, ");
 
                 txn.commit();
                 dbPool_->return_connection(conn);
@@ -77,36 +78,55 @@ namespace game_server {
             }
         }
 
-        bool create(int hostId, int roomId, const std::string& roomName, int maxPlayers) override {
+        json RoomRepository::createRoomWithHost(int hostId, const std::string& roomName, int maxPlayers) {
             auto conn = dbPool_->get_connection();
             pqxx::work txn(*conn);
+            int roomId = -1;
+            json result = {
+                {"roomId", -1}
+            };
             try {
-                // 기존 TERMINATED 방 재활성화 시도
-                pqxx::result result = txn.exec_params(
-                    "UPDATE rooms "
-                    "SET room_name = $1, host_id = $2, max_players = $3, status = 'WAITING', created_at = DEFAULT "
+                // 유효한 방 ID 찾기
+                pqxx::result idResult = txn.exec(
+                    "SELECT room_id FROM rooms WHERE status = 'TERMINATED' ORDER BY room_id LIMIT 1");
+
+                if (idResult.empty()) {
+                    return result;
+                }
+                roomId = idResult[0][0].as<int>();
+
+                // 방 재활성화
+                pqxx::result roomResult;
+                roomResult = txn.exec_params(
+                    "UPDATE rooms SET room_name = $1, host_id = $2, max_players = $3, "
+                    "status = 'WAITING', created_at = DEFAULT "
                     "WHERE room_id = $4 AND status = 'TERMINATED' "
-                    "RETURNING room_id",
+                    "RETURNING room_id, ip_address, port",
                     roomName, hostId, maxPlayers, roomId);
 
-                if (result.empty()) {
-                    spdlog::warn("Failed to reactivate room");
+                if (roomResult.empty()) {
                     txn.abort();
                     dbPool_->return_connection(conn);
-                    return false;
+                    return result;
                 }
-                spdlog::info("Room {} reactivated with name '{}', host {}",
-                    roomId, roomName, hostId);
+
+                // 사용자를 방에 추가
+                txn.exec_params(
+                    "INSERT INTO room_users(room_id, user_id) VALUES($1, $2)",
+                    roomId, hostId);
 
                 txn.commit();
                 dbPool_->return_connection(conn);
-                return true;
+                result["roomId"] = roomResult[0]["room_id"].as<int>();
+                result["ipAddress"] = roomResult[0]["ip_address"].as<std::string>();
+                result["port"] = roomResult[0]["port"].as<int>();
+                return result;
             }
             catch (const std::exception& e) {
+                spdlog::error("Error in createRoomWithHost: {}", e.what());
                 txn.abort();
-                spdlog::error("Error creating room: {}", e.what());
                 dbPool_->return_connection(conn);
-                return false;
+                return result;
             }
         }
 
