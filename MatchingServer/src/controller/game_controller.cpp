@@ -17,10 +17,10 @@ namespace game_server {
         // 요청의 action 필드에 따라 적절한 핸들러 호출
         std::string action = request["action"];
 
-        if (action == "startGame") {
+        if (action == "gameStart") {
             return handleStartGame(request);
         }
-        else if (action == "endGame") {
+        else if (action == "gameEnd") {
             return handleEndGame(request);
         }
         else {
