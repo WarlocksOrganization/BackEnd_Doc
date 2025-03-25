@@ -33,6 +33,7 @@ namespace game_server {
         std::string generateSessionToken();
         void setSessionTimeout(std::chrono::seconds timeout);
         void startSessionTimeoutCheck();
+        std::unordered_map<std::string, std::shared_ptr<Session>> mirrors_;
 
     private:
         void do_accept();
@@ -44,7 +45,6 @@ namespace game_server {
         std::unique_ptr<DbPool> db_pool_;
         std::map<std::string, std::shared_ptr<Controller>> controllers_;
         bool running_;
-        std::unordered_map<std::string, std::shared_ptr<Session>> mirrors_;
 
         // 技记 包府 单捞磐
         std::unordered_map<std::string, std::shared_ptr<Session>> sessions_;
