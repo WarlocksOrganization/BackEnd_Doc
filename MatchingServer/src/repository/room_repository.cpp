@@ -67,6 +67,8 @@ namespace game_server {
                     "SELECT room_id FROM rooms WHERE status = 'TERMINATED' ORDER BY room_id LIMIT 1");
 
                 if (idResult.empty()) {
+                    txn.abort();
+                    dbPool_->return_connection(conn);
                     return result;
                 }
                 roomId = idResult[0][0].as<int>();
@@ -167,14 +169,16 @@ namespace game_server {
                     "VALUES ($1, $2, DEFAULT) RETURNING room_id",
                     roomId, userId);
 
+                if (result.empty()) {
+                    txn.abort();
+                    dbPool_->return_connection(conn);
+                    return false;
+                }
+
                 txn.commit();
                 dbPool_->return_connection(conn);
-
-                if (!result.empty()) {
-                    spdlog::info("User {} joined room {}", userId, roomId);
-                    return true;
-                }
-                return false;
+                spdlog::info("User {} joined room {}", userId, roomId);
+                return true;
             }
             catch (const std::exception& e) {
                 spdlog::error("Error adding player to room: {}", e.what());
@@ -195,7 +199,7 @@ namespace game_server {
 
                 if (roomResult.empty()) {
                     // 사용자가 어떤 방에도 없음
-                    txn.commit();
+                    txn.abort();
                     dbPool_->return_connection(conn);
                     spdlog::warn("User {} is not in any room", userId);
                     return false;

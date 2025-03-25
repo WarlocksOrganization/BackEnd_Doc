@@ -158,6 +158,7 @@ namespace game_server {
                 if (action == "login" && response["status"] == "success") {
                     init_current_user(response);
                     server_->registerSession(shared_from_this());
+                    response["sessionToken"] = token_;
                 }
                 write_response(response.dump());
             }
