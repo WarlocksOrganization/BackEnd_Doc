@@ -18,11 +18,15 @@ namespace game_server {
         //std::optional<json> findById(int userId) override {}
 
         json findByUsername(const std::string& userName) {
+            spdlog::info("findByUsername called with userName: {}", userName);
+
             auto conn = dbPool_->get_connection();
             pqxx::work txn(*conn);
-            try {                
+            try {
                 pqxx::result result = txn.exec_params(
-                    "SELECT * FROM users WHERE user_name = $1", userName);
+                    "SELECT user_id, user_name, password_hash, created_at, last_login FROM users WHERE LOWER(user_name) = LOWER($1)",
+                    userName);
+                spdlog::info("Query executed, result size: {}", result.size());
 
                 if (result.empty()) {
                     // 사용자를 찾지 못함 - std::nullopt 반환
