@@ -26,6 +26,8 @@ namespace game_server {
 
                 if (result.empty()) {
                     // 사용자를 찾지 못함 - std::nullopt 반환
+                    txn.abort();
+                    dbPool_->return_connection(conn);
                     return { {"userId", -1} };
                 }
 
@@ -63,6 +65,8 @@ namespace game_server {
                 dbPool_->return_connection(conn);
 
                 if (result.empty()) {
+                    txn.abort();
+                    dbPool_->return_connection(conn);
                     return -1;
                 }
 

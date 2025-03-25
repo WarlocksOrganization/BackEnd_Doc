@@ -34,6 +34,8 @@ namespace game_server {
 
                 if (result.empty() || updateRoom.empty()) {
                     spdlog::error("Can't created game session");
+                    txn.abort();
+                    dbPool_->return_connection(conn);
                     return -1;
                 }
                 int gameId = result[0][0].as<int>();
@@ -63,6 +65,8 @@ namespace game_server {
 
                 if (result.empty()) {
                     spdlog::error("Can't found roomId use to Game ID : {}", gameId);
+                    txn.abort();
+                    dbPool_->return_connection(conn);
                     return false;
                 }
                 int roomId = result[0][0].as<int>();
@@ -77,11 +81,15 @@ namespace game_server {
 
                 if (res.empty()) {
                     spdlog::error("Can't found roomId use to Room ID : {}", roomId);
+                    txn.abort();
+                    dbPool_->return_connection(conn);
                     return false;
                 }
                 int resId = res[0][0].as<int>();
                 if (roomId != resId) {
                     spdlog::error("Can't found room which Room ID is {}", roomId);
+                    txn.abort();
+                    dbPool_->return_connection(conn);
                     return false;
                 }
 
