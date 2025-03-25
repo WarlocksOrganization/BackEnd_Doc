@@ -18,6 +18,7 @@ void signal_handler(int signal)
         server->stop();
     }
     exit(signal);
+    std::exit(0);
 }
 
 int main(int argc, char* argv[])
