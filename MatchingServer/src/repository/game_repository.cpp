@@ -25,7 +25,14 @@ namespace game_server {
                     "RETURNING game_id",
                 roomId, mapId);
 
-                if (result.empty()) {
+                pqxx::result updateRoom = txn.exec_params(
+                    "UPDATE rooms "
+                    "SET status = 'GAME_IN_PROGRESS' "
+                    "WHERE room_id = $1 "
+                    "RETURNING status",
+                    roomId);
+
+                if (result.empty() || updateRoom.empty()) {
                     spdlog::error("Can't created game session");
                     return -1;
                 }
