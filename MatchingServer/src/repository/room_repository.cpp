@@ -16,30 +16,6 @@ namespace game_server {
     public:
         explicit RoomRepositoryImpl(DbPool* dbPool) : dbPool_(dbPool) {}
 
-        json findValidRoom() override {
-            auto conn = dbPool_->get_connection();
-            pqxx::work txn(*conn);
-            try {
-                // ID로 방 정보 조회 (가장 낮은 ID의 TERMINATED 상태 방을 찾음)
-                pqxx::result result = txn.exec_params(
-                    "SELECT room_id "
-                    "FROM rooms WHERE status = 'TERMINATED' "
-                    "ORDER BY room_id LIMIT 1 "
-                    "RETURNING room_id, ");
-
-                txn.commit();
-                dbPool_->return_connection(conn);
-
-                return result.empty() ? -1 : result[0][0].as<int>();
-            }
-            catch (const std::exception& e) {
-                txn.abort();
-                spdlog::error("Cannot find valid room: {}", e.what());
-                dbPool_->return_connection(conn);
-                return -1;
-            }
-        }
-
         std::vector<json> findAllOpen() override {
             std::vector<json> rooms;
             auto conn = dbPool_->get_connection();
@@ -78,7 +54,7 @@ namespace game_server {
             }
         }
 
-        json RoomRepository::createRoomWithHost(int hostId, const std::string& roomName, int maxPlayers) {
+        json createRoomWithHost(int hostId, const std::string& roomName, int maxPlayers) {
             auto conn = dbPool_->get_connection();
             pqxx::work txn(*conn);
             int roomId = -1;
