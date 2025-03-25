@@ -41,6 +41,7 @@ namespace game_server {
         last_activity_time_ = std::chrono::steady_clock::now();
 
         json response = {
+            {"action", "refreshSession"},
             {"status", "success"},
             {"message", "pong"},
             {"sessionToken", token_}
@@ -134,7 +135,7 @@ namespace game_server {
                 request["userId"] = user_id_;
                 controller_type = "game";
             }
-            else if (action == "ping") {
+            else if (action == "alivePing") {
                 handlePing();
                 return;
             }

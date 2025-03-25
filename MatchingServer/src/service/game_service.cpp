@@ -36,6 +36,7 @@ namespace game_server {
                 }
 
                 // 己傍 览翠 积己
+                response["action"] = "gameStart";
                 response["status"] = "success";
                 response["message"] = "game successfully created";
                 response["gameId"] = gameId;
@@ -70,6 +71,7 @@ namespace game_server {
                 }
 
                 // 己傍 览翠 积己
+                response["action"] = "gameEnd";
                 response["status"] = "success";
                 response["message"] = "The game is ended successfully";
 

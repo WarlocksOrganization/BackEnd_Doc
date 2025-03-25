@@ -91,6 +91,7 @@ namespace game_server {
                 }
 
                 // 己傍 览翠 积己
+                response["action"] = "createRoom";
                 response["status"] = "success";
                 response["message"] = "Room successfully created";
                 response["roomId"] = result["roomId"];
@@ -131,6 +132,7 @@ namespace game_server {
                 }
 
                 // 己傍 览翠 积己
+                response["action"] = "joinRoom";
                 response["status"] = "success";
                 response["message"] = "Successfully joined room";
 
@@ -166,6 +168,7 @@ namespace game_server {
                 }
 
                 // 己傍 览翠 积己
+                response["action"] = "exitRoom";
                 response["status"] = "success";
                 response["message"] = "Successfully exited room";
 
@@ -188,6 +191,7 @@ namespace game_server {
                 auto rooms = roomRepo_->findAllOpen();
 
                 // 览翠 积己
+                response["action"] = "listRooms";
                 response["status"] = "success";
                 response["message"] = "Successfully retrieved room list";
                 response["rooms"] = json::array();

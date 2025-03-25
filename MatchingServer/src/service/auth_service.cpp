@@ -59,6 +59,7 @@ namespace game_server {
             }
 
             // 己傍 览翠 积己
+            response["action"] = "register";
             response["status"] = "success";
             response["message"] = "Registration successful";
             response["userId"] = userId;
@@ -90,6 +91,7 @@ namespace game_server {
             userRepo_->updateLastLogin(userInfo["userId"]);
 
             // 己傍 览翠 积己
+            response["action"] = "login";
             response["status"] = "success";
             response["message"] = "Login successful";
             response["userId"] = userInfo["userId"];
