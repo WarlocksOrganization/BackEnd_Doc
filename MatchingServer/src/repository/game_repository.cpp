@@ -18,7 +18,6 @@ namespace game_server {
             try {
                 int roomId = request["roomId"];
                 int mapId = request["mapId"];
-                const auto& users = request["users"];
 
                 pqxx::result result = txn.exec_params(
                     "INSERT INTO games (room_id, map_id) "
