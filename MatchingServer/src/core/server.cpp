@@ -213,7 +213,6 @@ namespace game_server {
                 if (!ec) {
                     // Create and start session
                     auto session = std::make_shared<Session>(std::move(socket), controllers_, this);
-                    session->initialize();
                     session->start();
                 }
                 else {

@@ -61,8 +61,87 @@ namespace game_server {
         return token_;
     }
 
+    // 세션 시작 - 핸드셰이크부터 시작
     void Session::start() {
-        read_message();
+        read_handshake();  // 먼저 핸드셰이크 처리
+    }
+
+    // 핸드셰이크 메시지 처리
+    void Session::read_handshake() {
+        auto self(shared_from_this());
+        socket_.async_read_some(
+            boost::asio::buffer(buffer_),
+            [this, self](boost::system::error_code ec, std::size_t length) {
+                if (!ec) {
+                    try {
+                        std::string data(buffer_.data(), length);
+                        json handshake = json::parse(data);
+
+                        // 미러 서버 구분 로직
+                        if (handshake.contains("connectionType") &&
+                            handshake["connectionType"] == "mirror") {
+
+                            // 미러 서버 세션으로 설정
+                            is_mirror_ = true;
+                            spdlog::info("Mirror server connection established");
+
+                            // 미러 서버 전용 초기화
+                            token_ = server_->generateSessionToken();
+                            server_->mirrors_[token_] = shared_from_this();
+
+                            // 확인 응답 전송
+                            json response = {
+                                {"status", "success"},
+                                {"message", "Mirror server connected"},
+                                {"token", token_}
+                            };
+                            write_handshake_response(response.dump());
+                        }
+                        else {
+                            // 일반 클라이언트 세션 초기화
+                            initialize();
+
+                            // 핸드셰이크가 실제 요청인 경우 처리
+                            if (handshake.contains("action")) {
+                                process_request(handshake);
+                            }
+                            else {
+                                // 일반 클라이언트에게 연결 확인 메시지 전송
+                                json response = {
+                                    {"status", "success"},
+                                    {"message", "Connected to server"}
+                                };
+                                write_handshake_response(response.dump());
+                            }
+                        }
+                    }
+                    catch (const std::exception& e) {
+                        // 핸드셰이크 실패 처리
+                        spdlog::error("Handshake error: {}", e.what());
+                        handle_error("Invalid handshake format");
+                    }
+                }
+                else {
+                    handle_error("Handshake reading error: " + ec.message());
+                }
+            });
+    }
+
+    // 핸드셰이크 응답 전송 (응답 후 일반 메시지 처리로 전환)
+    void Session::write_handshake_response(const std::string& response) {
+        auto self(shared_from_this());
+        boost::asio::async_write(
+            socket_,
+            boost::asio::buffer(response),
+            [this, self](boost::system::error_code ec, std::size_t /*length*/) {
+                if (!ec) {
+                    // 핸드셰이크 완료 후 일반 메시지 처리 시작
+                    read_message();
+                }
+                else {
+                    handle_error("Handshake response writing error: " + ec.message());
+                }
+            });
     }
 
     void Session::read_message() {
@@ -224,6 +303,9 @@ namespace game_server {
     void Session::init_current_user(const json& response) {
         if (response.contains("userId")) user_id_ = response["userId"];
         if (response.contains("userName")) user_name_ = response["userName"];
+        if (user_name_.find("mirror") != std::string::npos) {
+            is_mirror_ = true;
+        }
 
         spdlog::info("User logged in: {} (ID: {})", user_name_, user_id_);
     }

@@ -107,6 +107,15 @@ int main() {
             return 1;
         }
 
+        // 핸드셰이크
+        json handshake_request = {
+            {"connectionType", "mirror"}
+        };
+
+        json handshake_response = client.sendRequest(handshake_request);
+        cout << "핸드셰이크 응답:\n" << handshake_response.dump(2) << endl << endl;
+        Sleep(1000);
+
         // 회원가입 요청
         json register_request = {
             {"action", "register"},
