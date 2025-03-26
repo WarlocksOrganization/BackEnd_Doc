@@ -34,28 +34,28 @@ namespace game_server {
                 {"status", "error"},
                 {"message", "Unknown room action"}
             };
-            return error_response.dump();
+            return error_response;
         }
     }
 
     nlohmann::json RoomController::handleCreateRoom(json& request) {
         json response = roomService_->createRoom(request);
-        return response.dump();
+        return response;
     }
 
     nlohmann::json RoomController::handleJoinRoom(json& request) {
         json response = roomService_->joinRoom(request);
-        return response.dump();
+        return response;
     }
 
     nlohmann::json RoomController::handleExitRoom(json& request) {
         json response = roomService_->exitRoom(request);
-        return response.dump();
+        return response;
     }
 
     nlohmann::json RoomController::handleListRooms(json& request) {
         auto response = roomService_->listRooms();
-        return response.dump();
+        return response;
     }
 
 } // namespace game_server
