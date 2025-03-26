@@ -79,21 +79,20 @@ namespace game_server {
 
                         // 미러 서버 구분 로직
                         if (handshake.contains("connectionType") &&
-                            handshake["connectionType"] == "mirror") {
+                            handshake["connectionType"] == "mirror" && 
+                            handshake.contains("port")) {
 
                             // 미러 서버 세션으로 설정
                             is_mirror_ = true;
                             spdlog::info("Mirror server connection established");
 
                             // 미러 서버 전용 초기화
-                            token_ = server_->generateSessionToken();
-                            server_->mirrors_[token_] = shared_from_this();
+                            server_->mirrors_[handshake["port"]] = shared_from_this();
 
                             // 확인 응답 전송
                             json response = {
                                 {"status", "success"},
-                                {"message", "Mirror server connected"},
-                                {"token", token_}
+                                {"message", "Mirror server connected"}
                             };
                             write_handshake_response(response.dump());
                         }
@@ -239,6 +238,12 @@ namespace game_server {
                     server_->registerSession(shared_from_this());
                     response["sessionToken"] = token_;
                 }
+                else if (action == "createRoom" && response["status"] == "success") {
+                    int port = response["port"];
+                    if (server_->mirrors_.count(port)) {
+                        write_broadcast(response.dump(), server_->mirrors_[port]);
+                    }
+                }
                 write_response(response.dump());
             }
             else {
@@ -258,6 +263,21 @@ namespace game_server {
             };
             write_response(error_response.dump());
         }
+    }
+
+    void Session::write_broadcast(const std::string& response, std::shared_ptr<Session>& mirror) {
+        boost::asio::async_write(
+            mirror->socket_,
+            boost::asio::buffer(response),
+            [mirror](boost::system::error_code ec, std::size_t /*length*/) {
+                if (!ec) {
+                    // 다음 요청 대기
+                    mirror->read_message();
+                }
+                else {
+                    mirror->handle_error("Response writing error: " + ec.message());
+                }
+            });
     }
 
     void Session::write_response(const std::string& response) {

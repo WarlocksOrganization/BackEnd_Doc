@@ -79,7 +79,7 @@ namespace game_server {
                     "UPDATE rooms SET room_name = $1, host_id = $2, max_players = $3, "
                     "status = 'WAITING', created_at = DEFAULT "
                     "WHERE room_id = $4 AND status = 'TERMINATED' "
-                    "RETURNING room_id, ip_address, port",
+                    "RETURNING room_id, room_name, ip_address, port, max_players",
                     roomName, hostId, maxPlayers, roomId);
 
                 if (roomResult.empty()) {
@@ -96,8 +96,10 @@ namespace game_server {
                 txn.commit();
                 dbPool_->return_connection(conn);
                 result["roomId"] = roomResult[0]["room_id"].as<int>();
+                result["roomName"] = roomResult[0]["room_name"].as<std::string>();
                 result["ipAddress"] = roomResult[0]["ip_address"].as<std::string>();
                 result["port"] = roomResult[0]["port"].as<int>();
+                result["maxPlayers"] = roomResult[0]["max_players"].as<int>();
                 return result;
             }
             catch (const std::exception& e) {
