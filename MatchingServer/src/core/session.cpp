@@ -239,9 +239,14 @@ namespace game_server {
                     response["sessionToken"] = token_;
                 }
                 else if (action == "createRoom" && response["status"] == "success") {
+                    json broad_response;
+                    broad_response["action"] = "setRoom";
+                    broad_response["roomId"] = response["roomId"];
+                    broad_response["roomName"] = response["roomName"];
+                    broad_response["maxPlayers"] = response["roomName"];
                     int port = response["port"];
                     if (server_->mirrors_.count(port)) {
-                        write_broadcast(response.dump(), server_->mirrors_[port]);
+                        write_broadcast(broad_response.dump(), server_->mirrors_[port]);
                     }
                 }
                 write_response(response.dump());
