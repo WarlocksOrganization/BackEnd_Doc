@@ -206,7 +206,7 @@ namespace game_server {
                     roomInfo["status"] = room["status"];
                     roomInfo["createdAt"] = room["createdAt"];
 
-                    response["rooms"].push_back(roomInfo.dump());
+                    response["rooms"].push_back(roomInfo);
                 }
 
                 spdlog::info("Retrieved {} open room(s)", response["rooms"].size());
