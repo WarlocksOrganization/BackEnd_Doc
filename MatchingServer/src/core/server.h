@@ -33,8 +33,7 @@ namespace game_server {
         std::string generateSessionToken();
         void setSessionTimeout(std::chrono::seconds timeout);
         void startSessionTimeoutCheck();
-        std::unordered_map<std::string, std::shared_ptr<Session>> mirrors_;
-
+        std::unordered_map<int, std::shared_ptr<Session>> mirrors_;
     private:
         void do_accept();
         void init_controllers();
