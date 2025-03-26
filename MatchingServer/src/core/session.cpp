@@ -242,7 +242,7 @@ namespace game_server {
                     server_->registerSession(shared_from_this());
                     response["sessionToken"] = token_;
                 }
-                else if (action == "createRoom" && response["status"] == "success") {
+                else if (action == "createRoom" &&  response["status"] == "success") {
                     spdlog::debug("Processing createRoom response");
 
                     // response 객체 디버깅 로그
@@ -251,47 +251,14 @@ namespace game_server {
                     try {
                         json broad_response;
                         broad_response["action"] = "setRoom";
+                        broad_response["roomId"] = response["roomId"];
+                        broad_response["roomName"] = response["roomName"];
+                        broad_response["maxPlayers"] = response["maxPlayers"];
 
-                        // 각 필드 접근 시 검증 로직 추가
-                        if (response.contains("roomId")) {
-                            spdlog::debug("Setting roomId");
-                            broad_response["roomId"] = response["roomId"];
-                        }
-                        else {
-                            spdlog::warn("Response missing roomId field");
-                        }
-
-                        if (response.contains("roomName")) {
-                            spdlog::debug("Setting roomName");
-                            broad_response["roomName"] = response["roomName"];
-                        }
-                        else {
-                            spdlog::warn("Response missing roomName field");
-                        }
-
-                        if (response.contains("maxPlayers")) {
-                            spdlog::debug("Setting maxPlayers");
-                            broad_response["maxPlayers"] = response["maxPlayers"];
-                        }
-                        else {
-                            spdlog::warn("Response missing maxPlayers field");
-                        }
-
-                        spdlog::debug("Broadcast message created: {}", broad_response.dump());
-
-                        if (response.contains("port")) {
-                            int port = response["port"];
-                            spdlog::debug("Checking mirror for port: {}", port);
-                            if (server_->mirrors_.count(port)) {
-                                spdlog::debug("Mirror found, broadcasting message");
-                                write_broadcast(broad_response.dump(), server_->mirrors_[port]);
-                            }
-                            else {
-                                spdlog::debug("No mirror found for port: {}", port);
-                            }
-                        }
-                        else {
-                            spdlog::warn("Response missing port field");
+                        int port = response["port"];
+                        if (server_->mirrors_.count(port)) {
+                            spdlog::debug("Mirror found, broadcasting message");
+                            write_broadcast(broad_response.dump(), server_->mirrors_[port]);
                         }
                     }
                     catch (const std::exception& e) {

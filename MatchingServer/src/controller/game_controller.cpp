@@ -28,17 +28,17 @@ namespace game_server {
                 {"status", "error"},
                 {"message", "Unknown room action"}
             };
-            return error_response.dump();
+            return error_response;
         }
     }
 
     nlohmann::json GameController::handleStartGame(json& request) {
         json response = gameService_->startGame(request);
-        return response.dump();
+        return response;
     }
 
     nlohmann::json GameController::handleEndGame(json& request) {
         json response = gameService_->endGame(request);
-        return response.dump();
+        return response;
     }
 } // namespace game_server
