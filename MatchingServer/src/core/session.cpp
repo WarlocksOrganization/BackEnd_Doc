@@ -329,6 +329,31 @@ namespace game_server {
         // 오류 로깅
         spdlog::error(error_message);
 
+        // 사용자가 방에 참여 중이었다면 나가기 처리
+        try {
+            auto controller_it = controllers_.find("room");
+            if (controller_it != controllers_.end() && user_id_ > 0) {
+                spdlog::debug("Attempting automatic room exit for user {}", user_id_);
+
+                json temp = {
+                    {"action", "exitRoom"},
+                    {"userId", user_id_}
+                };
+
+                json response = controller_it->second->handleRequest(temp);
+
+                if (response.contains("status") && response["status"] == "success") {
+                    spdlog::info("User {} automatically exited from room on session termination", user_id_);
+                }
+                else {
+                    spdlog::warn("Failed to exit room for user {} on session termination", user_id_);
+                }
+            }
+        }
+        catch (const std::exception& e) {
+            spdlog::error("Error during automatic room exit: {}", e.what());
+        }
+
         // 소켓 리소스 정리
         if (socket_.is_open()) {
             boost::system::error_code ec;

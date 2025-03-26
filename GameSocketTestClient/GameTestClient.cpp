@@ -116,21 +116,21 @@ int main() {
         cout << "핸드셰이크 응답:\n" << handshake_response.dump(2) << endl << endl;
         Sleep(1000);
 
-        // 회원가입 요청
-        json register_request = {
-            {"action", "register"},
-            {"userName", "APItestUser"},
-            {"password", "testest"}
-        };
+        //// 회원가입 요청
+        //json register_request = {
+        //    {"action", "register"},
+        //    {"userName", "APItestUser"},
+        //    {"password", "testest"}
+        //};
 
-        json register_response = client.sendRequest(register_request);
-        cout << "회원가입 응답:\n" << register_response.dump(2) << endl << endl;
-        Sleep(1000);
+        //json register_response = client.sendRequest(register_request);
+        //cout << "회원가입 응답:\n" << register_response.dump(2) << endl << endl;
+        //Sleep(1000);
 
         // 로그인 요청
         json login_request = {
             {"action", "login"},
-            {"userName", "APItestUser"},
+            {"userName", "zzzzz955@gmail.com"},
             {"password", "testest"}
         };
 
@@ -138,15 +138,21 @@ int main() {
         cout << "로그인 응답:\n" << login_response.dump(2) << endl << endl;
         Sleep(1000);
 
-        // 방 생성 요청
-        json create_room_request = {
-            {"action", "createRoom"},
-            {"roomName", "Test Room"},
-            {"maxPlayers", 4}
+        json exit_room_request = {
+            {"action", "exitRoom"}
         };
+        json exit_room_response = client.sendRequest(exit_room_request);
+        cout << "방 퇴장 응답:\n" << exit_room_response.dump(2) << endl << endl;
 
-        json create_room_response = client.sendRequest(create_room_request);
-        cout << "방 생성 응답:\n" << create_room_response.dump(2) << endl << endl;
+        //// 방 생성 요청
+        //json create_room_request = {
+        //    {"action", "createRoom"},
+        //    {"roomName", "Test Room"},
+        //    {"maxPlayers", 4}
+        //};
+
+        //json create_room_response = client.sendRequest(create_room_request);
+        //cout << "방 생성 응답:\n" << create_room_response.dump(2) << endl << endl;
 
         client.disconnect();
     }
