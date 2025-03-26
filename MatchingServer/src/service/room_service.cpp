@@ -196,17 +196,9 @@ namespace game_server {
                 response["message"] = "Successfully retrieved room list";
                 response["rooms"] = json::array();
 
-                for (const auto& room : rooms) {
-                    json roomInfo;
-                    roomInfo["roomId"] = room["roomId"];
-                    roomInfo["roomName"] = room["roomName"];
-                    roomInfo["hostId"] = room["hostId"];
-                    roomInfo["currentPlayers"] = roomRepo_->getPlayerCount(room["roomId"]);
-                    roomInfo["maxPlayers"] = room["maxPlayers"];
-                    roomInfo["status"] = room["status"];
-                    roomInfo["createdAt"] = room["createdAt"];
-
-                    response["rooms"].push_back(roomInfo);
+                for (auto& room : rooms) {
+                    room["currentPlayers"] = roomRepo_->getPlayerCount(room["roomId"]);
+                    response["rooms"].push_back(room);
                 }
 
                 spdlog::info("Retrieved {} open room(s)", response["rooms"].size());
