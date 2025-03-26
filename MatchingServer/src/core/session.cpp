@@ -179,8 +179,10 @@ namespace game_server {
 
     void Session::process_request(json& request) {
         try {
+            spdlog::debug("Processing request...");
             // action 필드로 요청 타입 확인
             std::string action = request["action"];
+            spdlog::debug("Action: {}", action);
             std::string controller_type;
 
             // 컨트롤러 타입 결정
@@ -228,32 +230,77 @@ namespace game_server {
                 return;
             }
 
-            // 인증 컨트롤러 처리
             auto controller_it = controllers_.find(controller_type);
             if (controller_it != controllers_.end()) {
-                // 요청을 컨트롤러로 전달
+                spdlog::debug("Controller found: {}", controller_type);
                 json response = controller_it->second->handleRequest(request);
+                spdlog::debug("Controller response received");
+
                 if (action == "login" && response["status"] == "success") {
+                    spdlog::debug("Processing login response");
                     init_current_user(response);
                     server_->registerSession(shared_from_this());
                     response["sessionToken"] = token_;
                 }
                 else if (action == "createRoom" && response["status"] == "success") {
-                    json broad_response;
-                    broad_response["action"] = "setRoom";
-                    broad_response["roomId"] = response["roomId"];
-                    broad_response["roomName"] = response["roomName"];
-                    broad_response["maxPlayers"] = response["maxPlayers"];
-                    spdlog::info("action : {}, roomId : {}, roomName : {}, maxPlayers : {}",
-                        broad_response["action"].get<std::string>(),
-                        broad_response["roomId"].get<int>(),
-                        broad_response["roomName"].get<std::string>(),
-                        broad_response["maxPlayers"].get<int>());
-                    int port = response["port"];
-                    if (server_->mirrors_.count(port)) {
-                        write_broadcast(broad_response.dump(), server_->mirrors_[port]);
+                    spdlog::debug("Processing createRoom response");
+
+                    // response 객체 디버깅 로그
+                    spdlog::debug("Response content: {}", response.dump());
+
+                    try {
+                        json broad_response;
+                        broad_response["action"] = "setRoom";
+
+                        // 각 필드 접근 시 검증 로직 추가
+                        if (response.contains("roomId")) {
+                            spdlog::debug("Setting roomId");
+                            broad_response["roomId"] = response["roomId"];
+                        }
+                        else {
+                            spdlog::warn("Response missing roomId field");
+                        }
+
+                        if (response.contains("roomName")) {
+                            spdlog::debug("Setting roomName");
+                            broad_response["roomName"] = response["roomName"];
+                        }
+                        else {
+                            spdlog::warn("Response missing roomName field");
+                        }
+
+                        if (response.contains("maxPlayers")) {
+                            spdlog::debug("Setting maxPlayers");
+                            broad_response["maxPlayers"] = response["maxPlayers"];
+                        }
+                        else {
+                            spdlog::warn("Response missing maxPlayers field");
+                        }
+
+                        spdlog::debug("Broadcast message created: {}", broad_response.dump());
+
+                        if (response.contains("port")) {
+                            int port = response["port"];
+                            spdlog::debug("Checking mirror for port: {}", port);
+                            if (server_->mirrors_.count(port)) {
+                                spdlog::debug("Mirror found, broadcasting message");
+                                write_broadcast(broad_response.dump(), server_->mirrors_[port]);
+                            }
+                            else {
+                                spdlog::debug("No mirror found for port: {}", port);
+                            }
+                        }
+                        else {
+                            spdlog::warn("Response missing port field");
+                        }
+                    }
+                    catch (const std::exception& e) {
+                        spdlog::error("Error in createRoom response handling: {}", e.what());
+                        // 예외가 발생해도 원래 응답은 전송
                     }
                 }
+
+                spdlog::debug("Sending response to client");
                 write_response(response.dump());
             }
             else {
@@ -266,7 +313,10 @@ namespace game_server {
             }
         }
         catch (const std::exception& e) {
-            spdlog::error("Error processing request: {}", e.what());
+            spdlog::error("Error in process_request: {}", e.what());
+            if (request.is_object() && request.contains("action")) {
+                spdlog::error("Failed action: {}", request["action"].get<std::string>());
+            }
             json error_response = {
                 {"status", "error"},
                 {"message", "Invalid request format"}
