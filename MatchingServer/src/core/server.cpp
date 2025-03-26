@@ -43,6 +43,11 @@ namespace game_server {
         }
     }
 
+    bool Server::checkAlreadyLogin(int userId) {
+        std::lock_guard<std::mutex> lock(tokens_mutex_);
+        return tokens_.count(userId) > 0;
+    }
+
     void Server::setSessionTimeout(std::chrono::seconds timeout) {
         session_timeout_ = timeout;
         spdlog::info("Session timeout set to {} seconds", timeout.count());
@@ -115,16 +120,30 @@ namespace game_server {
 
         std::string token = generateSessionToken();
         sessions_[token] = session;
-        spdlog::info("Session registered with token: {}", token);
+        int userId = session->getUserId();
+        if (userId) {
+            tokens_[userId] = token;
+            spdlog::info("Session user ID {} registered with token: {}", userId, token);
+        }
         return token;
     }
 
-    void Server::removeSession(const std::string& token) {
-        std::lock_guard<std::mutex> lock(sessions_mutex_);
-        auto it = sessions_.find(token);
-        if (it != sessions_.end()) {
-            sessions_.erase(it);
-            spdlog::info("Session removed: {}", token);
+    void Server::removeSession(const std::string& token, int userId) {
+        {
+            std::lock_guard<std::mutex> lock(sessions_mutex_);
+            auto it = sessions_.find(token);
+            if (it != sessions_.end()) {
+                sessions_.erase(it);
+                spdlog::info("Session removed tokenId: {}", token);
+            }
+        }
+        {
+            std::lock_guard<std::mutex> lock(tokens_mutex_);
+            auto it = tokens_.find(userId);
+            if (it != tokens_.end()) {
+                tokens_.erase(it);
+                spdlog::info("Session removed userId: {}", userId);
+            }
         }
     }
 

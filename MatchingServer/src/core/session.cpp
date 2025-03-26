@@ -27,7 +27,7 @@ namespace game_server {
 
     Session::~Session() {
         if (server_ && !token_.empty()) {
-            server_->removeSession(token_);
+            server_->removeSession(token_, user_id_);
         }
     }
 
@@ -238,9 +238,20 @@ namespace game_server {
 
                 if (action == "login" && response["status"] == "success") {
                     spdlog::debug("Processing login response");
+                    if (server_->checkAlreadyLogin(response["userId"].get<int>())) {
+                        spdlog::error("user ID : {} is already login", response["userId"].get<int>());
+                        json error_response = {
+                            {"status", "error"},
+                            {"message", "Already login user"}
+                        };
+                        write_response(error_response.dump());
+                        return;
+                    }
+
                     init_current_user(response);
-                    server_->registerSession(shared_from_this());
-                    response["sessionToken"] = token_;
+                    std::string token = server_->registerSession(shared_from_this());
+                    token_ = token;
+                    response["sessionToken"] = token;
                 }
                 else if (action == "createRoom" &&  response["status"] == "success") {
                     spdlog::debug("Processing createRoom response");
@@ -372,13 +383,17 @@ namespace game_server {
         }
     }
 
+    int Session::getUserId() {
+        return user_id_;
+    }
+
+    void Session::setToken(const std::string& token) {
+        token_ = token;
+    }
+
     void Session::init_current_user(const json& response) {
         if (response.contains("userId")) user_id_ = response["userId"];
         if (response.contains("userName")) user_name_ = response["userName"];
-        if (user_name_.find("mirror") != std::string::npos) {
-            is_mirror_ = true;
-        }
-
         spdlog::info("User logged in: {} (ID: {})", user_name_, user_id_);
     }
 

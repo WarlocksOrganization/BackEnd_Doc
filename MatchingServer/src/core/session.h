@@ -28,9 +28,9 @@ namespace game_server {
         std::chrono::steady_clock::time_point getLastActivityTime() const;
         bool isActive(std::chrono::seconds timeout) const;
         void handle_error(const std::string& error_message);
-
+        void setToken(const std::string& token);
         bool is_mirror_ = false;
-        std::string token_;
+        int getUserId();
 
     private:
         void read_message();
@@ -49,6 +49,7 @@ namespace game_server {
         std::string user_name_;
         Server* server_;
         std::chrono::steady_clock::time_point last_activity_time_;
+        std::string token_;
     };
 
 } // namespace game_server
