@@ -28,12 +28,13 @@ namespace game_server {
 
         // 技记 包府 皋辑靛
         std::string registerSession(std::shared_ptr<Session> session);
-        void removeSession(const std::string& token);
+        void removeSession(const std::string& token, int userId);
         std::shared_ptr<Session> getSession(const std::string& token);
         std::string generateSessionToken();
         void setSessionTimeout(std::chrono::seconds timeout);
         void startSessionTimeoutCheck();
         std::unordered_map<int, std::shared_ptr<Session>> mirrors_;
+        bool checkAlreadyLogin(int userId);
     private:
         void do_accept();
         void init_controllers();
@@ -48,6 +49,8 @@ namespace game_server {
         // 技记 包府 单捞磐
         std::unordered_map<std::string, std::shared_ptr<Session>> sessions_;
         std::mutex sessions_mutex_;
+        std::unordered_map<int, std::string> tokens_;
+        std::mutex tokens_mutex_;
         boost::uuids::random_generator uuid_generator_;
         std::chrono::seconds session_timeout_{ 30 }; // 扁夯 30檬
         boost::asio::steady_timer session_check_timer_;
