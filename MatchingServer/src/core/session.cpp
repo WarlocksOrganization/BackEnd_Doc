@@ -243,7 +243,7 @@ namespace game_server {
                     broad_response["action"] = "setRoom";
                     broad_response["roomId"] = response["roomId"];
                     broad_response["roomName"] = response["roomName"];
-                    broad_response["maxPlayers"] = response["roomName"];
+                    broad_response["maxPlayers"] = response["maxPlayers"];
                     int port = response["port"];
                     if (server_->mirrors_.count(port)) {
                         write_broadcast(broad_response.dump(), server_->mirrors_[port]);
