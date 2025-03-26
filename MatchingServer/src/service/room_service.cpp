@@ -95,6 +95,8 @@ namespace game_server {
                 response["status"] = "success";
                 response["message"] = "Room successfully created";
                 response["roomId"] = result["roomId"];
+                response["roomName"] = result["roomName"];
+                response["maxPlayers"] = result["maxPlayers"];
                 response["ipAddress"] = result["ipAddress"];
                 response["port"] = result["port"];
 
