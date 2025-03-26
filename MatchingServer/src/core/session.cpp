@@ -244,6 +244,11 @@ namespace game_server {
                     broad_response["roomId"] = response["roomId"];
                     broad_response["roomName"] = response["roomName"];
                     broad_response["maxPlayers"] = response["maxPlayers"];
+                    spdlog::info("action : {}, roomId : {}, roomName : {}, maxPlayers : {}",
+                        broad_response["action"].get<std::string>(),
+                        broad_response["roomId"].get<int>(),
+                        broad_response["roomName"].get<std::string>(),
+                        broad_response["maxPlayers"].get<int>());
                     int port = response["port"];
                     if (server_->mirrors_.count(port)) {
                         write_broadcast(broad_response.dump(), server_->mirrors_[port]);
