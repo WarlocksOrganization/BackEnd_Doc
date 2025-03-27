@@ -129,7 +129,8 @@ private:
 
 int main() {
     try {
-        GameClient client("j12a509.p.ssafy.io", 8080);
+        //GameClient client("j12a509.p.ssafy.io", 8080);
+        GameClient client("127.0.0.1", 8080);
 
         if (!client.connect()) {
             cerr << "서버 연결 실패\n";

@@ -93,7 +93,7 @@ namespace game_server {
             }
         }
 
-        session_check_timer_.expires_after(std::chrono::seconds(60));
+        session_check_timer_.expires_after(std::chrono::seconds(20));
         session_check_timer_.async_wait([this](const boost::system::error_code& ec) {
             if (!ec) {
                 check_inactive_sessions();

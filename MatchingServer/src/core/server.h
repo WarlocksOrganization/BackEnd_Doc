@@ -52,7 +52,7 @@ namespace game_server {
         std::unordered_map<int, std::string> tokens_;
         std::mutex tokens_mutex_;
         boost::uuids::random_generator uuid_generator_;
-        std::chrono::seconds session_timeout_{ 30 }; // 기본 30초
+        std::chrono::seconds session_timeout_{ 20 }; // 기본 30초
         boost::asio::steady_timer session_check_timer_;
         bool timeout_check_running_{ false };
     };
