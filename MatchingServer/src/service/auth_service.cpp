@@ -286,6 +286,7 @@ namespace game_server {
             response["action"] = "updateNickName";
             response["status"] = "success";
             response["message"] = "Update nickname successful";
+            spdlog::info("User ID : {} set nickname to {}", request["userId"].get<int>(), request["nickName"].get<std::string>());
             return response;
         }
 
