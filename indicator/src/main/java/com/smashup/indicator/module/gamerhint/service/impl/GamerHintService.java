@@ -5,7 +5,7 @@ import com.smashup.indicator.module.gamerhint.controller.dto.request.InsertDataR
 import com.smashup.indicator.module.gamerhint.domain.entity.GamerHintDocument1;
 import com.smashup.indicator.module.gamerhint.repository.GamerHintRepository1;
 import com.smashup.indicator.module.version.BatchCountManager;
-import com.smashup.indicator.module.version.CardPoolManager;
+import com.smashup.indicator.module.version.PoolManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,28 +17,21 @@ import java.util.*;
 public class GamerHintService {
     // 의존성 주입
     private final GamerHintRepository1 gamerHintRepository1;
-    private final CardPoolManager cardPoolManager;
+    private final PoolManager poolManager;
     private final BatchCountManager batchCountManager;
 
-    // 전역 상수 참조 // 임시 나중에 다 전역변수 역할의 bean, @Component로 빼는게 좋을듯
-    // private final String PATCH_VERSION = "1.0.0";
-//    private final int BATCH_COUNT = batchCountManager.getBatchCount();
+    // 상수
     private final String NO_CARD = "NO_CARD";
-    // 전역 상수 : 정렬된 카드풀 배열. List<Integer:카드ID>
-//    private final List<Integer> cardPool = cardPoolManager.getCardPool();
-    // 전역 상수 : 카드 인덱싱 맵. Map<카드ID, 배열상의 인덱스> => cardPool 순회하면서 만들어야 함.
-//    private final Map<Integer, Integer> cardPoolIndex = cardPoolManager.getCardPoolIndex();
-    // 전역 상수 : 직업 코드풀. List<Integer:직업ID> => 이것도 다른곳으로 빼든가 아예 안 쓰든가 해야함.
-//    private final List<Integer> classPool = Arrays.asList(0, 1, 2, 3, 4);
+
 
 
     // 데이터 수집
-//    @Transactional
+    @Transactional
     public void insertData(InsertDataListRequestDto dto) throws Exception {
         // 공통 파트
-        List<Integer> cardPool = cardPoolManager.getCardPool();
-        Map<Integer, Integer> cardPoolIndex = cardPoolManager.getCardPoolIndex();
-        List<Integer> classPool = Arrays.asList(0, 1, 2, 3, 4);
+        List<Integer> cardPool = poolManager.getCardPool();
+        Map<Integer, Integer> cardPoolIndex = poolManager.getCardPoolIndex();
+        List<Integer> classPool = poolManager.getClassPool();
 
 
         /// documentID 재료

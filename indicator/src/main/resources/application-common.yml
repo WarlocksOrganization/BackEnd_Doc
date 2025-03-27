@@ -1,7 +1,6 @@
-# application-common.yml (공통 설정)
-# 서버 설정
+# application-common.yml
 server:
-  port: 8080
+  port: 8085
   servlet:
     context-path: /
     encoding:
@@ -9,66 +8,29 @@ server:
       force: true
   tomcat:
     max-swallow-size: -1
-    # 실패한 파일 업로드 요청의 남은 데이터를 계속 읽을지 결정
-    # -1: 제한없음, 양수: 바이트 단위 제한
-
     max-http-form-post-size: 10MB
-    # POST 요청의 최대 허용 크기
-    # 파일 업로드나 폼 데이터의 크기 제한
-
-    connection-timeout: 20000     # 빠른 실패 처리
-    # 클라이언트 연결 수립 대기 시간
-    # 30초 후 타임아웃
-
-    accept-count: 25            # max-threads의 50%
-    # 모든 스레드가 사용 중일 때 대기열 크기
-    # 추가 요청에 대한 버퍼
-
+    connection-timeout: 20000
+    accept-count: 25
   tomcat.threads:
     max: 50
     min-spare: 10
   forward-headers-strategy: native
-    # 프록시/로드밸런서 환경에서 
-    # 클라이언트 IP와 프로토콜 정보를 가져올 헤더 지정
 
 spring:
   application:
     name: ${APPLICATION_NAME:indicator}
-  datasource:
-    hikari:
-      auto-commit: true
-#      connection-init-sql: SELECT 1
-      connection-timeout: 5000
-      idle-timeout: 600000
-      max-lifetime: 1200000
-      maximum-pool-size: 50
-      minimum-idle: 50
-      validation-timeout: 5000
-    mvc:
-#      static-path-pattern: /file/**
-      pathmatch:
-        matching-strategy: ant_path_matcher
+
   data:
-    jpa:
-      repositories:
-        base-package: com.smashup.indicator.**.repository
-  # Jackson 설정
+    mongodb:
+    # 여기에 MongoDB 연결 uri 설정 필요 (예: uri: mongodb://localhost:27017/mydb)
+
   jackson:
     date-format: yyyy-MM-dd HH:mm:ss
-    #property-naming-strategy: SNAKE_CASE
     property-naming-strategy: LOWER_CAMEL_CASE
     serialization:
       fail-on-empty-beans: false
     time-zone: Asia/Seoul
-  jpa:
-    properties:
-      hibernate:
-        format_sql: true
-        show_sql: true  # 개발 환경에서만 사용
-        dialect: org.hibernate.dialect.MySQLDialect
-    open-in-view: false  # OSIV 설정 비활성화
 
-# Actuator 관련 설정
 management:
   endpoints:
     web:
@@ -86,8 +48,3 @@ management:
       enabled: true
     readinessState:
       enabled: true
-
-# 커스텀 설정
-
-# 404 에러 처리 설정 (현재 주석 처리됨)
-#    throw-exception-if-no-handler-found: true
