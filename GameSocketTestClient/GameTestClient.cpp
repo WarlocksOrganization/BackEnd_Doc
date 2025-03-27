@@ -145,7 +145,7 @@ int main() {
         };
 
         json updateNickname_response = client.sendRequest(updateNickname_request);
-        cout << "로그인 응답:\n" << updateNickname_response.dump(2) << endl << endl;
+        cout << "닉네임 변경 응답:\n" << updateNickname_response.dump(2) << endl << endl;
         Sleep(1000);
 
         //json exit_room_request = {
