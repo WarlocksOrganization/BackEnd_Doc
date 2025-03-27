@@ -177,6 +177,7 @@ namespace game_server {
             response["message"] = "Login successful";
             response["userId"] = userInfo["userId"];
             response["userName"] = userInfo["userName"];
+            response["nickName"] = userInfo["nickName"];
             response["createdAt"] = userInfo["createdAt"];
             response["lastLogin"] = userInfo["lastLogin"];
             return response;
@@ -195,12 +196,13 @@ namespace game_server {
 
             // 사용자 찾기
             const json& userInfo = userRepo_->findByUsername(request["userName"]);
+            int userId = -1;
             if (userInfo["userId"] == -1) {
                 // PasswordUtil을 사용하여 비밀번호 해싱
                 std::string hashedPassword = PasswordUtil::hashPassword(request["password"]);
 
                 // 새 사용자 생성
-                int userId = userRepo_->create(request["userName"], hashedPassword);
+                userId = userRepo_->create(request["userName"], hashedPassword);
                 if (userId < 0) {
                     response["status"] = "error";
                     response["message"] = "Failed to create user";
@@ -210,7 +212,7 @@ namespace game_server {
             }
 
             // 로그인 시간 업데이트
-            userRepo_->updateLastLogin(userInfo["userId"]);
+            userRepo_->updateLastLogin(userId);
 
             // 성공 응답 생성
             response["action"] = "login";
@@ -218,6 +220,7 @@ namespace game_server {
             response["message"] = "Login successful";
             response["userId"] = userInfo["userId"];
             response["userName"] = userInfo["userName"];
+            response["nickName"] = userInfo["nickName"];
             response["createdAt"] = userInfo["createdAt"];
             response["lastLogin"] = userInfo["lastLogin"];
             return response;
