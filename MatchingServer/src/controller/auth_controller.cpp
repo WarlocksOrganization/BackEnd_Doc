@@ -26,6 +26,9 @@ namespace game_server {
         else if (action == "SSAFYlogin") {
             return handleRegisterCheckAndLogin(request);
         }
+        else if (action == "changeNickName") {
+            return handleUpdateNickName(request);
+        }
         else {
             json error_response = {
                 {"status", "error"},
@@ -47,6 +50,11 @@ namespace game_server {
     }
 
     nlohmann::json AuthController::handleRegisterCheckAndLogin(nlohmann::json& request) {
+        json response = authService_->registerCheckAndLogin(request);
+        return response;
+    }
+
+    nlohmann::json AuthController::handleUpdateNickName(nlohmann::json& request) {
         json response = authService_->registerCheckAndLogin(request);
         return response;
     }

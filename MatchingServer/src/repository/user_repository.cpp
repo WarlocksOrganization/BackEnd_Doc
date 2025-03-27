@@ -104,6 +104,30 @@ namespace game_server {
             }
         }
 
+        bool updateUserNickName(int userId, const std::string& nickName) override {
+            auto conn = dbPool_->get_connection();
+            pqxx::work txn(*conn);
+            try {
+                // 마지막 로그인 시간 업데이트
+                pqxx::result result = txn.exec_params(
+                    "UPDATE users SET nick_name = $2 "
+                    "WHERE user_id = $1 "
+                    "RETURNING user_id",
+                    userId, nickName);
+
+                txn.commit();
+                dbPool_->return_connection(conn);
+
+                return !result.empty();
+            }
+            catch (const std::exception& e) {
+                txn.abort();
+                spdlog::error("Error updating last login: {}", e.what());
+                dbPool_->return_connection(conn);
+                return false;
+            }
+        }
+
     private:
         DbPool* dbPool_;
     };
