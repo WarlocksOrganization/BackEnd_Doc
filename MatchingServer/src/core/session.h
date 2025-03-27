@@ -47,6 +47,7 @@ namespace game_server {
         std::string message_;
         int user_id_;
         std::string user_name_;
+        std::string nick_name_;
         Server* server_;
         std::chrono::steady_clock::time_point last_activity_time_;
         std::string token_;

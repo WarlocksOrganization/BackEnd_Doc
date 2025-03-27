@@ -395,7 +395,8 @@ namespace game_server {
     void Session::init_current_user(const json& response) {
         if (response.contains("userId")) user_id_ = response["userId"];
         if (response.contains("userName")) user_name_ = response["userName"];
-        spdlog::info("User logged in: {} (ID: {})", user_name_, user_id_);
+        if (response.contains("nickName")) nick_name_ = response["nickName"];
+        spdlog::info("User logged in: {} (ID: {}) nickname : {}", user_name_, user_id_, nick_name_);
     }
 
 } // namespace game_server
