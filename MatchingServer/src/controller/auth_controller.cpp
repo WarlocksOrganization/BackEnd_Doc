@@ -55,7 +55,7 @@ namespace game_server {
     }
 
     nlohmann::json AuthController::handleUpdateNickName(nlohmann::json& request) {
-        json response = authService_->registerCheckAndLogin(request);
+        json response = authService_->updateNickName(request);
         return response;
     }
 
