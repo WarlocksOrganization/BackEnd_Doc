@@ -22,7 +22,7 @@ namespace game_server {
             pqxx::work txn(*conn);
             try {
                 pqxx::result result = txn.exec_params(
-                    "SELECT user_id, user_name, password_hash, created_at, last_login FROM users WHERE LOWER(user_name) = LOWER($1)",
+                    "SELECT user_id, user_name, nick_name, created_at, last_login FROM users WHERE LOWER(user_name) = LOWER($1)",
                     userName);
 
                 if (result.empty()) {
@@ -37,6 +37,7 @@ namespace game_server {
                 user["userId"] = result[0]["user_id"].as<int>();
                 user["userName"] = result[0]["user_name"].as<std::string>();
                 user["passwordHash"] = result[0]["password_hash"].as<std::string>();
+                user["nickName"] = result[0]["nick_name"].as<std::string>();
                 user["createdAt"] = result[0]["created_at"].as<std::string>();
                 user["lastLogin"] = result[0]["last_login"].as<std::string>();
 
