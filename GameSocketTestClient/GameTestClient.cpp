@@ -117,15 +117,15 @@ int main() {
         Sleep(1000);
 
         // 회원가입 요청
-        json register_request = {
-            {"action", "register"},
-            {"userName", "testest"},
-            {"password", "testest"}
-        };
+        //json register_request = {
+        //    {"action", "register"},
+        //    {"userName", "testest"},
+        //    {"password", "testest"}
+        //};
 
-        json register_response = client.sendRequest(register_request);
-        cout << "회원가입 응답:\n" << register_response.dump(2) << endl << endl;
-        Sleep(1000);
+        //json register_response = client.sendRequest(register_request);
+        //cout << "회원가입 응답:\n" << register_response.dump(2) << endl << endl;
+        //Sleep(1000);
 
         // 로그인 요청
         json login_request = {
@@ -136,6 +136,16 @@ int main() {
 
         json login_response = client.sendRequest(login_request);
         cout << "로그인 응답:\n" << login_response.dump(2) << endl << endl;
+        Sleep(1000);
+
+        // 닉네임 변경 요청
+        json updateNickname_request = {
+            {"action", "updateNickName"},
+            {"nickName", "testest"}
+        };
+
+        json updateNickname_response = client.sendRequest(updateNickname_request);
+        cout << "로그인 응답:\n" << updateNickname_response.dump(2) << endl << endl;
         Sleep(1000);
 
         //json exit_room_request = {
