@@ -235,7 +235,7 @@ namespace game_server {
             }
 
             // 사용자 찾기
-            if (!userRepo_->updateUserNickName(request["userId"], request["userName"])) {
+            if (!userRepo_->updateUserNickName(request["userId"], request["nickName"])) {
                 response["status"] = "error";
                 response["message"] = "Fail to update user nickname";
                 spdlog::error("Fail to update user nickname");
