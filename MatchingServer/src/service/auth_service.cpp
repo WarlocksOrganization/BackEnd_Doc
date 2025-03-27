@@ -223,6 +223,32 @@ namespace game_server {
             return response;
         }
 
+        json updateNickName(const nlohmann::json& request) {
+            json response;
+
+            // 사용자명 유효성 검증
+            if (!request.contains("userId") || !request.contains("nickName")) {
+                response["status"] = "error";
+                response["message"] = "The request json doesn't have userId or nickName";
+                spdlog::error("The request json doesn't have userId or nickName");
+                return response;
+            }
+
+            // 사용자 찾기
+            if (!userRepo_->updateUserNickName(request["userId"], request["userName"])) {
+                response["status"] = "error";
+                response["message"] = "Fail to update user nickname";
+                spdlog::error("Fail to update user nickname");
+                return response;
+            }
+
+            // 성공 응답 생성
+            response["action"] = "updateNickName";
+            response["status"] = "success";
+            response["message"] = "Update nickname successful";
+            return response;
+        }
+
     private:
         std::shared_ptr<UserRepository> userRepo_;
     };
