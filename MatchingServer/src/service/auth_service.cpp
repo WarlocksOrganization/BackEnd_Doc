@@ -42,16 +42,6 @@ namespace game_server {
                         continue;
                     }
 
-                    // UTF-8 한글 범위 확인 (첫 바이트가 0xEA~0xED 범위)
-                    if ((c & 0xF0) == 0xE0) {
-                        continue;
-                    }
-
-                    // 한글 문자의 연속 바이트 (0x80~0xBF 범위)
-                    if ((c & 0xC0) == 0x80) {
-                        continue;
-                    }
-
                     // 허용되지 않는 문자
                     return false;
                 }
@@ -73,6 +63,46 @@ namespace game_server {
                 }
             }
 
+            return true;
+        }
+
+        bool isValidNickName(const std::string& nickName) {
+            // 빈 이름은 유효하지 않음
+            if (nickName.empty()) {
+                return false;
+            }
+
+            // 30바이트 이내인지 확인
+            if (nickName.size() > 16) {
+                return false;
+            }
+
+            // "mirror" 단어가 포함되어 있는지 확인 (대소문자 구분 없이)
+            if (nickName.find("mirror") != std::string::npos) {
+                return false;
+            }
+
+            for (unsigned char c : nickName) {
+                // ASCII 영어와 숫자 확인
+                if ((c >= 'A' && c <= 'Z') ||
+                    (c >= 'a' && c <= 'z') ||
+                    (c >= '0' && c <= '9')) {
+                    continue;
+                }
+
+                // UTF-8 한글 범위 확인 (첫 바이트가 0xEA~0xED 범위)
+                if ((c & 0xF0) == 0xE0) {
+                    continue;
+                }
+
+                // 한글 문자의 연속 바이트 (0x80~0xBF 범위)
+                if ((c & 0xC0) == 0x80) {
+                    continue;
+                }
+
+                // 허용되지 않는 문자
+                return false;
+            }
             return true;
         }
     }
@@ -234,6 +264,13 @@ namespace game_server {
                 response["status"] = "error";
                 response["message"] = "The request json doesn't have userId or nickName";
                 spdlog::error("The request json doesn't have userId or nickName");
+                return response;
+            }
+
+            if (!isValidNickName(request["nickName"])) {
+                response["status"] = "error";
+                response["message"] = "Invalid nickname type";
+                spdlog::error("Invalid nickname type");
                 return response;
             }
 
