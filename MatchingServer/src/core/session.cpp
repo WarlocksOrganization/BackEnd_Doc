@@ -237,7 +237,7 @@ namespace game_server {
                 json response = controller_it->second->handleRequest(request);
                 spdlog::debug("Controller response received");
 
-                if (action == "login" && response["status"] == "success") {
+                if ((action == "login" || action == "SSAFYlogin") && response["status"] == "success") {
                     spdlog::debug("Processing login response");
                     if (server_->checkAlreadyLogin(response["userId"].get<int>())) {
                         spdlog::error("user ID : {} is already login", response["userId"].get<int>());
