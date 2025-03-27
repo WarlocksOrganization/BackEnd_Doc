@@ -186,7 +186,7 @@ namespace game_server {
             std::string controller_type;
 
             // 컨트롤러 타입 결정
-            if (action == "register" || action == "login") {
+            if (action == "register" || action == "login" || action == "SSAFYlogin") {
                 controller_type = "auth";
             }
             else if (action == "createRoom" || action == "joinRoom" || action == "exitRoom" || action == "listRooms") {

@@ -23,6 +23,9 @@ namespace game_server {
         else if (action == "login") {
             return handleLogin(request);
         }
+        else if (action == "SSAFYlogin") {
+            return handleRegisterCheckAndLogin(request);
+        }
         else {
             json error_response = {
                 {"status", "error"},
@@ -40,6 +43,11 @@ namespace game_server {
 
     nlohmann::json AuthController::handleLogin(json& request) {
         json response = authService_->loginUser(request);
+        return response;
+    }
+
+    nlohmann::json AuthController::handleRegisterCheckAndLogin(nlohmann::json& request) {
+        json response = authService_->registerCheckAndLogin(request);
         return response;
     }
 

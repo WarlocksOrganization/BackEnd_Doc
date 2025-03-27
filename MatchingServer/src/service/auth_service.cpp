@@ -145,6 +145,14 @@ namespace game_server {
         json loginUser(const json& request) override {
             json response;
 
+            // 사용자명 유효성 검증
+            if (!request.contains("userName") || !request.contains("password")) {
+                response["status"] = "error";
+                response["message"] = "The request json doesn't have userName or password";
+                spdlog::error("The request json doesn't have userName or password");
+                return response;
+            }
+
             // 사용자 찾기
             const json& userInfo = userRepo_->findByUsername(request["userName"]);
             if (userInfo["userId"] == -1) {
@@ -158,6 +166,47 @@ namespace game_server {
                 response["status"] = "error";
                 response["message"] = "Invalid password";
                 return response;
+            }
+
+            // 로그인 시간 업데이트
+            userRepo_->updateLastLogin(userInfo["userId"]);
+
+            // 성공 응답 생성
+            response["action"] = "login";
+            response["status"] = "success";
+            response["message"] = "Login successful";
+            response["userId"] = userInfo["userId"];
+            response["userName"] = userInfo["userName"];
+            response["createdAt"] = userInfo["createdAt"];
+            response["lastLogin"] = userInfo["lastLogin"];
+            return response;
+        }
+
+        json registerCheckAndLogin(const nlohmann::json& request) {
+            json response;
+
+            // 사용자명 유효성 검증
+            if (!request.contains("userName") || !request.contains("password")) {
+                response["status"] = "error";
+                response["message"] = "The request json doesn't have userName or password";
+                spdlog::error("The request json doesn't have userName or password");
+                return response;
+            }
+
+            // 사용자 찾기
+            const json& userInfo = userRepo_->findByUsername(request["userName"]);
+            if (userInfo["userId"] == -1) {
+                // PasswordUtil을 사용하여 비밀번호 해싱
+                std::string hashedPassword = PasswordUtil::hashPassword(request["password"]);
+
+                // 새 사용자 생성
+                int userId = userRepo_->create(request["userName"], hashedPassword);
+                if (userId < 0) {
+                    response["status"] = "error";
+                    response["message"] = "Failed to create user";
+                    spdlog::error("Failed to create user");
+                    return response;
+                }
             }
 
             // 로그인 시간 업데이트
