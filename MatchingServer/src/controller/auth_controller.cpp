@@ -26,7 +26,7 @@ namespace game_server {
         else if (action == "SSAFYlogin") {
             return handleRegisterCheckAndLogin(request);
         }
-        else if (action == "changeNickName") {
+        else if (action == "updateNickName") {
             return handleUpdateNickName(request);
         }
         else {
