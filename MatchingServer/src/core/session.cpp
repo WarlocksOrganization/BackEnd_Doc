@@ -187,6 +187,7 @@ namespace game_server {
 
             // 컨트롤러 타입 결정
             if (action == "register" || action == "login" || action == "SSAFYlogin" || action == "updateNickName") {
+                if (user_id_) request["userId"] = user_id_;
                 controller_type = "auth";
             }
             else if (action == "createRoom" || action == "joinRoom" || action == "exitRoom" || action == "listRooms") {
