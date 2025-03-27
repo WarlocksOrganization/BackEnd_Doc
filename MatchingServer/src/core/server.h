@@ -47,7 +47,7 @@ namespace game_server {
         bool running_;
 
         // 技记 包府 单捞磐
-        std::unordered_map<std::string, std::shared_ptr<Session>> sessions_;
+        std::unordered_map<std::string, std::weak_ptr<Session>> sessions_;
         std::mutex sessions_mutex_;
         std::unordered_map<int, std::string> tokens_;
         std::mutex tokens_mutex_;

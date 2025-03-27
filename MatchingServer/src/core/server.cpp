@@ -66,9 +66,15 @@ namespace game_server {
         std::vector<std::string> sessionsToRemove;
         {
             std::lock_guard<std::mutex> lock(sessions_mutex_);
-
-            for (const auto& [token, session] : sessions_) {
-                if (!session->isActive(session_timeout_)) {
+            for (const auto& [token, wsession] : sessions_) {
+                auto session = wsession.lock();
+                if (!session) {
+                    // 세션이 이미 소멸됨
+                    spdlog::info("Session {} already expired", token);
+                    sessionsToRemove.push_back(token);
+                }
+                else if (!session->isActive(session_timeout_)) {
+                    // 세션이 존재하지만 타임아웃됨
                     spdlog::info("Session {} timed out after {} seconds of inactivity",
                         token, session_timeout_.count());
                     sessionsToRemove.push_back(token);
@@ -82,7 +88,7 @@ namespace game_server {
                 std::lock_guard<std::mutex> lock(sessions_mutex_);
                 auto it = sessions_.find(token);
                 if (it != sessions_.end()) {
-                    session = it->second;
+                    session = it->second.lock();
                     sessions_.erase(it);  // 컬렉션에서 세션 제거
                     spdlog::info("Session {} removed from server", token);
                 }
@@ -111,7 +117,7 @@ namespace game_server {
 
         // 기존 세션이 존재하면 제거
         for (auto it = sessions_.begin(); it != sessions_.end(); ++it) {
-            if (it->second == session) {
+            if (it->second.lock() == session) {
                 spdlog::info("Existing session found, removing old token: {}", it->first);
                 sessions_.erase(it);
                 break;  // 한 개만 삭제하면 되므로 루프 종료
@@ -151,7 +157,15 @@ namespace game_server {
         std::lock_guard<std::mutex> lock(sessions_mutex_);
         auto it = sessions_.find(token);
         if (it != sessions_.end()) {
-            return it->second;
+            auto session = it->second.lock();
+            if (session) {
+                return session;
+            }
+            else {
+                // 세션이 이미 소멸된 경우 맵에서 제거
+                sessions_.erase(it);
+                spdlog::info("Removed expired session from map: {}", token);
+            }
         }
         return nullptr;
     }
@@ -199,7 +213,8 @@ namespace game_server {
         // 모든 세션에 종료 알림
         {
             std::lock_guard<std::mutex> lock(sessions_mutex_);
-            for (auto& [token, session] : sessions_) {
+            for (auto& [token, wsession] : sessions_) {
+                auto session = wsession.lock();
                 try {
                     if (session) {
                         session->handle_error("Server shutting down");
