@@ -64,7 +64,7 @@ namespace game_server {
             try {
                 // 유효한 방 ID 찾기
                 pqxx::result idResult = txn.exec(
-                    "SELECT room_id FROM rooms WHERE status = 'TERMINATED' ORDER BY room_id LIMIT 1");
+                    "SELECT room_id FROM rooms WHERE status = 'TERMINATED' ORDER BY room_id LIMIT 1 FOR UPDATE");
 
                 if (idResult.empty()) {
                     txn.abort();
@@ -152,7 +152,7 @@ namespace game_server {
                 pqxx::result maxPlayersResult = txn.exec_params(
                     "SELECT max_players, "
                     "(SELECT COUNT(*) FROM room_users WHERE room_id = $1) as current_players "
-                    "FROM rooms WHERE room_id = $1",
+                    "FROM rooms WHERE room_id = $1 FOR UPDATE",
                     roomId);
 
                 int maxPlayers = maxPlayersResult[0]["max_players"].as<int>();

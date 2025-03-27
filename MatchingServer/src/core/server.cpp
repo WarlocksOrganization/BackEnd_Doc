@@ -28,7 +28,7 @@ namespace game_server {
         session_check_timer_(io_context)
     {
         // Create database connection pool
-        db_pool_ = std::make_unique<DbPool>(db_connection_string, 5); // Create 5 connections
+        db_pool_ = std::make_unique<DbPool>(db_connection_string, 20); // Create 5 connections
 
         // Initialize controllers
         init_controllers();
