@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Builder
 public class UpdatePatchVersionRequestDto {
-    private String patchVersion;
+    private String newPatchVersion;
+    private String oldPatchVersion;
     private String timeStamp;
 }

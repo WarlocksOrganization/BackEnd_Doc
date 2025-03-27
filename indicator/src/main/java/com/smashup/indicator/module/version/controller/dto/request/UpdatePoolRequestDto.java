@@ -11,7 +11,10 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class UpdateCardPoolRequestDto {
+public class UpdatePoolRequestDto {
     private List<Integer> cardPool;
+    private List<Integer> classPool;
+    private List<Integer> mapPool;
+    private List<Integer> playerNumPool;
     private String timeStamp;
 }
