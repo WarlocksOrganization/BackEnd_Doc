@@ -13,6 +13,8 @@ namespace game_server {
 
         virtual nlohmann::json registerUser(const nlohmann::json& request) = 0;
         virtual nlohmann::json loginUser(const nlohmann::json& request) = 0;
+        virtual nlohmann::json registerCheckAndLogin(const nlohmann::json& request) = 0;
+        virtual nlohmann::json updateNickName(const nlohmann::json& request) = 0;
 
         static std::unique_ptr<AuthService> create(std::shared_ptr<UserRepository> userRepo);
     };

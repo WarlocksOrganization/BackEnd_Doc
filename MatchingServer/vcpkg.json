@@ -5,6 +5,7 @@
         "boost-system",
         "boost-asio",
         "boost-beast",
+        "boost-uuid",
         "libpqxx",
         "nlohmann-json",
         "spdlog",

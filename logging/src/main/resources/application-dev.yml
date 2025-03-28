@@ -1,0 +1,9 @@
+spring.application.name: logging
+
+kafka:
+  url: localhost:9092
+server:
+  port: 8001
+feign:
+  indicator-service:
+    url: localhost:8085

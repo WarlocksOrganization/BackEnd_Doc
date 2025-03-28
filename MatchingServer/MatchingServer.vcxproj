@@ -20,31 +20,35 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\controller\auth_controller.cpp" />
+    <ClCompile Include="src\controller\game_controller.cpp" />
     <ClCompile Include="src\controller\room_controller.cpp" />
     <ClCompile Include="src\core\server.cpp" />
     <ClCompile Include="src\core\session.cpp" />
     <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\repository\game_repository.cpp" />
     <ClCompile Include="src\repository\room_repository.cpp" />
     <ClCompile Include="src\repository\user_repository.cpp" />
     <ClCompile Include="src\service\auth_service.cpp" />
+    <ClCompile Include="src\service\game_service.cpp" />
     <ClCompile Include="src\service\room_service.cpp" />
     <ClCompile Include="src\util\db_pool.cpp" />
     <ClCompile Include="src\util\password_util.cpp" />
-    <ClCompile Include="src\util\session_pool.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\controller\auth_controller.h" />
     <ClInclude Include="src\controller\controller.h" />
+    <ClInclude Include="src\controller\game_controller.h" />
     <ClInclude Include="src\controller\room_controller.h" />
     <ClInclude Include="src\core\server.h" />
     <ClInclude Include="src\core\session.h" />
+    <ClInclude Include="src\repository\game_repository.h" />
     <ClInclude Include="src\repository\room_repository.h" />
     <ClInclude Include="src\repository\user_repository.h" />
     <ClInclude Include="src\service\auth_service.h" />
+    <ClInclude Include="src\service\game_service.h" />
     <ClInclude Include="src\service\room_service.h" />
     <ClInclude Include="src\util\db_pool.h" />
     <ClInclude Include="src\util\password_util.h" />
-    <ClInclude Include="src\util\session_pool.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
@@ -135,13 +139,13 @@
       <AdditionalIncludeDirectories>$(ProjectDir)\vcpkg_installed\x64-windows\include</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
-      <DisableSpecificWarnings>4996</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4996;4938;4828</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(ProjectDir)\vcpkg_installed\x64-windows\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>boost_system-vc143-mt-x64-1_86.lib;libssl.lib;libcrypto.lib;pqxx.lib;libpq.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>boost_system-vc143-mt-x64-1_87.lib;libssl.lib;libcrypto.lib;pqxx.lib;libpq.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>if exist "$(ProjectDir)vcpkg_installed\x64-windows\bin\*.dll" xcopy /y "$(ProjectDir)vcpkg_installed\x64-windows\bin\*.dll" "$(OutDir)"</Command>

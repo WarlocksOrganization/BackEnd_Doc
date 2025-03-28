@@ -23,24 +23,40 @@ namespace game_server {
         else if (action == "login") {
             return handleLogin(request);
         }
+        else if (action == "SSAFYlogin") {
+            return handleRegisterCheckAndLogin(request);
+        }
+        else if (action == "updateNickName") {
+            return handleUpdateNickName(request);
+        }
         else {
             json error_response = {
                 {"status", "error"},
                 {"message", "Unknown auth action"}
             };
-            return error_response.dump();
+            return error_response;
         }
     }
 
     nlohmann::json AuthController::handleRegister(json& request) {
         // 서비스 계층 호출하여 사용자 등록 수행
         json response = authService_->registerUser(request);
-        return response.dump();
+        return response;
     }
 
     nlohmann::json AuthController::handleLogin(json& request) {
         json response = authService_->loginUser(request);
-        return response.dump();
+        return response;
+    }
+
+    nlohmann::json AuthController::handleRegisterCheckAndLogin(nlohmann::json& request) {
+        json response = authService_->registerCheckAndLogin(request);
+        return response;
+    }
+
+    nlohmann::json AuthController::handleUpdateNickName(nlohmann::json& request) {
+        json response = authService_->updateNickName(request);
+        return response;
     }
 
 } // namespace game_server
