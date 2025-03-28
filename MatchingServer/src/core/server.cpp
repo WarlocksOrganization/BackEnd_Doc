@@ -12,6 +12,9 @@
 #include "../repository/game_repository.h"
 #include <iostream>
 #include <spdlog/spdlog.h>
+#include <boost/uuid/uuid.hpp>
+#include <boost/uuid/uuid_generators.hpp>
+#include <boost/uuid/uuid_io.hpp>
 
 namespace game_server {
 
@@ -20,22 +23,151 @@ namespace game_server {
         const std::string& db_connection_string)
         : io_context_(io_context),
         acceptor_(io_context, boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), port)),
-        running_(false)
+        running_(false),
+        uuid_generator_(),
+        session_check_timer_(io_context)
     {
         // Create database connection pool
-        db_pool_ = std::make_unique<DbPool>(db_connection_string, 5); // Create 5 connections
+        db_pool_ = std::make_unique<DbPool>(db_connection_string, 20); // Create 5 connections
 
         // Initialize controllers
         init_controllers();
 
         spdlog::info("Server initialized on port {}", port);
     }
-
+    
     Server::~Server()
     {
         if (running_) {
             stop();
         }
+    }
+
+    bool Server::checkAlreadyLogin(int userId) {
+        std::lock_guard<std::mutex> lock(tokens_mutex_);
+        return tokens_.count(userId) > 0;
+    }
+
+    void Server::setSessionTimeout(std::chrono::seconds timeout) {
+        session_timeout_ = timeout;
+        spdlog::info("Session timeout set to {} seconds", timeout.count());
+    }
+
+    void Server::startSessionTimeoutCheck() {
+        if (timeout_check_running_) return;
+        timeout_check_running_ = true;
+        check_inactive_sessions();
+    }
+
+    void Server::check_inactive_sessions() {
+        if (!running_ || !timeout_check_running_) return;
+        spdlog::debug("Checking for inactive sessions...");
+
+        std::vector<std::string> sessionsToRemove;
+        {
+            std::lock_guard<std::mutex> lock(sessions_mutex_);
+            for (const auto& [token, wsession] : sessions_) {
+                auto session = wsession.lock();
+                if (!session) {
+                    // 세션이 이미 소멸됨
+                    spdlog::info("Session {} already expired", token);
+                    sessionsToRemove.push_back(token);
+                }
+                else if (!session->isActive(session_timeout_)) {
+                    // 세션이 존재하지만 타임아웃됨
+                    spdlog::info("Session {} timed out after {} seconds of inactivity",
+                        token, session_timeout_.count());
+                    sessionsToRemove.push_back(token);
+                }
+            }
+        }
+
+        for (const auto& token : sessionsToRemove) {
+            std::shared_ptr<Session> session;
+            {
+                std::lock_guard<std::mutex> lock(sessions_mutex_);
+                auto it = sessions_.find(token);
+                if (it != sessions_.end()) {
+                    session = it->second.lock();
+                    sessions_.erase(it);  // 컬렉션에서 세션 제거
+                    spdlog::info("Session {} removed from server", token);
+                }
+            }
+
+            if (session) {
+                session->handle_error("Session timed out");
+            }
+        }
+
+        session_check_timer_.expires_after(std::chrono::seconds(10));
+        session_check_timer_.async_wait([this](const boost::system::error_code& ec) {
+            if (!ec) {
+                check_inactive_sessions();
+            }
+            });
+    }
+
+    std::string Server::generateSessionToken() {
+        boost::uuids::uuid uuid = uuid_generator_();
+        return boost::uuids::to_string(uuid);
+    }
+
+    std::string Server::registerSession(std::shared_ptr<Session> session) {
+        std::lock_guard<std::mutex> lock(sessions_mutex_);
+
+        // 기존 세션이 존재하면 제거
+        for (auto it = sessions_.begin(); it != sessions_.end(); ++it) {
+            if (it->second.lock() == session) {
+                spdlog::info("Existing session found, removing old token: {}", it->first);
+                sessions_.erase(it);
+                break;  // 한 개만 삭제하면 되므로 루프 종료
+            }
+        }
+
+        std::string token = generateSessionToken();
+        sessions_[token] = session;
+        int userId = session->getUserId();
+        if (userId) {
+            tokens_[userId] = token;
+            spdlog::info("Session user ID {} registered with token: {}", userId, token);
+        }
+        return token;
+    }
+
+    void Server::removeSession(const std::string& token, int userId) {
+        {
+            std::lock_guard<std::mutex> lock(sessions_mutex_);
+            auto it = sessions_.find(token);
+            if (it != sessions_.end()) {
+                sessions_.erase(it);
+                spdlog::info("Session removed tokenId: {}", token);
+            }
+        }
+        {
+            std::lock_guard<std::mutex> lock(tokens_mutex_);
+            auto it = tokens_.find(userId);
+            if (it != tokens_.end()) {
+                tokens_.erase(it);
+                spdlog::info("Session removed userId: {}", userId);
+            }
+        }
+    }
+
+    std::shared_ptr<Session> Server::getSession(const std::string& token) {
+        std::lock_guard<std::mutex> lock(sessions_mutex_);
+        auto it = sessions_.find(token);
+        if (it != sessions_.end()) {
+            auto session = it->second.lock();
+            if (session) {
+                return session;
+            }
+            else {
+                // 세션이 이미 소멸된 경우 맵에서 제거
+                sessions_.erase(it);
+                spdlog::info("Removed expired session from map: {}", token);
+            }
+        }
+        return nullptr;
     }
 
     void Server::init_controllers() {
@@ -65,13 +197,46 @@ namespace game_server {
     {
         running_ = true;
         do_accept();
+        startSessionTimeoutCheck();
         spdlog::info("Server is running and accepting connections...");
     }
 
-    void Server::stop()
-    {
+    void Server::stop() {
+        if (!running_) return;  // 이미 중지된 경우 중복 실행 방지
+
         running_ = false;
-        acceptor_.close();
+        timeout_check_running_ = false;
+
+        // 타이머 취소 및 대기
+        session_check_timer_.cancel();
+
+        // 모든 세션에 종료 알림
+        {
+            std::lock_guard<std::mutex> lock(sessions_mutex_);
+            for (auto& [token, wsession] : sessions_) {
+                auto session = wsession.lock();
+                try {
+                    if (session) {
+                        session->handle_error("Server shutting down");
+                    }
+                }
+                catch (const std::exception& e) {
+                    spdlog::error("Error during session cleanup: {}", e.what());
+                }
+            }
+            sessions_.clear();
+        }
+
+        // acceptor 닫기
+        try {
+            if (acceptor_.is_open()) {
+                acceptor_.close();
+            }
+        }
+        catch (const std::exception& e) {
+            spdlog::error("Error closing acceptor: {}", e.what());
+        }
+
         spdlog::info("Server stopped");
     }
 
@@ -81,7 +246,7 @@ namespace game_server {
             [this](boost::system::error_code ec, boost::asio::ip::tcp::socket socket) {
                 if (!ec) {
                     // Create and start session
-                    auto session = std::make_shared<Session>(std::move(socket), controllers_);
+                    auto session = std::make_shared<Session>(std::move(socket), controllers_, this);
                     session->start();
                 }
                 else {

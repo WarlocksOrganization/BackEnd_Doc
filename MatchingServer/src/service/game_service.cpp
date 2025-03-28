@@ -20,21 +20,9 @@ namespace game_server {
             json response;
             try {
                 // 요청 유효성 검증
-                if (!request.contains("roomId") || !request.contains("mapId") || !request.contains("users")) {
+                if (!request.contains("roomId") || !request.contains("mapId")) {
                     response["status"] = "error";
                     response["message"] = "Missing required fields in request";
-                    return response;
-                }
-
-                if (!request["users"].is_array()) {
-                    response["status"] = "error";
-                    response["message"] = "key users is must be a list type";
-                    return response;
-                }
-
-                if (request["users"].empty()) {
-                    response["status"] = "error";
-                    response["message"] = "the list is empty";
                     return response;
                 }
 
@@ -48,6 +36,7 @@ namespace game_server {
                 }
 
                 // 성공 응답 생성
+                response["action"] = "gameStart";
                 response["status"] = "success";
                 response["message"] = "game successfully created";
                 response["gameId"] = gameId;
@@ -75,18 +64,20 @@ namespace game_server {
                     return response;
                 }
 
-                if (!gameRepo_->endGame(request["gameId"])) {
+                int roomId = gameRepo_->endGame(request["gameId"]);
+                if (roomId == -1) {
                     response["status"] = "error";
                     response["message"] = "Failed to game end update";
                     return response;
                 }
 
                 // 성공 응답 생성
+                response["action"] = "gameEnd";
                 response["status"] = "success";
                 response["message"] = "The game is ended successfully";
 
                 spdlog::info("Room {} ended the gameId: {}",
-                    request["roomId"].get<int>(), request["gameId"].get<int>());
+                    roomId, request["gameId"].get<int>());
                 return response;
             }
             catch (const std::exception& e) {

@@ -20,12 +20,15 @@ namespace game_server {
         json findByUsername(const std::string& userName) {
             auto conn = dbPool_->get_connection();
             pqxx::work txn(*conn);
-            try {                
+            try {
                 pqxx::result result = txn.exec_params(
-                    "SELECT * FROM users WHERE user_name = $1", userName);
+                    "SELECT user_id, user_name, password_hash, nick_name, created_at, last_login FROM users WHERE LOWER(user_name) = LOWER($1)",
+                    userName);
 
                 if (result.empty()) {
                     // 사용자를 찾지 못함 - std::nullopt 반환
+                    txn.abort();
+                    dbPool_->return_connection(conn);
                     return { {"userId", -1} };
                 }
 
@@ -34,6 +37,7 @@ namespace game_server {
                 user["userId"] = result[0]["user_id"].as<int>();
                 user["userName"] = result[0]["user_name"].as<std::string>();
                 user["passwordHash"] = result[0]["password_hash"].as<std::string>();
+                user["nickName"] = result[0]["nick_name"].as<std::string>();
                 user["createdAt"] = result[0]["created_at"].as<std::string>();
                 user["lastLogin"] = result[0]["last_login"].as<std::string>();
 
@@ -63,6 +67,8 @@ namespace game_server {
                 dbPool_->return_connection(conn);
 
                 if (result.empty()) {
+                    txn.abort();
+                    dbPool_->return_connection(conn);
                     return -1;
                 }
 
@@ -85,6 +91,30 @@ namespace game_server {
                     "UPDATE users SET last_login = CURRENT_TIMESTAMP "
                     "WHERE user_id = $1 RETURNING user_id",
                     userId);
+
+                txn.commit();
+                dbPool_->return_connection(conn);
+
+                return !result.empty();
+            }
+            catch (const std::exception& e) {
+                txn.abort();
+                spdlog::error("Error updating last login: {}", e.what());
+                dbPool_->return_connection(conn);
+                return false;
+            }
+        }
+
+        bool updateUserNickName(int userId, const std::string& nickName) override {
+            auto conn = dbPool_->get_connection();
+            pqxx::work txn(*conn);
+            try {
+                // 마지막 로그인 시간 업데이트
+                pqxx::result result = txn.exec_params(
+                    "UPDATE users SET nick_name = $2 "
+                    "WHERE user_id = $1 "
+                    "RETURNING user_id",
+                    userId, nickName);
 
                 txn.commit();
                 dbPool_->return_connection(conn);
