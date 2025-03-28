@@ -64,7 +64,8 @@ namespace game_server {
                     return response;
                 }
 
-                if (!gameRepo_->endGame(request["gameId"])) {
+                int roomId = gameRepo_->endGame(request["gameId"]);
+                if (roomId == -1) {
                     response["status"] = "error";
                     response["message"] = "Failed to game end update";
                     return response;
@@ -76,7 +77,7 @@ namespace game_server {
                 response["message"] = "The game is ended successfully";
 
                 spdlog::info("Room {} ended the gameId: {}",
-                    request["roomId"].get<int>(), request["gameId"].get<int>());
+                    roomId, request["gameId"].get<int>());
                 return response;
             }
             catch (const std::exception& e) {

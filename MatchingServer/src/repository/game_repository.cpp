@@ -52,7 +52,7 @@ namespace game_server {
             }
         }
 
-        bool endGame(int gameId)  {
+        int endGame(int gameId)  {
             auto conn = dbPool_->get_connection();
             pqxx::work txn(*conn);
             try {
@@ -67,7 +67,7 @@ namespace game_server {
                     spdlog::error("Can't found roomId use to Game ID : {}", gameId);
                     txn.abort();
                     dbPool_->return_connection(conn);
-                    return false;
+                    return -1;
                 }
                 int roomId = result[0][0].as<int>();
                 spdlog::info("found roomId completely! Room ID : {}", roomId);
@@ -83,27 +83,27 @@ namespace game_server {
                     spdlog::error("Can't found roomId use to Room ID : {}", roomId);
                     txn.abort();
                     dbPool_->return_connection(conn);
-                    return false;
+                    return -1;
                 }
                 int resId = res[0][0].as<int>();
                 if (roomId != resId) {
                     spdlog::error("Can't found room which Room ID is {}", roomId);
                     txn.abort();
                     dbPool_->return_connection(conn);
-                    return false;
+                    return -1;
                 }
 
                 spdlog::info("Change room status competely Room ID : {}", roomId);
 
                 txn.commit();
                 dbPool_->return_connection(conn);
-                return true;
+                return roomId;
             }
             catch (const std::exception& e) {
                 txn.abort();
                 dbPool_->return_connection(conn);
                 spdlog::error("Database error in findByUsername: {}", e.what());
-                return false;
+                return -1;
             }
         }
         

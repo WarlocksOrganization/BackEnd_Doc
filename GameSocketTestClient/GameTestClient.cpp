@@ -3,7 +3,11 @@
 #include <string>
 #include <thread>
 #include <chrono>
+#include <atomic>
 #include <nlohmann/json.hpp>
+#include <mutex>
+#include <deque>
+#include <condition_variable>
 
 using json = nlohmann::json;
 using boost::asio::ip::tcp;
@@ -12,7 +16,18 @@ using namespace std;
 class GameClient {
 public:
     GameClient(const std::string& host, int port)
-        : io_context_(), socket_(io_context_), host_(host), port_(port), user_id_(0) {
+        : io_context_(),
+        socket_(io_context_),
+        host_(host),
+        port_(port),
+        user_id_(0),
+        running_(false),
+        io_thread_(),
+        ping_thread_() {
+    }
+
+    ~GameClient() {
+        stop();
     }
 
     bool connect() {
@@ -21,12 +36,34 @@ public:
             auto endpoints = resolver.resolve(host_, std::to_string(port_));
             boost::asio::connect(socket_, endpoints);
             cout << "서버 연결 성공: " << host_ << ":" << port_ << endl;
+
+            // 비동기 읽기 시작
+            running_ = true;
+            io_thread_ = std::thread([this]() { this->runIoContext(); });
+
+            // alivePing 스레드 시작
+            ping_thread_ = std::thread([this]() { this->runPingThread(); });
+
             return true;
         }
         catch (const std::exception& e) {
             cerr << "연결 오류: " << e.what() << endl;
             return false;
         }
+    }
+
+    void stop() {
+        running_ = false;
+
+        if (io_thread_.joinable()) {
+            io_thread_.join();
+        }
+
+        if (ping_thread_.joinable()) {
+            ping_thread_.join();
+        }
+
+        disconnect();
     }
 
     json sendRequest(const json& request_data) {
@@ -45,62 +82,29 @@ public:
             }
 
             std::string request = modified_request.dump();
-            boost::asio::write(socket_, boost::asio::buffer(request));
-            cout << "요청 전송 완료: " << request << endl;
 
-            // 응답 받기
-            boost::asio::streambuf response_buffer;
-            boost::system::error_code ec;
-            size_t bytes_transferred = 0;
-
-            // 응답 데이터 읽기
-            bytes_transferred = boost::asio::read_until(socket_, response_buffer, "}", ec);
-
-            if (ec && ec != boost::asio::error::eof) {
-                throw boost::system::system_error(ec);
+            // 동기식 쓰기 작업 시 뮤텍스로 보호
+            {
+                std::lock_guard<std::mutex> lock(write_mutex_);
+                boost::asio::write(socket_, boost::asio::buffer(request));
             }
 
-            // 응답 데이터 처리
-            std::string response_str((std::istreambuf_iterator<char>(&response_buffer)),
-                std::istreambuf_iterator<char>());
-
-            if (response_str.empty()) {
-                return json{ {"status", "error"}, {"message", "서버 응답 없음"} };
+            // ping이 아닌 경우에만 요청 로그 출력
+            if (!request_data.contains("action") || request_data["action"] != "alivePing") {
+                cout << "요청 전송 완료: " << request << endl;
             }
 
-            // JSON 객체가 불완전할 경우 나머지 데이터 읽기 시도
-            if (response_str.find_last_of('}') != response_str.length() - 1) {
-                // 추가 데이터 읽기
-                boost::asio::streambuf additional_buffer;
-                bytes_transferred = boost::asio::read(socket_, additional_buffer,
-                    boost::asio::transfer_at_least(1), ec);
+            // 응답 대기 (동기식)
+            std::unique_lock<std::mutex> lock(response_mutex_);
+            response_cv_.wait_for(lock, std::chrono::seconds(5), [this] { return !response_queue_.empty(); });
 
-                std::string additional_str((std::istreambuf_iterator<char>(&additional_buffer)),
-                    std::istreambuf_iterator<char>());
-
-                response_str += additional_str;
+            if (!response_queue_.empty()) {
+                json response = response_queue_.front();
+                response_queue_.pop_front();
+                return response;
             }
 
-            cout << "받은 응답: " << response_str << endl;
-
-            json response = json::parse(response_str);
-
-            // 로그인 응답에서 userId 저장
-            if (response.contains("status") && response["status"] == "success") {
-                if (response.contains("action")) {
-                    std::string action = response["action"];
-                    if ((action == "login" || action == "register") && response.contains("userId")) {
-                        user_id_ = response["userId"];
-                        cout << "로그인 성공: 사용자 ID " << user_id_ << endl;
-                    }
-                }
-            }
-
-            return response;
-        }
-        catch (const json::parse_error& e) {
-            cerr << "JSON 파싱 오류: " << e.what() << endl;
-            return json{ {"status", "error"}, {"message", std::string("JSON 파싱 오류: ") + e.what()} };
+            return json{ {"status", "error"}, {"message", "응답 대기 시간 초과"} };
         }
         catch (const std::exception& e) {
             cerr << "요청 오류: " << e.what() << endl;
@@ -125,6 +129,128 @@ private:
     std::string host_;
     int port_;
     int user_id_; // 로그인 후 사용자 ID 저장
+
+    std::atomic<bool> running_;
+    std::thread io_thread_;
+    std::thread ping_thread_;
+
+    std::mutex write_mutex_;
+    std::mutex response_mutex_;
+    std::condition_variable response_cv_;
+    std::deque<json> response_queue_;
+
+    void runIoContext() {
+        try {
+            // 비동기 읽기 작업 시작
+            startAsyncRead();
+
+            // io_context 실행
+            io_context_.run();
+        }
+        catch (const std::exception& e) {
+            cerr << "IO 스레드 오류: " << e.what() << endl;
+        }
+    }
+
+    void startAsyncRead() {
+        auto response_buffer = std::make_shared<boost::asio::streambuf>();
+
+        // 비동기 read_until 시작
+        boost::asio::async_read_until(
+            socket_,
+            *response_buffer,
+            '}',
+            [this, response_buffer](const boost::system::error_code& ec, std::size_t bytes_transferred) {
+                this->handleRead(ec, bytes_transferred, response_buffer);
+            }
+        );
+    }
+
+    void handleRead(const boost::system::error_code& ec, std::size_t bytes_transferred,
+        std::shared_ptr<boost::asio::streambuf> response_buffer) {
+        if (!ec) {
+            try {
+                // 응답 데이터 처리
+                std::string response_str((std::istreambuf_iterator<char>(response_buffer.get())),
+                    std::istreambuf_iterator<char>());
+
+                // 불완전한 JSON 처리
+                if (response_str.find_last_of('}') != response_str.length() - 1) {
+                    // 추가 데이터 읽기는 이 예제에서는 생략 (실제 구현 시 추가 필요)
+                }
+
+                // ping 응답이 아닌 경우에만 로깅
+                if (response_str.find("\"action\":\"refreshSession\"") == std::string::npos) {
+                    cout << "받은 응답: " << response_str << endl;
+                }
+
+                json response = json::parse(response_str);
+
+                // 로그인 응답에서 userId 저장
+                if (response.contains("status") && response["status"] == "success") {
+                    if (response.contains("action")) {
+                        std::string action = response["action"];
+                        if ((action == "login" || action == "register" || action == "SSAFYlogin") &&
+                            response.contains("userId")) {
+                            user_id_ = response["userId"];
+                            cout << "로그인 성공: 사용자 ID " << user_id_ << endl;
+                        }
+                    }
+                }
+
+                // 응답 큐에 추가
+                {
+                    std::lock_guard<std::mutex> lock(response_mutex_);
+                    response_queue_.push_back(response);
+                }
+                response_cv_.notify_one();
+
+                // 다음 읽기 작업 시작
+                startAsyncRead();
+            }
+            catch (const json::parse_error& e) {
+                cerr << "JSON 파싱 오류: " << e.what() << endl;
+
+                // 다음 읽기 작업 시작
+                startAsyncRead();
+            }
+        }
+        else if (ec != boost::asio::error::operation_aborted) {
+            cerr << "읽기 오류: " << ec.message() << endl;
+
+            if (running_) {
+                // 오류가 발생했지만 아직 실행 중이면 다시 읽기 시도
+                startAsyncRead();
+            }
+        }
+    }
+
+    void runPingThread() {
+        while (running_) {
+            try {
+                // 10초 대기
+                std::this_thread::sleep_for(std::chrono::seconds(10));
+
+                if (!running_) break;
+
+                // alivePing 요청 보내기
+                json ping_request = {
+                    {"action", "alivePing"}
+                };
+
+                // 로그 없이 ping 요청 송신
+                std::string request = ping_request.dump();
+                {
+                    std::lock_guard<std::mutex> lock(write_mutex_);
+                    boost::asio::write(socket_, boost::asio::buffer(request));
+                }
+            }
+            catch (const std::exception& e) {
+                // Ping 스레드에서 발생한 예외는 무시하지만 로깅
+                cerr << "Ping 스레드 오류: " << e.what() << endl;
+            }
+        }
+    }
 };
 
 int main() {
@@ -138,7 +264,9 @@ int main() {
         }
 
         // 핸드셰이크
-        json handshake_request = {};
+        json handshake_request = {
+            {"connectionType", "client"}
+        };
         json handshake_response = client.sendRequest(handshake_request);
         cout << "핸드셰이크 응답:\n" << handshake_response.dump(2) << endl << endl;
         std::this_thread::sleep_for(std::chrono::seconds(1));
@@ -321,7 +449,7 @@ int main() {
                 break;
             }
             case 11: {
-                // Ping 보내기
+                // Ping 수동 보내기
                 request = {
                     {"action", "alivePing"}
                 };
@@ -341,7 +469,8 @@ int main() {
             std::this_thread::sleep_for(std::chrono::milliseconds(500));
         }
 
-        client.disconnect();
+        // 클라이언트 정리 (모든 스레드 종료)
+        client.stop();
     }
     catch (const std::exception& e) {
         cerr << "오류 발생: " << e.what() << endl;
