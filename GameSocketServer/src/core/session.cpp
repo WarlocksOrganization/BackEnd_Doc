@@ -69,7 +69,7 @@ namespace game_server {
             if (action == "register" || action == "login") {
                 controller_type = "auth";
             }
-            else if (action == "create_room" || action == "join_room" || action == "exit_room" || action == "list_rooms") {
+            else if (action == "createRoom" || action == "joinRoom" || action == "exitRoom" || action == "listRooms") {
                 if (user_id_ == 0) {
                     json error_response = {
                         {"status", "error"},
@@ -79,8 +79,21 @@ namespace game_server {
                     return;
                 }
 
-                request["user_id"] = user_id_;
+                request["userId"] = user_id_;
                 controller_type = "room";
+            }
+            else if (action == "gameStart" || action == "gameEnd") {
+                if (user_id_ == 0) {
+                    json error_response = {
+                        {"status", "error"},
+                        {"message", "Authentication required"}
+                    };
+                    write_response(error_response.dump());
+                    return;
+                }
+
+                request["userId"] = user_id_;
+                controller_type = "game";
             }
             else {
                 // 알 수 없는 액션 처리
@@ -158,15 +171,8 @@ namespace game_server {
     }
 
     void Session::init_current_user(const json& response) {
-        if (response.contains("user_id")) user_id_ = response["user_id"];
-        if (response.contains("username")) user_name_ = response["username"];
-        if (response.contains("wins")) wins_ = response["wins"];
-        if (response.contains("games_played")) games_played_ = response["games_played"];
-        if (response.contains("total_kills")) total_kills_ = response["total_kills"];
-        if (response.contains("total_damages")) total_damages_ = response["total_damages"];
-        if (response.contains("total_deaths")) total_deaths_ = response["total_deaths"];
-        if (response.contains("rating")) rating_ = response["rating"];
-        if (response.contains("highest_rating")) highest_rating_ = response["highest_rating"];
+        if (response.contains("userId")) user_id_ = response["userId"];
+        if (response.contains("userName")) user_name_ = response["userName"];
 
         spdlog::info("User logged in: {} (ID: {})", user_name_, user_id_);
     }

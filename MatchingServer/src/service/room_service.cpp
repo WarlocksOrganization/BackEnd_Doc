@@ -63,49 +63,45 @@ namespace game_server {
 
             try {
                 // 요청 유효성 검증
-                if (!request.contains("room_name") || !request.contains("user_id") || !request.contains("max_players")) {
+                if (!request.contains("roomName") || !request.contains("userId") || !request.contains("maxPlayers")) {
                     response["status"] = "error";
                     response["message"] = "Missing required fields in request";
                     return response;
                 }
 
-                if (!isValidRoomName(request["room_name"])) {
+                if (!isValidRoomName(request["roomName"])) {
                     response["status"] = "error";
                     response["message"] = "Room name must be 1-40 bytes long and contain only English, Korean, or numbers";
                     return response;
                 }
 
-                if (request["max_players"] < 2 || request["max_players"] > 8) {
+                if (request["maxPlayers"] < 2 || request["maxPlayers"] > 8) {
                     response["status"] = "error";
                     response["message"] = "Max players must be between 2 and 8";
                     return response;
                 }
 
-                // 방 ID 얻기 (재사용 가능한 방이 있으면 그 ID, 없으면 -1)
-                int roomId = roomRepo_->findValidRoom();
-
-                // 방 생성
-                if (!roomRepo_->create(request["user_id"], roomId, request["room_name"], request["max_players"])) {
+                // 단일 트랜잭션으로 방 생성 및 호스트 추가
+                json result = roomRepo_->createRoomWithHost(
+                    request["userId"], request["roomName"], request["maxPlayers"]);
+                if (result["roomId"] == -1) {
                     response["status"] = "error";
                     response["message"] = "Failed to create room";
                     return response;
                 }
 
-                // 방 생성자를 방에 추가
-                if (!roomRepo_->addPlayer(roomId, request["user_id"])) {
-                    response["status"] = "error";
-                    response["message"] = "Failed to add room creator to room";
-                    return response;
-                }
-
                 // 성공 응답 생성
+                response["action"] = "createRoom";
                 response["status"] = "success";
                 response["message"] = "Room successfully created";
-                response["room_id"] = roomId;
-                response["room_name"] = request["room_name"];
+                response["roomId"] = result["roomId"];
+                response["roomName"] = result["roomName"];
+                response["maxPlayers"] = result["maxPlayers"];
+                response["ipAddress"] = result["ipAddress"];
+                response["port"] = result["port"];
 
                 spdlog::info("User {} created new room: {} (ID: {})",
-                    request["user_id"].get<int>(), request["room_name"].get<std::string>(), roomId);
+                    request["userId"].get<int>(), request["roomName"].get<std::string>(), result["roomId"].get<int>());
             }
             catch (const std::exception& e) {
                 response["status"] = "error";
@@ -121,14 +117,14 @@ namespace game_server {
 
             try {
                 // 요청 유효성 검증
-                if (!request.contains("room_id") || !request.contains("user_id")) {
+                if (!request.contains("roomId") || !request.contains("userId")) {
                     response["status"] = "error";
                     response["message"] = "Missing required fields in request";
                     return response;
                 }
 
-                int roomId = request["room_id"];
-                int userId = request["user_id"];
+                int roomId = request["roomId"];
+                int userId = request["userId"];
 
                 // 방에 참가자 추가
                 if (!roomRepo_->addPlayer(roomId, userId)) {
@@ -137,21 +133,12 @@ namespace game_server {
                     return response;
                 }
 
-                // 방의 현재 참가자 수 가져오기
-                int currentPlayers = roomRepo_->getPlayerCount(roomId);
-
-                // 방 참가자 목록 가져오기
-                auto players = roomRepo_->getPlayersInRoom(roomId);
-
                 // 성공 응답 생성
+                response["action"] = "joinRoom";
                 response["status"] = "success";
                 response["message"] = "Successfully joined room";
-                response["room_id"] = roomId;
-                response["current_players"] = currentPlayers;
-                response["players"] = players;
 
                 spdlog::info("User {} joined room {}", userId, roomId);
-                spdlog::info("Room {} current players: {}", roomId, currentPlayers);
             }
             catch (const std::exception& e) {
                 response["status"] = "error";
@@ -167,13 +154,13 @@ namespace game_server {
 
             try {
                 // 요청 유효성 검증
-                if (!request.contains("user_id")) {
+                if (!request.contains("userId")) {
                     response["status"] = "error";
-                    response["message"] = "Missing user_id in request";
+                    response["message"] = "Missing userId in request";
                     return response;
                 }
 
-                int userId = request["user_id"];
+                int userId = request["userId"];
 
                 // 플레이어를 방에서 제거 
                 if (!roomRepo_->removePlayer(userId)) {
@@ -183,6 +170,7 @@ namespace game_server {
                 }
 
                 // 성공 응답 생성
+                response["action"] = "exitRoom";
                 response["status"] = "success";
                 response["message"] = "Successfully exited room";
 
@@ -205,24 +193,17 @@ namespace game_server {
                 auto rooms = roomRepo_->findAllOpen();
 
                 // 응답 생성
+                response["action"] = "listRooms";
                 response["status"] = "success";
                 response["message"] = "Successfully retrieved room list";
                 response["rooms"] = json::array();
 
-                for (const auto& room : rooms) {
-                    json roomInfo;
-                    roomInfo["room_id"] = room["room_id"];
-                    roomInfo["room_name"] = room["room_name"];
-                    roomInfo["host_id"] = room["host_id"];
-                    roomInfo["current_players"] = roomRepo_->getPlayerCount(room["room_id"]);
-                    roomInfo["max_players"] = room["max_players"];
-                    roomInfo["status"] = room["status"];
-                    roomInfo["created_at"] = room["created_at"];
-
-                    response["rooms"].push_back(roomInfo);
+                for (auto& room : rooms) {
+                    room["currentPlayers"] = roomRepo_->getPlayerCount(room["roomId"]);
+                    response["rooms"].push_back(room);
                 }
 
-                spdlog::info("Retrieved {} open rooms", response["rooms"].size());
+                spdlog::info("Retrieved {} open room(s)", response["rooms"].size());
             }
             catch (const std::exception& e) {
                 response["status"] = "error";

@@ -17,6 +17,7 @@ void signal_handler(int signal)
     if (server) {
         server->stop();
     }
+    std::exit(0);
     exit(signal);
 }
 
@@ -36,7 +37,7 @@ int main(int argc, char* argv[])
         // 기본 설정
         short port = 8080;
         std::string db_connection_string =
-            "dbname=GameData user=admin password=admin host=localhost port=5432 client_encoding=UTF8";
+            "dbname=gamedata user=admin password=admin host=localhost port=5432 client_encoding=UTF8";
 
         // 명령줄 인수 처리
         for (int i = 1; i < argc; ++i) {
