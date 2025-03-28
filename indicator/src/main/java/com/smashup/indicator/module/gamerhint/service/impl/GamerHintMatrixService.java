@@ -9,9 +9,12 @@ import com.smashup.indicator.module.version.PoolManager;
 import com.smashup.indicator.module.version.service.impl.VersionService;
 import lombok.RequiredArgsConstructor;
 import org.bson.types.ObjectId;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.*;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,6 +35,11 @@ public class GamerHintMatrixService {
 
 
     // 데이터 수집
+    @Retryable(
+            value = { OptimisticLockingFailureException.class },
+            maxAttempts = 3,
+            backoff = @Backoff(delay = 2000, multiplier = 2)
+    )
     @Transactional
     public List<MatrixDocument> insertData(GameEndRequestDto dto) throws Exception {
 
@@ -63,14 +71,12 @@ public class GamerHintMatrixService {
                     updateMatrix(doc, targetMatrixIdList, transitionXYList);
                 }
             }
-
         }
 
         // 새로 들어온 data 전부 반영된 상태이므로 저장.
         for (MatrixDocument doc : docs) {
             matrixRepository.save(doc);
         }
-        System.out.println(docs);
 
         return docs;
     }
@@ -97,32 +103,35 @@ public class GamerHintMatrixService {
             // 현재 배치 load 결과가 null이 아니면 그냥 그대로 사용. [완료]
             List<MatrixDocument> docs = getDocumentByBatch(inputPatchVersion, batchCountManager.getBatchCount());
             if (docs.isEmpty()) {
-                if (getLatestDocument(inputPatchVersion)==false) {
-                    System.out.println("여긴가111111");
+                if (haveDocument(inputPatchVersion)==false) {
 
                     return generateDocument(inputPatchVersion);
                 } else{ // 현재 배치가 1이 아니면 직전 배치 가져와서 ID값을 현재 배치로 수정하기. [완료]
-                    System.out.println("여긴가222222");
+                    // 직전 배치 기간에 혹시라도 아무 요청이 없으면 배치가 1씩 증가하지 않는다.
+                    // 따라서 "직전 배치 =  현재 배치 -1" 로 구하는 건 리스크가 있다.
+                    // 따라서 순서상 맨뒤에 있는 배치의 문서를 반환하기로 수정한다.
 
-                    docs = getDocumentByBatch(inputPatchVersion, batchCountManager.getBatchCount()-1);
+//                    docs = getDocumentByBatch(inputPatchVersion, batchCountManager.getBatchCount()-1);
+//                    for (MatrixDocument doc: docs) {
+//                        String id = doc.getId();
+//                        String newId = id.replace("/"+(batchCountManager.getBatchCount()-1)+"/","/"+(batchCountManager.getBatchCount())+"/");
+//                        doc.setId(newId);
+//                    }
+
+                    docs = getLatestDocument(inputPatchVersion);
                     for (MatrixDocument doc: docs) {
-                        String id = doc.getId();
-                        String newId = id.replace("/"+(batchCountManager.getBatchCount()-1)+"/","/"+(batchCountManager.getBatchCount())+"/");
-                        doc.setId(newId);
+                        String id = String.join("/", versionService.getCurrentPatchVersion(),batchCountManager.getBatchCount()+"",doc.getType() );
+                        doc.setId(id);
                     }
                     return docs;
                 }
             }
             else{ // 현재 배치 load 결과가 null이 아니면 그냥 그대로 사용. [완료]
-                System.out.println("여긴가33333");
-                System.out.println(docs);
-
                 return docs;
             }
         }
         /// 취급 안하는 값. 버려야 함.
         else{
-            System.out.println("여긴가44444");
 
             return null; // 임시 값
         }
@@ -144,12 +153,10 @@ public class GamerHintMatrixService {
         return results;
     }
 
-
-
     // 마지막 배치 (가장 최신 배치) load
     @Transactional
-    public boolean getLatestDocument(String inputPatchVersion) throws Exception {
-        // 1. 가장 마지막 batchCount 하나만 가져옴 => batchCount 안전하게 가져오기
+    public boolean haveDocument(String inputPatchVersion) throws Exception {
+        // 이 버전의 도큐먼트가 있는지 확인하기.
         String regex1 = "^"+inputPatchVersion;
         Query batchCountCheckQuery = new Query();
         batchCountCheckQuery.addCriteria(Criteria.where("_id").regex(regex1));
@@ -158,29 +165,43 @@ public class GamerHintMatrixService {
 
         boolean result = mongoTemplate.exists(batchCountCheckQuery, MatrixDocument.class);
         return result;
-        // 해당 패치 버전의 문서가 있냐 없냐로만 사용하기로 바뀜.
-//        // 검색결과가 없음 => inputPatchVersion 에 해당되는 Document 가 없음.
-//        if (lastBatchDoc == null) {
-//            return null; // 임시값. => 예외처리 필요. 뭘 돌려주지???
-//        }
-//
-//        // 2. 마지막 batchCount를 추출
-//        String lastBatchCount = lastBatchDoc.getId().split("/")[1];
-//
-//        // 3. 마지막 batchCount에 해당하는 C, T를 가져옴
-//        Query finalQuery = new Query();
-//        String regex2 = String.join("/", regex1,lastBatchCount,"");
-//
-//        finalQuery.addCriteria(Criteria.where("_id").regex(regex2));
-//
-//        List<MatrixDocument> results = mongoTemplate.find(finalQuery, MatrixDocument.class);
-//
-//        // 만약 C, T 중 하나만 존재하는 경우에 대한 처리
-//        if (results.size() == 1) {
-//            // 로그 추가 or 예외 처리 (C, T가 항상 있어야 하는데 1개만 존재할 경우 대비)
-//            // System.out.println("경고: " + lastBatchCount + "의 C 또는 T 중 하나가 누락됨");
-//        }
-//        return results;
+    }
+
+    // 마지막 배치 (가장 최신 배치) load
+    @Transactional
+    public List<MatrixDocument> getLatestDocument(String inputPatchVersion) throws Exception {
+        // 1. 가장 마지막 batchCount 하나만 가져옴 => batchCount 안전하게 가져오기
+        String regex1 = "^"+inputPatchVersion;
+        Query batchCountCheckQuery = new Query();
+        batchCountCheckQuery.addCriteria(Criteria.where("_id").regex(regex1));
+        batchCountCheckQuery.with(Sort.by(Sort.Direction.DESC, "_id"));
+        batchCountCheckQuery.limit(1);
+
+        MatrixDocument lastBatchDoc = mongoTemplate.findOne(batchCountCheckQuery, MatrixDocument.class);
+
+        // 검색결과가 없음 => inputPatchVersion 에 해당되는 Document 가 없음.
+        if (lastBatchDoc == null) {
+
+            return null; // 예외처리 필요 => 호출 위치상 inputPatchVersion 에 해당되는 Document가 있을때만 호출됨.
+        }
+
+        // 2. 마지막 batchCount를 추출
+        String lastBatchCount = lastBatchDoc.getId().split("/")[1];
+
+        // 3. 마지막 batchCount에 해당하는 C, T를 가져옴
+        Query finalQuery = new Query();
+        String regex2 = String.join("/", regex1,lastBatchCount,"");
+
+        finalQuery.addCriteria(Criteria.where("_id").regex(regex2));
+
+        List<MatrixDocument> results = mongoTemplate.find(finalQuery, MatrixDocument.class);
+
+        // 만약 C, T 중 하나만 존재하는 경우에 대한 처리
+        if (results.size() == 1) {
+            // 로그 추가 or 예외 처리 (C, T가 항상 있어야 하는데 1개만 존재할 경우 대비)
+            // System.out.println("경고: " + lastBatchCount + "의 C 또는 T 중 하나가 누락됨");
+        }
+        return results;
     }
 
     public List<MatrixDocument> generateDocument(String inputPatchVersion) throws Exception {
