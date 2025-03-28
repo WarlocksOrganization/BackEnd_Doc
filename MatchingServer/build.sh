@@ -27,9 +27,4 @@ else
 fi
 
 echo "===== 빌드 완료 ====="
-
-# 선택적으로 서버 실행
-read -p "서버를 실행하시겠습니까? (y/n): " run_server
-if [ "$run_server" = "y" ]; then
-    ./build/bin/MatchingServer
-fi
+./build/bin/MatchingServer

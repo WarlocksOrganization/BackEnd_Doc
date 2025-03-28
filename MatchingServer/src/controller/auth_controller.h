@@ -16,6 +16,8 @@ namespace game_server {
     private:
         nlohmann::json handleRegister(nlohmann::json& request);
         nlohmann::json handleLogin(nlohmann::json& request);
+        nlohmann::json handleRegisterCheckAndLogin(nlohmann::json& request);
+        nlohmann::json handleUpdateNickName(nlohmann::json& request);
 
         std::shared_ptr<AuthService> authService_;
     };

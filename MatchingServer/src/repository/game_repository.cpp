@@ -18,7 +18,6 @@ namespace game_server {
             try {
                 int roomId = request["roomId"];
                 int mapId = request["mapId"];
-                const auto& users = request["users"];
 
                 pqxx::result result = txn.exec_params(
                     "INSERT INTO games (room_id, map_id) "
@@ -26,40 +25,21 @@ namespace game_server {
                     "RETURNING game_id",
                 roomId, mapId);
 
-                if (result.empty()) {
+                pqxx::result updateRoom = txn.exec_params(
+                    "UPDATE rooms "
+                    "SET status = 'GAME_IN_PROGRESS' "
+                    "WHERE room_id = $1 "
+                    "RETURNING status",
+                    roomId);
+
+                if (result.empty() || updateRoom.empty()) {
                     spdlog::error("Can't created game session");
+                    txn.abort();
+                    dbPool_->return_connection(conn);
                     return -1;
                 }
                 int gameId = result[0][0].as<int>();
                 spdlog::info("Created game session completely! Game ID : {}", gameId);
-
-                int cnt = 0;
-                for (const auto& user : users) {
-                    if (!user.is_object()) {
-                        spdlog::error("value is not the object type");
-                        continue;
-                    }
-
-                    if (!user.contains("userId") || !user.contains("classId")) {
-                        spdlog::error("value has not the few keys");
-                        continue;
-                    }
-
-                    pqxx::result res = txn.exec_params(
-                        "INSERT INTO game_users (game_id, user_id, class_id) "
-                        "VALUES ($1, $2, $3) "
-                        "RETURNING 1",
-                        gameId, user["userId"].get<int>(), user["classId"].get<int>());
-
-                    if (res.empty()) {
-                        spdlog::error("Can't create gameUsers recode for user ID : {}", user["userId"].get<int>());
-                        continue;
-                    }
-                    spdlog::info("create gameUsers recode for user ID : {}", user["userId"].get<int>());
-                    cnt++;
-                }
-                spdlog::info("count of completely created gameUsers record(s) : {}", cnt);
-
                 txn.commit();
                 dbPool_->return_connection(conn);
                 return gameId;
@@ -72,7 +52,7 @@ namespace game_server {
             }
         }
 
-        bool endGame(int gameId)  {
+        int endGame(int gameId)  {
             auto conn = dbPool_->get_connection();
             pqxx::work txn(*conn);
             try {
@@ -85,7 +65,9 @@ namespace game_server {
 
                 if (result.empty()) {
                     spdlog::error("Can't found roomId use to Game ID : {}", gameId);
-                    return false;
+                    txn.abort();
+                    dbPool_->return_connection(conn);
+                    return -1;
                 }
                 int roomId = result[0][0].as<int>();
                 spdlog::info("found roomId completely! Room ID : {}", roomId);
@@ -99,25 +81,29 @@ namespace game_server {
 
                 if (res.empty()) {
                     spdlog::error("Can't found roomId use to Room ID : {}", roomId);
-                    return false;
+                    txn.abort();
+                    dbPool_->return_connection(conn);
+                    return -1;
                 }
                 int resId = res[0][0].as<int>();
                 if (roomId != resId) {
                     spdlog::error("Can't found room which Room ID is {}", roomId);
-                    return false;
+                    txn.abort();
+                    dbPool_->return_connection(conn);
+                    return -1;
                 }
 
                 spdlog::info("Change room status competely Room ID : {}", roomId);
 
                 txn.commit();
                 dbPool_->return_connection(conn);
-                return true;
+                return roomId;
             }
             catch (const std::exception& e) {
                 txn.abort();
                 dbPool_->return_connection(conn);
                 spdlog::error("Database error in findByUsername: {}", e.what());
-                return false;
+                return -1;
             }
         }
         

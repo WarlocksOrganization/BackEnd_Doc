@@ -17,10 +17,10 @@ namespace game_server {
         // 요청의 action 필드에 따라 적절한 핸들러 호출
         std::string action = request["action"];
 
-        if (action == "startGame") {
+        if (action == "gameStart") {
             return handleStartGame(request);
         }
-        else if (action == "endGame") {
+        else if (action == "gameEnd") {
             return handleEndGame(request);
         }
         else {
@@ -28,17 +28,17 @@ namespace game_server {
                 {"status", "error"},
                 {"message", "Unknown room action"}
             };
-            return error_response.dump();
+            return error_response;
         }
     }
 
     nlohmann::json GameController::handleStartGame(json& request) {
         json response = gameService_->startGame(request);
-        return response.dump();
+        return response;
     }
 
     nlohmann::json GameController::handleEndGame(json& request) {
         json response = gameService_->endGame(request);
-        return response.dump();
+        return response;
     }
 } // namespace game_server

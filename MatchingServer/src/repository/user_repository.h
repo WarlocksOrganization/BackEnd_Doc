@@ -18,6 +18,7 @@ namespace game_server {
         virtual nlohmann::json findByUsername(const std::string& username) = 0;
         virtual int create(const std::string& username, const std::string& hashedPassword) = 0;
         virtual bool updateLastLogin(int userId) = 0;
+        virtual bool updateUserNickName(int userId, const std::string& nickName) = 0;
 
         static std::unique_ptr<UserRepository> create(DbPool* dbPool);
     };

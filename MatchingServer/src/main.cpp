@@ -17,6 +17,7 @@ void signal_handler(int signal)
     if (server) {
         server->stop();
     }
+    std::exit(0);
     exit(signal);
 }
 

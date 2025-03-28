@@ -11,21 +11,35 @@
 namespace game_server {
 
     using json = nlohmann::json;
+    class Server;
 
     class Session : public std::enable_shared_from_this<Session> {
     public:
         Session(boost::asio::ip::tcp::socket socket,
-            std::map<std::string, std::shared_ptr<Controller>>& controllers);
+            std::map<std::string, std::shared_ptr<Controller>>& controllers,
+            Server* server);
+        ~Session();
 
         void start();
         boost::asio::ip::tcp::socket& get_socket();
+        const std::string& getToken() const;
+        void initialize();
+        void handlePing();
+        std::chrono::steady_clock::time_point getLastActivityTime() const;
+        bool isActive(std::chrono::seconds timeout) const;
+        void handle_error(const std::string& error_message);
+        void setToken(const std::string& token);
+        bool is_mirror_ = false;
+        int getUserId();
 
     private:
         void read_message();
         void process_request(json& request);
         void write_response(const std::string& response);
-        void handle_error(const std::string& error_message);
         void init_current_user(const json& response);
+        void read_handshake();
+        void write_handshake_response(const std::string& response);
+        void write_broadcast(const std::string& response, std::shared_ptr<Session>& mirror);
 
         boost::asio::ip::tcp::socket socket_;
         std::map<std::string, std::shared_ptr<Controller>>& controllers_;
@@ -33,6 +47,10 @@ namespace game_server {
         std::string message_;
         int user_id_;
         std::string user_name_;
+        std::string nick_name_;
+        Server* server_;
+        std::chrono::steady_clock::time_point last_activity_time_;
+        std::string token_;
     };
 
 } // namespace game_server

@@ -14,9 +14,8 @@ namespace game_server {
     public:
         virtual ~RoomRepository() = default;
 
-        virtual int findValidRoom() = 0;
         virtual std::vector<nlohmann::json> findAllOpen() = 0;
-        virtual bool create(int hostId, int roomId, const std::string& roomName, int maxPlayers) = 0;
+        virtual nlohmann::json createRoomWithHost(int hostId, const std::string& roomName, int maxPlayers) = 0;
         virtual bool addPlayer(int roomId, int userId) = 0;
         virtual bool removePlayer(int userId) = 0;
         virtual int getPlayerCount(int roomId) = 0;

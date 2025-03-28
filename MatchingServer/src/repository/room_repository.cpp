@@ -16,29 +16,6 @@ namespace game_server {
     public:
         explicit RoomRepositoryImpl(DbPool* dbPool) : dbPool_(dbPool) {}
 
-        int findValidRoom() override {
-            auto conn = dbPool_->get_connection();
-            pqxx::work txn(*conn);
-            try {
-                // ID로 방 정보 조회 (가장 낮은 ID의 TERMINATED 상태 방을 찾음)
-                pqxx::result result = txn.exec_params(
-                    "SELECT room_id "
-                    "FROM rooms WHERE status = 'TERMINATED' "
-                    "ORDER BY room_id LIMIT 1");
-
-                txn.commit();
-                dbPool_->return_connection(conn);
-
-                return result.empty() ? -1 : result[0][0].as<int>();
-            }
-            catch (const std::exception& e) {
-                txn.abort();
-                spdlog::error("Cannot find valid room: {}", e.what());
-                dbPool_->return_connection(conn);
-                return -1;
-            }
-        }
-
         std::vector<json> findAllOpen() override {
             std::vector<json> rooms;
             auto conn = dbPool_->get_connection();
@@ -77,36 +54,59 @@ namespace game_server {
             }
         }
 
-        bool create(int hostId, int roomId, const std::string& roomName, int maxPlayers) override {
+        json createRoomWithHost(int hostId, const std::string& roomName, int maxPlayers) {
             auto conn = dbPool_->get_connection();
             pqxx::work txn(*conn);
+            int roomId = -1;
+            json result = {
+                {"roomId", -1}
+            };
             try {
-                // 기존 TERMINATED 방 재활성화 시도
-                pqxx::result result = txn.exec_params(
-                    "UPDATE rooms "
-                    "SET room_name = $1, host_id = $2, max_players = $3, status = 'WAITING', created_at = DEFAULT "
-                    "WHERE room_id = $4 AND status = 'TERMINATED' "
-                    "RETURNING room_id",
-                    roomName, hostId, maxPlayers, roomId);
+                // 유효한 방 ID 찾기
+                pqxx::result idResult = txn.exec(
+                    "SELECT room_id FROM rooms WHERE status = 'TERMINATED' ORDER BY room_id LIMIT 1 FOR UPDATE");
 
-                if (result.empty()) {
-                    spdlog::warn("Failed to reactivate room");
+                if (idResult.empty()) {
                     txn.abort();
                     dbPool_->return_connection(conn);
-                    return false;
+                    return result;
                 }
-                spdlog::info("Room {} reactivated with name '{}', host {}",
-                    roomId, roomName, hostId);
+                roomId = idResult[0][0].as<int>();
+
+                // 방 재활성화
+                pqxx::result roomResult;
+                roomResult = txn.exec_params(
+                    "UPDATE rooms SET room_name = $1, host_id = $2, max_players = $3, "
+                    "status = 'WAITING', created_at = DEFAULT "
+                    "WHERE room_id = $4 AND status = 'TERMINATED' "
+                    "RETURNING room_id, room_name, ip_address, port, max_players",
+                    roomName, hostId, maxPlayers, roomId);
+
+                if (roomResult.empty()) {
+                    txn.abort();
+                    dbPool_->return_connection(conn);
+                    return result;
+                }
+
+                // 사용자를 방에 추가
+                txn.exec_params(
+                    "INSERT INTO room_users(room_id, user_id) VALUES($1, $2)",
+                    roomId, hostId);
 
                 txn.commit();
                 dbPool_->return_connection(conn);
-                return true;
+                result["roomId"] = roomResult[0]["room_id"].as<int>();
+                result["roomName"] = roomResult[0]["room_name"].as<std::string>();
+                result["ipAddress"] = roomResult[0]["ip_address"].as<std::string>();
+                result["port"] = roomResult[0]["port"].as<int>();
+                result["maxPlayers"] = roomResult[0]["max_players"].as<int>();
+                return result;
             }
             catch (const std::exception& e) {
+                spdlog::error("Error in createRoomWithHost: {}", e.what());
                 txn.abort();
-                spdlog::error("Error creating room: {}", e.what());
                 dbPool_->return_connection(conn);
-                return false;
+                return result;
             }
         }
 
@@ -152,7 +152,7 @@ namespace game_server {
                 pqxx::result maxPlayersResult = txn.exec_params(
                     "SELECT max_players, "
                     "(SELECT COUNT(*) FROM room_users WHERE room_id = $1) as current_players "
-                    "FROM rooms WHERE room_id = $1",
+                    "FROM rooms WHERE room_id = $1 FOR UPDATE",
                     roomId);
 
                 int maxPlayers = maxPlayersResult[0]["max_players"].as<int>();
@@ -171,14 +171,16 @@ namespace game_server {
                     "VALUES ($1, $2, DEFAULT) RETURNING room_id",
                     roomId, userId);
 
+                if (result.empty()) {
+                    txn.abort();
+                    dbPool_->return_connection(conn);
+                    return false;
+                }
+
                 txn.commit();
                 dbPool_->return_connection(conn);
-
-                if (!result.empty()) {
-                    spdlog::info("User {} joined room {}", userId, roomId);
-                    return true;
-                }
-                return false;
+                spdlog::info("User {} joined room {}", userId, roomId);
+                return true;
             }
             catch (const std::exception& e) {
                 spdlog::error("Error adding player to room: {}", e.what());
@@ -199,7 +201,7 @@ namespace game_server {
 
                 if (roomResult.empty()) {
                     // 사용자가 어떤 방에도 없음
-                    txn.commit();
+                    txn.abort();
                     dbPool_->return_connection(conn);
                     spdlog::warn("User {} is not in any room", userId);
                     return false;
