@@ -2,6 +2,7 @@ package com.worlcok.logging.controller
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.worlcok.logging.controller.dto.LogRequest
+import com.worlcok.logging.feign.IndicatorClient
 import com.worlcok.logging.kafka.toEvent
 import com.worlcok.logging.service.LogService
 import org.springframework.kafka.core.KafkaTemplate
@@ -18,6 +19,7 @@ class LogApi(
 
     @PostMapping
     fun log(@RequestBody log: LogRequest.Log) {
+        println(log)
         logService.sendLog(log)
     }
 }
