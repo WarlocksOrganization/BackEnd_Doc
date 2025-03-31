@@ -1,6 +1,8 @@
 package com.smashup.indicator.module.version.service.impl;
 
-import com.smashup.indicator.module.version.BatchCountManager;
+import com.smashup.indicator.module.gamerhint.domain.entity.MatrixDocument;
+import com.smashup.indicator.module.gamerhint.repository.MatrixRepository;
+import com.smashup.indicator.module.gamerhint.service.impl.GamerHintMatrixSubService;
 import com.smashup.indicator.module.version.PoolManager;
 import com.smashup.indicator.module.version.controller.dto.request.UpdatePatchVersionRequestDto;
 import com.smashup.indicator.module.version.controller.dto.request.UpdatePoolRequestDto;
@@ -17,12 +19,15 @@ import java.util.List;
 public class VersionService {
     // 의존성 주입
     private final PoolManager poolManager;
-    private final BatchCountManager batchCountManager;
+    private final GamerHintMatrixSubService gamerHintMatrixSubService;
+    private final MatrixRepository matrixRepository;
+
     // 필드 변수
     private String oldPatchVersion = null;  // 기본 값 // 중앙 관리
     private String currentPatchVersion = "1.0.0";  // 기본 값 // 중앙 관리
+    private int batchCount = 1;
 
-//    @Transactional
+    @Transactional
     public String updatePatchVersion(UpdatePatchVersionRequestDto dto) {
         // 임시방편으로 비밀번호 틀리면 작동안하게.
         // 인증인가가 없어서.
@@ -40,10 +45,37 @@ public class VersionService {
             if(dto.getOldPatchVersion()!=null){
                 this.oldPatchVersion = dto.getOldPatchVersion();
             }
+            // 서버 내려가고 다시 초기화해줄때 진행된 batchCount가 있을때.
+            if(dto.getLatestBatchCount() != null){
+                // 이전 버전batchCount를 한번에 set하기
+                this.batchCount = dto.getLatestBatchCount();
+                // 해당 patchVersion 로 작성된 문서가 이미 있으면 최초 스켈레톤 안 만들도록 건너뛰기.
+                try{
+                    // 있으면 아래 로직 건너뜀.
+                    if(gamerHintMatrixSubService.haveDocument(currentPatchVersion)){
+                        return currentPatchVersion;
+                    }
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+
+            }
+
 
             // 카드 풀 및 배치 카운트 업데이트
-//            poolManager.updateCardPool();
-            batchCountManager.resetBatchCount();
+            // poolManager.updateCardPool();
+            resetBatchCount();
+
+            // 배치 리셋이후 해당 패치버전의 첫 document 생성 및 저장 필요.
+            try{
+                List<MatrixDocument> docs = gamerHintMatrixSubService.generateDocument(currentPatchVersion, batchCount);
+                for (MatrixDocument doc : docs) {
+                    matrixRepository.save(doc);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
         return currentPatchVersion;
     }
@@ -66,6 +98,14 @@ public class VersionService {
                 .playerNumPool(poolManager.getPlayerNumPool())
                 .build();
         return returnDto;
+    }
+    // 이전 BatchCountManager 로직
+    public synchronized void resetBatchCount() {
+        this.batchCount = 1; // PATCH_VERSION이 바뀌면 초기화
+    }
+
+    public synchronized void incrementBatchCount() {
+        this.batchCount++; // PATCH_VERSION이 바뀌면 초기화
     }
 
 }
