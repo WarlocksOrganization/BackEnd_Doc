@@ -34,7 +34,7 @@ public class GamerHintController extends AbstractRestController {
     ) throws Exception {
         try {
 //            log.debug("insertData: {}", dto);
-//            System.out.println(dto.toString());
+            System.out.println(dto.toString());
             List<MatrixDocument> result = gamerHintMatrixService.insertData(dto);
             return handleSuccess(result); //
         } catch (Exception e) {
