@@ -1,6 +1,7 @@
 package com.smashup.indicator.module.gamerhint.service.impl;
 
 import com.smashup.indicator.module.gamerhint.controller.dto.request.GameEndRequestDto;
+import com.smashup.indicator.module.gamerhint.controller.dto.request.LogServerRequestDto;
 import com.smashup.indicator.module.gamerhint.controller.dto.request.PlayerLogRequestDto;
 import com.smashup.indicator.module.gamerhint.domain.entity.MatrixDocument;
 import com.smashup.indicator.module.gamerhint.repository.MatrixRepository;
@@ -64,37 +65,42 @@ public class GamerHintMatrixService {
             backoff = @Backoff(delay = 2000, multiplier = 2)
     )
     @Transactional
-    public List<MatrixDocument> insertData(GameEndRequestDto dto) throws Exception {
-        // 설계상 게임 단위로 받는중. 이상한 버전의 게임은 처리X => early return
-        if (dto.getPatchVersion().equals(versionService.getCurrentPatchVersion()) == false) {
-            return null;
-        }
+    public List<MatrixDocument> insertData(LogServerRequestDto dto) throws Exception {
         // 도큐먼트 세팅
         List<MatrixDocument> docs = gamerHintMatrixSubService.getDocumentByBatch(versionService.getCurrentPatchVersion(), versionService.getBatchCount());
 
-        // playerLog 단위 작업
-        for ( PlayerLogRequestDto playerLog: dto.getPlayerLogs()) {
+        // 여러 게임 받도록 설계 변경.
+        for (GameEndRequestDto game: dto.getData()) {
+            // 이상한 버전의 게임은 처리X => early return
+            if (game.getPatchVersion().equals(versionService.getCurrentPatchVersion()) == false) {
+                continue;
+            }
+            // playerLog 단위 작업
+            for ( PlayerLogRequestDto playerLog: game.getPlayerLogs()) {
 
-            // targetMatrixId 생성
-            /// pool 세팅
-            List<Integer> classPool = List.of(playerLog.getClassCode(),-1);
-            List<Integer> mapPool = List.of(dto.getMapId(),-1);
-            List<Integer> playerNumPool = List.of(dto.getPlayerCount(),-1);
+                // targetMatrixId 생성
+                /// pool 세팅
+                List<Integer> classPool = List.of(playerLog.getClassCode(),-1);
+                List<Integer> mapPool = List.of(game.getMapId(),-1);
+                List<Integer> playerNumPool = List.of(game.getPlayerCount(),-1);
 
-            List<String> targetMatrixIdList = gamerHintMatrixSubService.generateMatrixId(classPool,mapPool,playerNumPool);
+                List<String> targetMatrixIdList = gamerHintMatrixSubService.generateMatrixId(classPool,mapPool,playerNumPool);
 
-            // 공존 빈도 행렬 상에서 ++ 할 좌표 생성 => 공존 빈도 행렬 docC에 id와 좌표에 맞게 반영
-            List<int[]> coexistenceXYList = gamerHintMatrixSubService.generateCoexistenceXY(playerLog);
-            // 전이 빈도 행렬 상에서 ++ 할 좌표 생성 => 전이 빈도 행렬 docT에 id와 좌표에 맞게 반영
-            List<int[]> transitionXYList = gamerHintMatrixSubService.generateTransitionXY(playerLog);
-            for (MatrixDocument doc : docs) {
-                if(doc.getType().equals("C")){
-                    gamerHintMatrixSubService.updateMatrix(doc, targetMatrixIdList, coexistenceXYList);
-                } else{
-                    gamerHintMatrixSubService.updateMatrix(doc, targetMatrixIdList, transitionXYList);
+                // 공존 빈도 행렬 상에서 ++ 할 좌표 생성 => 공존 빈도 행렬 docC에 id와 좌표에 맞게 반영
+                List<int[]> coexistenceXYList = gamerHintMatrixSubService.generateCoexistenceXY(playerLog);
+                // 전이 빈도 행렬 상에서 ++ 할 좌표 생성 => 전이 빈도 행렬 docT에 id와 좌표에 맞게 반영
+                List<int[]> transitionXYList = gamerHintMatrixSubService.generateTransitionXY(playerLog);
+                for (MatrixDocument doc : docs) {
+                    if(doc.getType().equals("C")){
+                        gamerHintMatrixSubService.updateMatrix(doc, targetMatrixIdList, coexistenceXYList);
+                    } else{
+                        gamerHintMatrixSubService.updateMatrix(doc, targetMatrixIdList, transitionXYList);
+                    }
                 }
             }
+
         }
+
 
         // 새로 들어온 data 전부 반영된 상태이므로 저장.
         for (MatrixDocument doc : docs) {

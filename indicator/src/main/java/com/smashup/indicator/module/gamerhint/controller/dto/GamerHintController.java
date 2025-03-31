@@ -1,7 +1,7 @@
 package com.smashup.indicator.module.gamerhint.controller.dto;
 
 import com.smashup.indicator.common.util.AbstractRestController;
-import com.smashup.indicator.module.gamerhint.controller.dto.request.GameEndRequestDto;
+import com.smashup.indicator.module.gamerhint.controller.dto.request.LogServerRequestDto;
 import com.smashup.indicator.module.gamerhint.domain.entity.MatrixDocument;
 import com.smashup.indicator.module.gamerhint.service.impl.GamerHintMatrixService;
 import com.smashup.indicator.module.gamerhint.service.impl.GamerHintService;
@@ -30,7 +30,7 @@ public class GamerHintController extends AbstractRestController {
     // 로그서버 맡은 팀원이 Post로 받아달라고 요청하였음.
     @PostMapping("/internal/hints/data")
     public ResponseEntity<Map<String, Object>> insertData(
-            @RequestBody GameEndRequestDto dto
+            @RequestBody LogServerRequestDto dto
     ) throws Exception {
         try {
 //            log.debug("insertData: {}", dto);
