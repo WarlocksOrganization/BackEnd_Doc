@@ -28,7 +28,7 @@ int main(int argc, char* argv[])
         auto console = spdlog::stdout_color_mt("console");
         spdlog::set_default_logger(console);
         spdlog::set_level(spdlog::level::info);
-        spdlog::info("SmashUp server v1.0.0");
+        spdlog::info("SmashUp server v1.0.1");
 
         // 시그널 핸들러 등록
         std::signal(SIGINT, signal_handler);
