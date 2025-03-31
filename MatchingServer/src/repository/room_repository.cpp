@@ -179,7 +179,7 @@ namespace game_server {
 
                 txn.commit();
                 dbPool_->return_connection(conn);
-                spdlog::info("User {} joined room {}", userId, roomId);
+                spdlog::debug("User {} joined room {}", userId, roomId);
                 return true;
             }
             catch (const std::exception& e) {
@@ -226,12 +226,12 @@ namespace game_server {
                     txn.exec_params(
                         "UPDATE rooms SET status = 'TERMINATED' WHERE room_id = $1",
                         room_id);
-                    spdlog::info("Room {} marked as TERMINATED (no players left)", room_id);
+                    spdlog::debug("Room {} marked as TERMINATED (no players left)", room_id);
                 }
 
                 txn.commit();
                 dbPool_->return_connection(conn);
-                spdlog::info("User {} left room {}, {} players remaining",
+                spdlog::debug("User {} left room {}, {} players remaining",
                     userId, room_id, remaining_players);
                 return true;
             }

@@ -39,7 +39,7 @@ namespace game_server {
         void init_current_user(const json& response);
         void read_handshake();
         void write_handshake_response(const std::string& response);
-        void write_broadcast(const std::string& response, std::shared_ptr<Session>& mirror);
+        void write_broadcast(const std::string& response, int port);
 
         boost::asio::ip::tcp::socket socket_;
         std::map<std::string, std::shared_ptr<Controller>>& controllers_;
