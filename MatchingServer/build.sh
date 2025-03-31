@@ -66,15 +66,11 @@ ln -sf "$LOG_FILE" logs/server_latest.log
 
 # 초기 로그 표시
 echo "초기 서버 로그 (5초 동안):"
-sleep 2  # 서버가 시작하는데 약간의 시간을 줍니다
-tail -f "$LOG_FILE" & 
+sleep 1  # 서버가 시작하는데 약간의 시간을 줍니다
+tail -n 10 "$LOG_FILE"
 TAIL_PID=$!
-sleep 5
+sleep 1
 kill $TAIL_PID 2>/dev/null
-
-# 과거 로그 정리 (선택적)
-# 30일 이상 된 로그 파일 삭제
-find logs -name "server_*.log" -type f -mtime +30 -delete 2>/dev/null
 
 echo -e "${GREEN}서버가 백그라운드에서 실행 중입니다.${NC}"
 echo "실시간 로그 확인: tail -f logs/server_latest.log"

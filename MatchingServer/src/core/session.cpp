@@ -220,6 +220,11 @@ namespace game_server {
                 handlePing();
                 return;
             }
+            else if (action == "logout") {
+                std::string logMessage = user_name_ + "has left the game";
+                handle_error(logMessage);
+                return;
+            }
             else {
                 // 알 수 없는 액션 처리
                 spdlog::warn("Unknown action: {}", action);
@@ -339,7 +344,7 @@ namespace game_server {
 
     void Session::handle_error(const std::string& error_message) {
         // 오류 로깅
-        spdlog::error(error_message);
+        spdlog::info(error_message);
 
         // 사용자가 방에 참여 중이었다면 나가기 처리
         try {
