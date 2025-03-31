@@ -226,7 +226,12 @@ namespace game_server {
                     txn.exec_params(
                         "UPDATE rooms SET status = 'TERMINATED' WHERE room_id = $1",
                         room_id);
-                    spdlog::debug("Room {} marked as TERMINATED (no players left)", room_id);
+
+                    txn.exec_params(
+                        "UPDATE games SET status = 'COMPLETED' WHERE status = 'IN_PROGRESS' AND room_id = $1",
+                        room_id);
+                    
+                    spdlog::debug("Room {} marked as TERMINATED (no players left) and completed games that inprogress at room : {}", room_id, room_id);
                 }
 
                 txn.commit();
