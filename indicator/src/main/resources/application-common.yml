@@ -1,28 +1,24 @@
 # application-common.yml
-server:
-  port: 8085
-  servlet:
-    context-path: /
-    encoding:
-      charset: UTF-8
-      force: true
-  tomcat:
-    max-swallow-size: -1
-    max-http-form-post-size: 10MB
-    connection-timeout: 20000
-    accept-count: 25
-  tomcat.threads:
-    max: 50
-    min-spare: 10
-  forward-headers-strategy: native
+#server:
+#  port: 8085
+#  servlet:
+#    context-path: /
+#    encoding:
+#      charset: UTF-8
+#      force: true
+#  tomcat:
+#    max-swallow-size: -1
+#    max-http-form-post-size: 10MB
+#    connection-timeout: 20000
+#    accept-count: 25
+#  tomcat.threads:
+#    max: 50
+#    min-spare: 10
+#  forward-headers-strategy: native
 
 spring:
   application:
     name: ${APPLICATION_NAME:indicator}
-
-  data:
-    mongodb:
-    # 여기에 MongoDB 연결 uri 설정 필요 (예: uri: mongodb://localhost:27017/mydb)
 
   jackson:
     date-format: yyyy-MM-dd HH:mm:ss

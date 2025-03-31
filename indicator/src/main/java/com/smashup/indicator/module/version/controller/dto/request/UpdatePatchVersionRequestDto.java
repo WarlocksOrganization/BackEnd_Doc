@@ -12,5 +12,6 @@ import lombok.NoArgsConstructor;
 public class UpdatePatchVersionRequestDto {
     private String newPatchVersion;
     private String oldPatchVersion;
+    private Integer latestBatchCount;
     private String timeStamp;
 }
