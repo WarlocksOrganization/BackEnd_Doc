@@ -1,4 +1,4 @@
-CXX = g++
+CXX = ccache g++
 # vcpkg 헤더 파일 경로 추가
 CXXFLAGS = -std=c++20 -Wall -Wextra -I./ -I./src -I./src/core -I./src/controller -I./src/service -I./src/repository -I./src/util -I./vcpkg_installed/x64-linux/include
 # vcpkg 라이브러리 경로 추가
