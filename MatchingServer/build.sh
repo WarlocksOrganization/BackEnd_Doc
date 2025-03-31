@@ -42,3 +42,5 @@ else
 fi
 
 echo "===== 빌드 완료 ====="
+echo "서버 실행 중..."
+./build/bin/MatchingServer
