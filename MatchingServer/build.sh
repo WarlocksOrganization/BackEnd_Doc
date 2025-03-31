@@ -43,35 +43,3 @@ if [ ! -z "$PID" ]; then
         sleep 1
     fi
 fi
-
-# 로그 디렉토리 생성
-mkdir -p logs
-
-# 날짜를 포함한 로그 파일명 생성
-LOG_DATE=$(date +%Y%m%d_%H%M%S)
-LOG_FILE="logs/server_${LOG_DATE}.log"
-
-# 서버를 백그라운드로 실행하고 로그 저장
-echo "서버를 백그라운드로 시작합니다..."
-echo "로그 파일: $LOG_FILE"
-
-nohup ./build/bin/MatchingServer >> "$LOG_FILE" 2>&1 &
-
-# 새 프로세스 ID 출력
-NEW_PID=$!
-echo "서버가 PID $NEW_PID로 시작되었습니다."
-
-# 최신 로그 파일에 대한 심볼릭 링크 생성/업데이트
-ln -sf "$LOG_FILE" logs/server_latest.log
-
-# 초기 로그 표시
-echo "초기 서버 로그 (5초 동안):"
-sleep 1  # 서버가 시작하는데 약간의 시간을 줍니다
-tail -n 10 "$LOG_FILE"
-TAIL_PID=$!
-sleep 1
-kill $TAIL_PID 2>/dev/null
-
-echo -e "${GREEN}서버가 백그라운드에서 실행 중입니다.${NC}"
-echo "실시간 로그 확인: tail -f logs/server_latest.log"
-echo "전체 로그 목록 확인: ls -la logs/"
