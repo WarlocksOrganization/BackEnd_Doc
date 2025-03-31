@@ -14,6 +14,20 @@ if [ -d "build" ]; then
     make clean
 fi
 
+# vcpkg 의존성 변경 확인
+if [ -f "vcpkg.json" ]; then
+    VCPKG_HASH=$(md5sum vcpkg.json | awk '{print $1}')
+    VCPKG_HASH_FILE=".vcpkg_hash"
+    
+    if [ -f "$VCPKG_HASH_FILE" ] && [ "$(cat $VCPKG_HASH_FILE)" = "$VCPKG_HASH" ]; then
+        echo "vcpkg 의존성 변경 없음, 설치 건너뜀..."
+    else
+        echo "vcpkg 의존성 변경 감지, 설치 중..."
+        ./vcpkg/vcpkg install --triplet=x64-linux
+        echo "$VCPKG_HASH" > "$VCPKG_HASH_FILE"
+    fi
+fi
+
 # 빌드 실행
 echo "프로젝트 빌드 중..."
 make -j$(nproc)
@@ -28,18 +42,3 @@ else
 fi
 
 echo "===== 빌드 완료 ====="
-
-# 기존 서버 프로세스 종료
-PID=$(pgrep -f "MatchingServer" || echo "")
-if [ ! -z "$PID" ]; then
-    echo "기존 서버 프로세스(PID: $PID) 종료 중..."
-    kill $PID
-    sleep 2
-    
-    # 프로세스가 종료되었는지 확인
-    if ps -p $PID > /dev/null; then
-        echo -e "${YELLOW}정상 종료 실패, 강제 종료합니다...${NC}"
-        kill -9 $PID
-        sleep 1
-    fi
-fi
