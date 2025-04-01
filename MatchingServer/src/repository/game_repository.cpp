@@ -70,7 +70,7 @@ namespace game_server {
                     return -1;
                 }
                 int roomId = result[0][0].as<int>();
-                spdlog::info("found roomId completely! Room ID : {}", roomId);
+                spdlog::info("Update status completed successful for Game ID : {}", gameId);
 
                 pqxx::result res = txn.exec_params(
                     "UPDATE rooms "
@@ -79,21 +79,13 @@ namespace game_server {
                     "RETURNING room_id",
                     roomId);
 
-                if (res.empty()) {
-                    spdlog::error("Can't found roomId use to Room ID : {}", roomId);
+                if (res.empty() || roomId != res[0][0].as<int>()) {
+                    spdlog::error("Update room status fail Room ID : {}", roomId);
                     txn.abort();
                     dbPool_->return_connection(conn);
                     return -1;
                 }
-                int resId = res[0][0].as<int>();
-                if (roomId != resId) {
-                    spdlog::error("Can't found room which Room ID is {}", roomId);
-                    txn.abort();
-                    dbPool_->return_connection(conn);
-                    return -1;
-                }
-
-                spdlog::info("Change room status competely Room ID : {}", roomId);
+                spdlog::info("Update room status competely Room ID : {}", roomId);
 
                 txn.commit();
                 dbPool_->return_connection(conn);
