@@ -1,6 +1,6 @@
 CXX = ccache g++
 # vcpkg 헤더 파일 경로 추가
-CXXFLAGS = -std=c++20 -Wall -Wextra -I./ -I./src -I./src/core -I./src/controller -I./src/service -I./src/repository -I./src/util -I./vcpkg_installed/x64-linux/include
+CXXFLAGS = -std=c++20 -Wall -Wextra -finput-charset=UTF-8 -I./ -I./src -I./src/core -I./src/controller -I./src/service -I./src/repository -I./src/util -I./vcpkg_installed/x64-linux/include
 # vcpkg 라이브러리 경로 추가
 LDFLAGS = -L./vcpkg_installed/x64-linux/lib -lpqxx -lpq -lboost_system -lssl -lcrypto -pthread -lfmt -lpgcommon -lpgport
 SRC_DIR = ./src
