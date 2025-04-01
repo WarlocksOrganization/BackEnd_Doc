@@ -28,12 +28,16 @@ namespace game_server {
 
         // 技记 包府 皋辑靛
         std::string registerSession(std::shared_ptr<Session> session);
+        void registerMirrorSession(std::shared_ptr<Session> session, int port);
         void removeSession(const std::string& token, int userId);
+        void removeMirrorSession(int port);
         std::shared_ptr<Session> getSession(const std::string& token);
+        std::shared_ptr<Session> getMirrorSession(int port);
+        int getCCU();
+        int getRoomCapacity();
         std::string generateSessionToken();
         void setSessionTimeout(std::chrono::seconds timeout);
         void startSessionTimeoutCheck();
-        std::unordered_map<int, std::weak_ptr<Session>> mirrors_;
         bool checkAlreadyLogin(int userId);
     private:
         void do_accept();
@@ -47,6 +51,8 @@ namespace game_server {
         bool running_;
 
         // 技记 包府 单捞磐
+        std::unordered_map<int, std::weak_ptr<Session>> mirrors_;
+        std::mutex mirrors_mutex_;
         std::unordered_map<std::string, std::weak_ptr<Session>> sessions_;
         std::mutex sessions_mutex_;
         std::unordered_map<int, std::string> tokens_;

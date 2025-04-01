@@ -87,7 +87,7 @@ namespace game_server {
                             spdlog::info("Mirror server connection established");
 
                             // 미러 서버 전용 초기화
-                            server_->mirrors_[handshake["port"]] = shared_from_this();
+                            server_->registerMirrorSession(shared_from_this(), handshake["port"]);
                             user_id_ = handshake["port"];
 
                             // 확인 응답 전송
@@ -226,11 +226,20 @@ namespace game_server {
                 handle_error(logMessage);
                 return;
             }
+            else if (action == "roomCapacity") {
+                json response;
+                response["action"] = "roomCapacity";
+                response["status"] = "success";
+                response["roomCapacity"] = server_->getRoomCapacity();
+                write_response(response.dump());
+                return;
+            }
             else if (action == "CCU") {
-                json ccu_response;
-                ccu_response["action"] = "CCU";
-                ccu_response["CCU"] = (int)server_->mirrors_.size();
-                write_response(ccu_response.dump());
+                json response;
+                response["action"] = "CCU";
+                response["status"] = "success";
+                response["roomCapacity"] = server_->getCCU();
+                write_response(response.dump());
                 return;
             }
             else {
@@ -280,11 +289,18 @@ namespace game_server {
                         broad_response["roomName"] = response["roomName"];
                         broad_response["maxPlayers"] = response["maxPlayers"];
 
-                        int port = response["port"];
-                        if (server_->mirrors_.count(port)) {
-                            spdlog::debug("Mirror found, broadcasting message");
-                            write_broadcast(broad_response.dump(), port);
+                        auto mirror = server_->getMirrorSession(response["port"]);
+                        if (!mirror) {
+                            json error_response = {
+                                {"status", "error"},
+                                {"message", "Missing mirror server"}
+                            };
+                            spdlog::error("roomId {} has no mirror server", response["roomId"].get<int>());
+                            write_response(error_response.dump());
+                            return;
                         }
+                        spdlog::debug("Mirror found, broadcasting message");
+                        write_broadcast(broad_response.dump(), mirror);
                     }
                     catch (const std::exception& e) {
                         spdlog::error("Error in createRoom response handling: {}", e.what());
@@ -317,13 +333,7 @@ namespace game_server {
         }
     }
 
-    void Session::write_broadcast(const std::string& response, int port) {
-        auto mirror = server_->mirrors_[port].lock();
-        if (!mirror) {
-            spdlog::warn("Mirror for port {} no longer exists", port);
-            server_->mirrors_.erase(port);  // 미러 맵에서 해당 항목 제거
-            return;
-        }
+    void Session::write_broadcast(const std::string& response, std::shared_ptr<Session> mirror) {
         boost::asio::async_write(
             mirror->socket_,
             boost::asio::buffer(response),
