@@ -1,4 +1,4 @@
-#include "game_repository.h"
+ï»¿#include "game_repository.h"
 #include "../util/db_pool.h"
 #include <pqxx/pqxx>
 #include <spdlog/spdlog.h>
@@ -7,7 +7,7 @@ namespace game_server {
 
     using json = nlohmann::json;
 
-    // ¸®Æ÷ÁöÅä¸® ±¸ÇöÃ¼
+    // ë¦¬í¬ì§€í† ë¦¬ êµ¬í˜„ì²´
     class GameRepositoryImpl : public GameRepository {
     public:
         explicit GameRepositoryImpl(DbPool* dbPool) : dbPool_(dbPool) {}
@@ -104,7 +104,7 @@ namespace game_server {
         DbPool* dbPool_;
     };
 
-    // ÆÑÅä¸® ¸Ş¼­µå ±¸Çö
+    // íŒ©í† ë¦¬ ë©”ì„œë“œ êµ¬í˜„
     std::unique_ptr<GameRepository> GameRepository::create(DbPool* dbPool) {
         return std::make_unique<GameRepositoryImpl>(dbPool);
     }

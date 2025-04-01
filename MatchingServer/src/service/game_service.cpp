@@ -1,4 +1,4 @@
-#include "game_service.h"
+ï»¿#include "game_service.h"
 #include "../repository/game_repository.h"
 #include <spdlog/spdlog.h>
 #include <random>
@@ -9,7 +9,7 @@ namespace game_server {
 
     using json = nlohmann::json;
 
-    // ¼­ºñ½º ±¸ÇöÃ¼
+    // ì„œë¹„ìŠ¤ êµ¬í˜„ì²´
     class GameServiceImpl : public GameService {
     public:
         explicit GameServiceImpl(std::shared_ptr<GameRepository> gameRepo)
@@ -19,14 +19,14 @@ namespace game_server {
         json startGame(json& request) {
             json response;
             try {
-                // ¿äÃ» À¯È¿¼º °ËÁõ
+                // ìš”ì²­ ìœ íš¨ì„± ê²€ì¦
                 if (!request.contains("roomId") || !request.contains("mapId")) {
                     response["status"] = "error";
                     response["message"] = "Missing required fields in request";
                     return response;
                 }
 
-                // °ÔÀÓ ID ¾ò±â ½ÇÆĞ ½Ã -1
+                // ê²Œì„ ID ì–»ê¸° ì‹¤íŒ¨ ì‹œ -1
                 int gameId = gameRepo_->createGame(request);
 
                 if (gameId == -1) {
@@ -35,7 +35,7 @@ namespace game_server {
                     return response;
                 }
 
-                // ¼º°ø ÀÀ´ä »ı¼º
+                // ì„±ê³µ ì‘ë‹µ ìƒì„±
                 response["action"] = "gameStart";
                 response["status"] = "success";
                 response["message"] = "game successfully created";
@@ -57,7 +57,7 @@ namespace game_server {
         json endGame(json& request) {
             json response;
             try {
-                // ¿äÃ» À¯È¿¼º °ËÁõ
+                // ìš”ì²­ ìœ íš¨ì„± ê²€ì¦
                 if (!request.contains("gameId")) {
                     response["status"] = "error";
                     response["message"] = "Missing required fields in request";
@@ -71,7 +71,7 @@ namespace game_server {
                     return response;
                 }
 
-                // ¼º°ø ÀÀ´ä »ı¼º
+                // ì„±ê³µ ì‘ë‹µ ìƒì„±
                 response["action"] = "gameEnd";
                 response["status"] = "success";
                 response["message"] = "The game is ended successfully";
@@ -92,7 +92,7 @@ namespace game_server {
         std::shared_ptr<GameRepository> gameRepo_;
     };
 
-    // ÆÑÅä¸® ¸Ş¼­µå ±¸Çö
+    // íŒ©í† ë¦¬ ë©”ì„œë“œ êµ¬í˜„
     std::unique_ptr<GameService> GameService::create(std::shared_ptr<GameRepository> gameRepo) {
         return std::make_unique<GameServiceImpl>(gameRepo);
     }

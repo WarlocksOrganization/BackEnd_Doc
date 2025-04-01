@@ -1,4 +1,4 @@
-// core/session.h
+﻿// core/session.h
 #pragma once
 #include "../controller/controller.h"
 #include <boost/asio.hpp>

@@ -1,6 +1,6 @@
-// repository/room_repository.cpp
-// ¹æ ¸®Æ÷ÁöÅä¸® ±¸Çö ÆÄÀÏ
-// ¹æ °ü·Ã µ¥ÀÌÅÍº£ÀÌ½º ÀÛ¾÷À» Ã³¸®ÇÏ´Â ¸®Æ÷ÁöÅä¸®
+ï»¿// repository/room_repository.cpp
+// ë°© ë¦¬í¬ì§€í† ë¦¬ êµ¬í˜„ íŒŒì¼
+// ë°© ê´€ë ¨ ë°ì´í„°ë² ì´ìŠ¤ ì‘ì—…ì„ ì²˜ë¦¬í•˜ëŠ” ë¦¬í¬ì§€í† ë¦¬
 #include "room_repository.h"
 #include "../util/db_pool.h"
 #include <pqxx/pqxx>
@@ -11,7 +11,7 @@ namespace game_server {
 
     using json = nlohmann::json;
 
-    // ¸®Æ÷ÁöÅä¸® ±¸ÇöÃ¼
+    // ë¦¬í¬ì§€í† ë¦¬ êµ¬í˜„ì²´
     class RoomRepositoryImpl : public RoomRepository {
     public:
         explicit RoomRepositoryImpl(DbPool* dbPool) : dbPool_(dbPool) {}
@@ -21,7 +21,7 @@ namespace game_server {
             auto conn = dbPool_->get_connection();
             pqxx::work txn(*conn);
             try {
-                // ¿­¸° ¹æ ¸ñ·Ï Á¶È¸ (ÃÖ±Ù »ı¼º¼ø)
+                // ì—´ë¦° ë°© ëª©ë¡ ì¡°íšŒ (ìµœê·¼ ìƒì„±ìˆœ)
                 pqxx::result result = txn.exec_params(
                     "SELECT room_id, room_name, host_id, ip_address, port, "
                     "max_players, status, created_at "
@@ -31,7 +31,7 @@ namespace game_server {
                 txn.commit();
                 dbPool_->return_connection(conn);
 
-                // Á¶È¸ °á°ú¸¦ Room °´Ã¼ ¸®½ºÆ®·Î º¯È¯
+                // ì¡°íšŒ ê²°ê³¼ë¥¼ Room ê°ì²´ ë¦¬ìŠ¤íŠ¸ë¡œ ë³€í™˜
                 for (const auto& row : result) {
                     json room;
                     room["roomId"] = row["room_id"].as<int>();
@@ -62,7 +62,7 @@ namespace game_server {
                 {"roomId", -1}
             };
             try {
-                // À¯È¿ÇÑ ¹æ ID Ã£±â
+                // ìœ íš¨í•œ ë°© ID ì°¾ê¸°
                 pqxx::result idResult = txn.exec(
                     "SELECT room_id FROM rooms WHERE status = 'TERMINATED' ORDER BY room_id LIMIT 1 FOR UPDATE");
 
@@ -73,7 +73,7 @@ namespace game_server {
                 }
                 roomId = idResult[0][0].as<int>();
 
-                // ¹æ ÀçÈ°¼ºÈ­
+                // ë°© ì¬í™œì„±í™”
                 pqxx::result roomResult;
                 roomResult = txn.exec_params(
                     "UPDATE rooms SET room_name = $1, host_id = $2, max_players = $3, "
@@ -88,7 +88,7 @@ namespace game_server {
                     return result;
                 }
 
-                // »ç¿ëÀÚ¸¦ ¹æ¿¡ Ãß°¡
+                // ì‚¬ìš©ìë¥¼ ë°©ì— ì¶”ê°€
                 txn.exec_params(
                     "INSERT INTO room_users(room_id, user_id) VALUES($1, $2)",
                     roomId, hostId);
@@ -114,7 +114,7 @@ namespace game_server {
             auto conn = dbPool_->get_connection();
             pqxx::work txn(*conn);
             try {
-                // ¹æÀÌ Á¸ÀçÇÏ°í WAITING »óÅÂÀÎÁö È®ÀÎ
+                // ë°©ì´ ì¡´ì¬í•˜ê³  WAITING ìƒíƒœì¸ì§€ í™•ì¸
                 pqxx::result roomCheck = txn.exec_params(
                     "SELECT status FROM rooms WHERE room_id = $1",
                     roomId);
@@ -134,21 +134,21 @@ namespace game_server {
                     return false;
                 }
 
-                // ÀÌ¹Ì Âü°¡ÇÑ »ç¿ëÀÚÀÎÁö È®ÀÎ
+                // ì´ë¯¸ ì°¸ê°€í•œ ì‚¬ìš©ìì¸ì§€ í™•ì¸
                 pqxx::result checkResult = txn.exec_params(
                     "SELECT joined_at FROM room_users "
                     "WHERE room_id = $1 AND user_id = $2",
                     roomId, userId);
 
                 if (!checkResult.empty()) {
-                    // ÀÌ¹Ì Âü°¡ÇÑ »óÅÂ
+                    // ì´ë¯¸ ì°¸ê°€í•œ ìƒíƒœ
                     spdlog::error("User {} already exists in room {}", userId, roomId);
                     txn.abort();
                     dbPool_->return_connection(conn);
                     return false;
                 }
 
-                // ÃÖ´ë ÀÎ¿ø È®ÀÎ
+                // ìµœëŒ€ ì¸ì› í™•ì¸
                 pqxx::result maxPlayersResult = txn.exec_params(
                     "SELECT max_players, "
                     "(SELECT COUNT(*) FROM room_users WHERE room_id = $1) as current_players "
@@ -165,7 +165,7 @@ namespace game_server {
                     return false;
                 }
 
-                // »õ Âü°¡ÀÚ Ãß°¡
+                // ìƒˆ ì°¸ê°€ì ì¶”ê°€
                 pqxx::result result = txn.exec_params(
                     "INSERT INTO room_users (room_id, user_id, joined_at) "
                     "VALUES ($1, $2, DEFAULT) RETURNING room_id",
@@ -194,13 +194,13 @@ namespace game_server {
             auto conn = dbPool_->get_connection();
             pqxx::work txn(*conn);
             try {
-                // »ç¿ëÀÚ°¡ ¼ÓÇÑ ¹æ ID °¡Á®¿À±â
+                // ì‚¬ìš©ìê°€ ì†í•œ ë°© ID ê°€ì ¸ì˜¤ê¸°
                 pqxx::result roomResult = txn.exec_params(
                     "SELECT room_id FROM room_users WHERE user_id = $1",
                     userId);
 
                 if (roomResult.empty()) {
-                    // »ç¿ëÀÚ°¡ ¾î¶² ¹æ¿¡µµ ¾øÀ½
+                    // ì‚¬ìš©ìê°€ ì–´ë–¤ ë°©ì—ë„ ì—†ìŒ
                     txn.abort();
                     dbPool_->return_connection(conn);
                     spdlog::warn("User {} is not in any room", userId);
@@ -209,19 +209,19 @@ namespace game_server {
 
                 int room_id = roomResult[0][0].as<int>();
 
-                // Âü°¡ÀÚ Á¦°Å
+                // ì°¸ê°€ì ì œê±°
                 txn.exec_params(
                     "DELETE FROM room_users WHERE user_id = $1",
                     userId);
 
-                // µ¿ÀÏ Æ®·£Àè¼Ç ³»¿¡¼­ ÇÃ·¹ÀÌ¾î ¼ö È®ÀÎ
+                // ë™ì¼ íŠ¸ëœì­ì…˜ ë‚´ì—ì„œ í”Œë ˆì´ì–´ ìˆ˜ í™•ì¸
                 pqxx::result countResult = txn.exec_params(
                     "SELECT COUNT(*) FROM room_users WHERE room_id = $1",
                     room_id);
 
                 int remaining_players = countResult[0][0].as<int>();
 
-                // ¹æ¿¡ ³²Àº ÇÃ·¹ÀÌ¾î°¡ ¾øÀ¸¸é ¹æ »óÅÂ TERMINATED·Î º¯°æ
+                // ë°©ì— ë‚¨ì€ í”Œë ˆì´ì–´ê°€ ì—†ìœ¼ë©´ ë°© ìƒíƒœ TERMINATEDë¡œ ë³€ê²½
                 if (remaining_players == 0) {
                     txn.exec_params(
                         "UPDATE rooms SET status = 'TERMINATED' WHERE room_id = $1",
@@ -252,7 +252,7 @@ namespace game_server {
             auto conn = dbPool_->get_connection();
             pqxx::work txn(*conn);
             try {
-                // ³²Àº ÇÃ·¹ÀÌ¾î ¼ö È®ÀÎ
+                // ë‚¨ì€ í”Œë ˆì´ì–´ ìˆ˜ í™•ì¸
                 pqxx::result result = txn.exec_params(
                     "SELECT COUNT(*) FROM room_users WHERE room_id = $1",
                     roomId);
@@ -276,7 +276,7 @@ namespace game_server {
             pqxx::work txn(*conn);
 
             try {
-                // ÇöÀç ¹æ¿¡ ÀÖ´Â Âü°¡ÀÚ ID ¸ñ·Ï Á¶È¸
+                // í˜„ì¬ ë°©ì— ìˆëŠ” ì°¸ê°€ì ID ëª©ë¡ ì¡°íšŒ
                 pqxx::result result = txn.exec_params(
                     "SELECT user_id FROM room_users "
                     "WHERE room_id = $1",
@@ -304,7 +304,7 @@ namespace game_server {
         DbPool* dbPool_;
     };
 
-    // ÆÑÅä¸® ¸Ş¼­µå ±¸Çö
+    // íŒ©í† ë¦¬ ë©”ì„œë“œ êµ¬í˜„
     std::unique_ptr<RoomRepository> RoomRepository::create(DbPool* dbPool) {
         return std::make_unique<RoomRepositoryImpl>(dbPool);
     }
