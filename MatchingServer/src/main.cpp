@@ -13,7 +13,7 @@ std::unique_ptr<game_server::Server> server;
 // 시그널 핸들러 함수
 void signal_handler(int signal)
 {
-    spdlog::info("Received signal {}, shutting down...", signal);
+    spdlog::info("시그널 받음 {}, 서버 종료...", signal);
     if (server) {
         server->stop();
     }
@@ -28,7 +28,7 @@ int main(int argc, char* argv[])
         auto console = spdlog::stdout_color_mt("console");
         spdlog::set_default_logger(console);
         spdlog::set_level(spdlog::level::info);
-        spdlog::info("SmashUp server v1.0.2");
+        spdlog::info("서버 버전 v1.0.2");
 
         // 시그널 핸들러 등록
         std::signal(SIGINT, signal_handler);
@@ -48,11 +48,11 @@ int main(int argc, char* argv[])
         server->run();
 
         // IO 컨텍스트 실행 (이벤트 루프)
-        spdlog::info("서버 시작 포트 : {}", port);
+        spdlog::info("서버 시작, 포트 : {}", port);
         io_context.run();
     }
     catch (std::exception& e) {
-        spdlog::error("Exception: {}", e.what());
+        spdlog::error("서버 설정 중 예외 발생: {}", e.what());
         return 1;
     }
 
