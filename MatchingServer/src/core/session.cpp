@@ -225,6 +225,13 @@ namespace game_server {
                 handle_error(logMessage);
                 return;
             }
+            else if (action == "CCU") {
+                json ccu_response;
+                ccu_response["action"] = "CCU";
+                ccu_response["CCU"] = (int)server_->mirrors_.size();
+                write_response(ccu_response.dump());
+                return;
+            }
             else {
                 // 알 수 없는 액션 처리
                 spdlog::warn("Unknown action: {}", action);
