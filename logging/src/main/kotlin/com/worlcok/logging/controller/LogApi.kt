@@ -19,7 +19,6 @@ class LogApi(
 
     @PostMapping
     fun log(@RequestBody log: LogRequest.Log) {
-        println(log)
         logService.sendLog(log)
     }
 }

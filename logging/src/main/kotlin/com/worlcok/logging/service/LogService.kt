@@ -39,7 +39,6 @@ class LogService (
         if(check) {
             sb.deleteCharAt( sb.length - 1)
             sb.append("]}")
-            println(sb.toString())
             sendToIndicator(sb.toString())
         }
     }
