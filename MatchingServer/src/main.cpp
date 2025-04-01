@@ -28,7 +28,7 @@ int main(int argc, char* argv[])
         auto console = spdlog::stdout_color_mt("console");
         spdlog::set_default_logger(console);
         spdlog::set_level(spdlog::level::info);
-        spdlog::info("SmashUp server v1.0.1");
+        spdlog::info("SmashUp server v1.0.2");
 
         // 시그널 핸들러 등록
         std::signal(SIGINT, signal_handler);
@@ -38,25 +38,6 @@ int main(int argc, char* argv[])
         short port = 8080;
         std::string db_connection_string =
             "dbname=gamedata user=admin password=admin host=localhost port=5432 client_encoding=UTF8";
-
-        // 명령줄 인수 처리
-        for (int i = 1; i < argc; ++i) {
-            std::string arg = argv[i];
-            if (arg == "--port" && i + 1 < argc) {
-                port = std::stoi(argv[++i]);
-            }
-            else if (arg == "--db" && i + 1 < argc) {
-                db_connection_string = argv[++i];
-            }
-            else if (arg == "--help") {
-                std::cout << "사용법: " << argv[0] << " [옵션]\n"
-                    << "옵션:\n"
-                    << "  --port PORT       서버 포트 (기본값: 8080)\n"
-                    << "  --db CONNSTRING   데이터베이스 연결 문자열\n"
-                    << "  --help            도움말 표시\n";
-                return 0;
-            }
-        }
 
         // IO 컨텍스트 및 서버 생성
         boost::asio::io_context io_context;

@@ -26,8 +26,13 @@ namespace game_server {
     }
 
     Session::~Session() {
-        if (server_ && !token_.empty()) {
-            server_->removeSession(token_, user_id_);
+        if (server_) {
+            if (is_mirror_) {
+                server_->removeMirrorSession(mirror_port_);
+            }
+            if (!token_.empty()) {
+                server_->removeSession(token_, user_id_);
+            }
         }
     }
 
@@ -84,7 +89,8 @@ namespace game_server {
 
                             // 미러 서버 세션으로 설정
                             is_mirror_ = true;
-                            spdlog::info("Mirror server connection established");
+                            mirror_port_ = handshake["port"];
+                            spdlog::info("Mirror server connection established port: {}", mirror_port_);
 
                             // 미러 서버 전용 초기화
                             server_->registerMirrorSession(shared_from_this(), handshake["port"]);
@@ -385,9 +391,6 @@ namespace game_server {
 
                 if (response.contains("status") && response["status"] == "success") {
                     spdlog::info("User {} automatically exited from room on session termination", user_id_);
-                }
-                else {
-                    spdlog::warn("Failed to exit room for user {} on session termination", user_id_);
                 }
             }
         }

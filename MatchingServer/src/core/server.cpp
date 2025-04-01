@@ -27,10 +27,10 @@ namespace game_server {
         uuid_generator_(),
         session_check_timer_(io_context)
     {
-        // Create database connection pool
-        db_pool_ = std::make_unique<DbPool>(db_connection_string, 20); // Create 5 connections
+        // DB풀 생성
+        db_pool_ = std::make_unique<DbPool>(db_connection_string, 20);
 
-        // Initialize controllers
+        // 컨트롤러 초기화
         init_controllers();
 
         spdlog::info("Server initialized on port {}", port);
@@ -151,32 +151,32 @@ namespace game_server {
     }
 
     void Server::removeSession(const std::string& token, int userId) {
-        {
-            std::lock_guard<std::mutex> lock(sessions_mutex_);
-            auto it = sessions_.find(token);
-            if (it != sessions_.end()) {
-                sessions_.erase(it);
-                spdlog::info("Session removed tokenId: {}", token);
-            }
+        std::lock_guard<std::mutex> session_lock(sessions_mutex_);
+        std::lock_guard<std::mutex> token_lock(tokens_mutex_);
+
+        bool found = false;
+        auto it_session = sessions_.find(token);
+        if (it_session != sessions_.end()) {
+            sessions_.erase(it_session);
+            found = true;
         }
-        {
-            std::lock_guard<std::mutex> lock(tokens_mutex_);
-            auto it = tokens_.find(userId);
-            if (it != tokens_.end()) {
-                tokens_.erase(it);
-                spdlog::info("Session removed userId: {}", userId);
-            }
+
+        auto it_token = tokens_.find(userId);
+        if (it_token != tokens_.end()) {
+            tokens_.erase(it_token);
+            found = true;
+        }
+        if (found) {
+            spdlog::info("Session removed token={}, userId={}", token, userId);
         }
     }
 
     void Server::removeMirrorSession(int port) {
-        {
-            std::lock_guard<std::mutex> lock(mirrors_mutex_);
-            auto it = mirrors_.find(port);
-            if (it != mirrors_.end()) {
-                mirrors_.erase(it);
-                spdlog::info("Mirror session removed port: {}", port);
-            }
+        std::lock_guard<std::mutex> lock(mirrors_mutex_);
+        auto it = mirrors_.find(port);
+        if (it != mirrors_.end()) {
+            mirrors_.erase(it);
+            spdlog::info("Mirror session removed port: {}", port);
         }
     }
 
