@@ -88,6 +88,7 @@ namespace game_server {
 
                             // 미러 서버 전용 초기화
                             server_->mirrors_[handshake["port"]] = shared_from_this();
+                            user_id_ = handshake["port"];
 
                             // 확인 응답 전송
                             json response = {
