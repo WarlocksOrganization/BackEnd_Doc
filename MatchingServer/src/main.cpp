@@ -1,5 +1,5 @@
-// main.cpp
-// ÇÁ·Î±×·¥ ÁøÀÔÁ¡ ¹× ¼­¹ö ½ÇÇà ÆÄÀÏ
+ï»¿// main.cpp
+// í”„ë¡œê·¸ë¨ ì§„ì…ì  ë° ì„œë²„ ì‹¤í–‰ íŒŒì¼
 #include "core/server.h"
 #include <boost/asio.hpp>
 #include <iostream>
@@ -7,10 +7,10 @@
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <csignal>
 
-// ½Ã±×³Î ÇÚµé·¯¿ë Àü¿ª ¼­¹ö º¯¼ö
+// ì‹œê·¸ë„ í•¸ë“¤ëŸ¬ìš© ì „ì—­ ì„œë²„ ë³€ìˆ˜
 std::unique_ptr<game_server::Server> server;
 
-// ½Ã±×³Î ÇÚµé·¯ ÇÔ¼ö
+// ì‹œê·¸ë„ í•¸ë“¤ëŸ¬ í•¨ìˆ˜
 void signal_handler(int signal)
 {
     spdlog::info("Received signal {}, shutting down...", signal);
@@ -24,32 +24,31 @@ void signal_handler(int signal)
 int main(int argc, char* argv[])
 {
     try {
-        setlocale(LC_ALL, "ko_KR.UTF-8");
-        // ·Î°Å ÃÊ±âÈ­
+        // ë¡œê±° ì´ˆê¸°í™”
         auto console = spdlog::stdout_color_mt("console");
         spdlog::set_default_logger(console);
         spdlog::set_level(spdlog::level::info);
         spdlog::info("SmashUp server v1.0.2");
 
-        // ½Ã±×³Î ÇÚµé·¯ µî·Ï
+        // ì‹œê·¸ë„ í•¸ë“¤ëŸ¬ ë“±ë¡
         std::signal(SIGINT, signal_handler);
         std::signal(SIGTERM, signal_handler);
 
-        // ±âº» ¼³Á¤
+        // ê¸°ë³¸ ì„¤ì •
         short port = 8080;
         std::string db_connection_string =
             "dbname=gamedata user=admin password=admin host=localhost port=5432 client_encoding=UTF8";
 
-        // IO ÄÁÅØ½ºÆ® ¹× ¼­¹ö »ı¼º
+        // IO ì»¨í…ìŠ¤íŠ¸ ë° ì„œë²„ ìƒì„±
         boost::asio::io_context io_context;
         server = std::make_unique<game_server::Server>(
             io_context, port, db_connection_string);
 
-        // ¼­¹ö ½ÇÇà
+        // ì„œë²„ ì‹¤í–‰
         server->run();
 
-        // IO ÄÁÅØ½ºÆ® ½ÇÇà (ÀÌº¥Æ® ·çÇÁ)
-        spdlog::info("¼­¹ö ½ÃÀÛ Æ÷Æ® : {}", port);
+        // IO ì»¨í…ìŠ¤íŠ¸ ì‹¤í–‰ (ì´ë²¤íŠ¸ ë£¨í”„)
+        spdlog::info("ì„œë²„ ì‹œì‘ í¬íŠ¸ : {}", port);
         io_context.run();
     }
     catch (std::exception& e) {
