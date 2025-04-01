@@ -29,13 +29,13 @@ namespace game_server {
                 connections_.push_back(conn);
                 in_use_.push_back(false);
 
-                spdlog::info("Created database connection {}/{}", i + 1, poolSize);
+                spdlog::info("데이터베이스 연결 생성 {}/{}", i + 1, poolSize);
             }
 
-            spdlog::info("Database connection pool initialized with {} connections", poolSize);
+            spdlog::info("{}개의 데이터베이스 풀 초기화 성공", poolSize);
         }
         catch (const std::exception& e) {
-            spdlog::error("Failed to initialize database connection pool: {}", e.what());
+            spdlog::error("데이터베이스 풀 초기화 중 예외가 발생하였습니다. : {}", e.what());
             throw;
         }
     }
@@ -44,7 +44,7 @@ namespace game_server {
     {
         // 모든 연결 종료
         connections_.clear();
-        spdlog::info("Database connection pool destroyed");
+        spdlog::info("데이터베이스 풀 삭제");
     }
 
     std::shared_ptr<pqxx::connection> DbPool::get_connection()
@@ -58,12 +58,12 @@ namespace game_server {
 
                 // 연결이 유효한지 확인
                 if (!connections_[i]->is_open()) {
-                    spdlog::warn("Connection {} was closed, reconnecting...", i);
+                    spdlog::warn("{}번째 연결이 종료되었습니다, 재연결 진행 중...", i);
                     try {
                         connections_[i] = std::make_shared<pqxx::connection>(connection_string_);
                     }
                     catch (const std::exception& e) {
-                        spdlog::error("Failed to reconnect: {}", e.what());
+                        spdlog::error("재 연결에 중 예외가 발생하였습니다. : {}", e.what());
                         in_use_[i] = false;
                         throw;
                     }
@@ -74,7 +74,7 @@ namespace game_server {
         }
 
         // 사용 가능한 연결이 없으면 새 연결 생성
-        spdlog::warn("No available connections in pool, creating a new one");
+        spdlog::warn("사용 가능한 연결이 없습니다, 연결을 추가로 생성합니다.");
         try {
             auto conn = std::make_shared<pqxx::connection>(connection_string_);
             connections_.push_back(conn);
@@ -82,7 +82,7 @@ namespace game_server {
             return conn;
         }
         catch (const std::exception& e) {
-            spdlog::error("Failed to create new connection: {}", e.what());
+            spdlog::error("연결 추가 중 예외가 발생하였습니다. : {}", e.what());
             throw;
         }
     }
@@ -99,7 +99,7 @@ namespace game_server {
             }
         }
 
-        spdlog::warn("Attempted to return a connection not from this pool");
+        spdlog::warn("데이터베이스 풀로 반환 가능한 연결을 찾지 못했습니다.");
     }
 
 } // namespace game_server

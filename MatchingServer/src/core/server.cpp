@@ -33,7 +33,7 @@ namespace game_server {
         // 컨트롤러 초기화
         init_controllers();
 
-        spdlog::info("Server initialized on port {}", port);
+        spdlog::info("서버 초기화 완료! 포트 번호 : {}", port);
     }
     
     Server::~Server()
@@ -50,7 +50,7 @@ namespace game_server {
 
     void Server::setSessionTimeout(std::chrono::seconds timeout) {
         session_timeout_ = timeout;
-        spdlog::info("Session timeout set to {} seconds", timeout.count());
+        spdlog::info("세션 타임아웃 발생 {} 초", timeout.count());
     }
 
     void Server::startSessionTimeoutCheck() {
@@ -61,7 +61,7 @@ namespace game_server {
 
     void Server::check_inactive_sessions() {
         if (!running_ || !timeout_check_running_) return;
-        spdlog::debug("Checking for inactive sessions...");
+        spdlog::debug("유효하지 않은 세션 체크 중...");
 
         std::vector<std::string> sessionsToRemove;
         {
@@ -70,12 +70,12 @@ namespace game_server {
                 auto session = wsession.lock();
                 if (!session) {
                     // 세션이 이미 소멸됨
-                    spdlog::info("Session {} already expired", token);
+                    spdlog::info("세션 {}가 이미 소멸되었습니다.", token);
                     sessionsToRemove.push_back(token);
                 }
                 else if (!session->isActive(session_timeout_)) {
                     // 세션이 존재하지만 타임아웃됨
-                    spdlog::info("Session {} timed out after {} seconds of inactivity",
+                    spdlog::info("세션 {}가 {}초간 연결이 없어 타임아웃 되었습니다.",
                         token, session_timeout_.count());
                     sessionsToRemove.push_back(token);
                 }
@@ -90,12 +90,12 @@ namespace game_server {
                 if (it != sessions_.end()) {
                     session = it->second.lock();
                     sessions_.erase(it);  // 컬렉션에서 세션 제거
-                    spdlog::info("Session {} removed from server", token);
+                    spdlog::info("세션 {}가 서버로 부터 삭제되었습니다.", token);
                 }
             }
 
             if (session) {
-                session->handle_error("Session timed out");
+                session->handle_error("세션 타임 아웃 발생");
             }
         }
 
@@ -118,7 +118,7 @@ namespace game_server {
         // 기존 세션이 존재하면 제거
         for (auto it = sessions_.begin(); it != sessions_.end(); ++it) {
             if (it->second.lock() == session) {
-                spdlog::info("Existing session found, removing old token: {}", it->first);
+                spdlog::info("이전에 할당된 토큰 확인, 삭제 후 새로운 토큰 할당: {}", it->first);
                 sessions_.erase(it);
                 break;  // 한 개만 삭제하면 되므로 루프 종료
             }
@@ -129,7 +129,7 @@ namespace game_server {
         int userId = session->getUserId();
         if (userId) {
             tokens_[userId] = token;
-            spdlog::info("Session user ID {} registered with token: {}", userId, token);
+            spdlog::info("유저ID : {}에게 토큰ID : {} 할당 완료", userId, token);
         }
         return token;
     }
@@ -140,7 +140,7 @@ namespace game_server {
         // 기존 세션이 존재하면 제거
         for (auto it = mirrors_.begin(); it != mirrors_.end(); ++it) {
             if (it->second.lock() == session) {
-                spdlog::info("Existing mirror session found, removing old session: {}", it->first);
+                spdlog::info("이미 존재하는 미러 서버 세션이 확인되어 삭제 후 재할당 하였습니다, 포트 번호 : {}", it->first);
                 mirrors_.erase(it);
                 break;  // 한 개만 삭제하면 되므로 루프 종료
             }
@@ -167,7 +167,7 @@ namespace game_server {
             found = true;
         }
         if (found) {
-            spdlog::info("Session removed token={}, userId={}", token, userId);
+            spdlog::info("유저 ID : {}의 토큰 삭제 완료, 토큰 ID : {}", userId, token);
         }
     }
 
@@ -176,7 +176,7 @@ namespace game_server {
         auto it = mirrors_.find(port);
         if (it != mirrors_.end()) {
             mirrors_.erase(it);
-            spdlog::info("Mirror session removed port: {}", port);
+            spdlog::info("미러 서버 세션 삭제 완료, 포트 번호 : {}", port);
         }
     }
 
@@ -191,7 +191,7 @@ namespace game_server {
             else {
                 // 세션이 이미 소멸된 경우 맵에서 제거
                 sessions_.erase(it);
-                spdlog::info("Removed expired session from map: {}", token);
+                spdlog::info("토큰 ID : {}가 이미 삭제된 상태입니다, 세션 정보를 서버에서 제거하였습니다.", token);
             }
         }
         return nullptr;
@@ -208,7 +208,7 @@ namespace game_server {
             else {
                 // 세션이 이미 소멸된 경우 맵에서 제거
                 mirrors_.erase(it);
-                spdlog::info("Removed expired mirror session from map port: {}", port);
+                spdlog::info("포트 번호 : {}가 이미 삭제된 상태입니다, 미리 서버 세션 정보를 서버에서 제거하였습니다.", port);
             }
         }
         return nullptr;
@@ -233,18 +233,19 @@ namespace game_server {
         std::shared_ptr<UserRepository> sharedUserRepo = std::move(userRepo);
         std::shared_ptr<RoomRepository> sharedRoomRepo = std::move(roomRepo);
         std::shared_ptr<GameRepository> sharedGameRepo = std::move(gameRepo);
+        spdlog::info("레포지토리 객체 생성 및 포인터화 완료");
 
         // Create services
         auto authService = AuthService::create(sharedUserRepo);
         auto roomService = RoomService::create(sharedRoomRepo);
         auto gameService = GameService::create(sharedGameRepo);
+        spdlog::info("레포지토리와 서비스 연동 및 서비스 객체 생성 완료");
 
         // Create and register controllers
         controllers_["auth"] = std::make_shared<AuthController>(std::move(authService));
         controllers_["room"] = std::make_shared<RoomController>(std::move(roomService));
         controllers_["game"] = std::make_shared<GameController>(std::move(gameService));
-
-        spdlog::info("Controllers initialized");
+        spdlog::info("서비스와 컨트롤러 연동 및 컨트롤러 객체 생성, 핸들러 할당 완료");
     }
 
     void Server::run()
@@ -252,7 +253,7 @@ namespace game_server {
         running_ = true;
         do_accept();
         startSessionTimeoutCheck();
-        spdlog::info("Server is running and accepting connections...");
+        spdlog::info("서버 실행 완료, 클라이언트 연결 요청을 기다리는 중...");
     }
 
     void Server::stop() {
@@ -271,11 +272,11 @@ namespace game_server {
                 auto session = wsession.lock();
                 try {
                     if (session) {
-                        session->handle_error("Server shutting down");
+                        session->handle_error("서버 중단으로 인한 연결 종료");
                     }
                 }
                 catch (const std::exception& e) {
-                    spdlog::error("Error during session cleanup: {}", e.what());
+                    spdlog::error("세션을 정리하던 중 에러가 발생하였습니다. : {}", e.what());
                 }
             }
             sessions_.clear();
@@ -288,10 +289,10 @@ namespace game_server {
             }
         }
         catch (const std::exception& e) {
-            spdlog::error("Error closing acceptor: {}", e.what());
+            spdlog::error("서버 종료 중 에러가 발생하였습니다. : {}", e.what());
         }
 
-        spdlog::info("Server stopped");
+        spdlog::info("서버 중단");
     }
 
     void Server::do_accept()
@@ -304,7 +305,7 @@ namespace game_server {
                     session->start();
                 }
                 else {
-                    spdlog::error("Connection acceptance error: {}", ec.message());
+                    spdlog::error("클라이언트 연결을 받아 들이던 중 에러가 발생하였습니다. : {}", ec.message());
                 }
 
                 // Continue accepting connections (if server is still running)
