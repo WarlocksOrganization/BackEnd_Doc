@@ -24,6 +24,7 @@ void signal_handler(int signal)
 int main(int argc, char* argv[])
 {
     try {
+        setlocale(LC_ALL, "ko_KR.UTF-8");
         // 로거 초기화
         auto console = spdlog::stdout_color_mt("console");
         spdlog::set_default_logger(console);
