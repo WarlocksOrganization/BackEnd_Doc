@@ -1,6 +1,6 @@
-// repository/user_repository.cpp
-// »ç¿ëÀÚ ¸®Æ÷ÁöÅä¸® ±¸Çö ÆÄÀÏ
-// »ç¿ëÀÚ °ü·Ã µ¥ÀÌÅÍº£ÀÌ½º ÀÛ¾÷À» Ã³¸®ÇÏ´Â ¸®Æ÷ÁöÅä¸®
+ï»¿// repository/user_repository.cpp
+// ì‚¬ìš©ì ë¦¬í¬ì§€í† ë¦¬ êµ¬í˜„ íŒŒì¼
+// ì‚¬ìš©ì ê´€ë ¨ ë°ì´í„°ë² ì´ìŠ¤ ì‘ì—…ì„ ì²˜ë¦¬í•˜ëŠ” ë¦¬í¬ì§€í† ë¦¬
 #include "user_repository.h"
 #include "../util/db_pool.h"
 #include <pqxx/pqxx>
@@ -10,7 +10,7 @@ namespace game_server {
 
     using json = nlohmann::json;
 
-    // ¸®Æ÷ÁöÅä¸® ±¸ÇöÃ¼
+    // ë¦¬í¬ì§€í† ë¦¬ êµ¬í˜„ì²´
     class UserRepositoryImpl : public UserRepository {
     public:
         explicit UserRepositoryImpl(DbPool* dbPool) : dbPool_(dbPool) {}
@@ -26,13 +26,13 @@ namespace game_server {
                     userName);
 
                 if (result.empty()) {
-                    // »ç¿ëÀÚ¸¦ Ã£Áö ¸øÇÔ - std::nullopt ¹İÈ¯
+                    // ì‚¬ìš©ìë¥¼ ì°¾ì§€ ëª»í•¨ - std::nullopt ë°˜í™˜
                     txn.abort();
                     dbPool_->return_connection(conn);
                     return { {"userId", -1} };
                 }
 
-                // °á°ú¸¦ JSONÀ¸·Î º¯È¯
+                // ê²°ê³¼ë¥¼ JSONìœ¼ë¡œ ë³€í™˜
                 nlohmann::json user;
                 user["userId"] = result[0]["user_id"].as<int>();
                 user["userName"] = result[0]["user_name"].as<std::string>();
@@ -57,7 +57,7 @@ namespace game_server {
             auto conn = dbPool_->get_connection();
             pqxx::work txn(*conn);
             try {
-                // »õ »ç¿ëÀÚ »ı¼º
+                // ìƒˆ ì‚¬ìš©ì ìƒì„±
                 pqxx::result result = txn.exec_params(
                     "INSERT INTO users (user_name, password_hash) "
                     "VALUES ($1, $2) RETURNING user_id",
@@ -86,7 +86,7 @@ namespace game_server {
             auto conn = dbPool_->get_connection();
             pqxx::work txn(*conn);
             try {
-                // ¸¶Áö¸· ·Î±×ÀÎ ½Ã°£ ¾÷µ¥ÀÌÆ®
+                // ë§ˆì§€ë§‰ ë¡œê·¸ì¸ ì‹œê°„ ì—…ë°ì´íŠ¸
                 pqxx::result result = txn.exec_params(
                     "UPDATE users SET last_login = CURRENT_TIMESTAMP "
                     "WHERE user_id = $1 RETURNING user_id",
@@ -109,7 +109,7 @@ namespace game_server {
             auto conn = dbPool_->get_connection();
             pqxx::work txn(*conn);
             try {
-                // ¸¶Áö¸· ·Î±×ÀÎ ½Ã°£ ¾÷µ¥ÀÌÆ®
+                // ë§ˆì§€ë§‰ ë¡œê·¸ì¸ ì‹œê°„ ì—…ë°ì´íŠ¸
                 pqxx::result result = txn.exec_params(
                     "UPDATE users SET nick_name = $2 "
                     "WHERE user_id = $1 "
@@ -133,7 +133,7 @@ namespace game_server {
         DbPool* dbPool_;
     };
 
-    // ÆÑÅä¸® ¸Ş¼­µå ±¸Çö
+    // íŒ©í† ë¦¬ ë©”ì„œë“œ êµ¬í˜„
     std::unique_ptr<UserRepository> UserRepository::create(DbPool* dbPool) {
         return std::make_unique<UserRepositoryImpl>(dbPool);
     }

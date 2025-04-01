@@ -1,4 +1,4 @@
-// core/server.cpp
+ï»¿// core/server.cpp
 #include "server.h"
 #include "session.h"
 #include "../controller/auth_controller.h"
@@ -27,10 +27,10 @@ namespace game_server {
         uuid_generator_(),
         session_check_timer_(io_context)
     {
-        // DBÇ® »ı¼º
+        // DBí’€ ìƒì„±
         db_pool_ = std::make_unique<DbPool>(db_connection_string, 20);
 
-        // ÄÁÆ®·Ñ·¯ ÃÊ±âÈ­
+        // ì»¨íŠ¸ë¡¤ëŸ¬ ì´ˆê¸°í™”
         init_controllers();
 
         spdlog::info("Server initialized on port {}", port);
@@ -69,12 +69,12 @@ namespace game_server {
             for (const auto& [token, wsession] : sessions_) {
                 auto session = wsession.lock();
                 if (!session) {
-                    // ¼¼¼ÇÀÌ ÀÌ¹Ì ¼Ò¸êµÊ
+                    // ì„¸ì…˜ì´ ì´ë¯¸ ì†Œë©¸ë¨
                     spdlog::info("Session {} already expired", token);
                     sessionsToRemove.push_back(token);
                 }
                 else if (!session->isActive(session_timeout_)) {
-                    // ¼¼¼ÇÀÌ Á¸ÀçÇÏÁö¸¸ Å¸ÀÓ¾Æ¿ôµÊ
+                    // ì„¸ì…˜ì´ ì¡´ì¬í•˜ì§€ë§Œ íƒ€ì„ì•„ì›ƒë¨
                     spdlog::info("Session {} timed out after {} seconds of inactivity",
                         token, session_timeout_.count());
                     sessionsToRemove.push_back(token);
@@ -89,7 +89,7 @@ namespace game_server {
                 auto it = sessions_.find(token);
                 if (it != sessions_.end()) {
                     session = it->second.lock();
-                    sessions_.erase(it);  // ÄÃ·º¼Ç¿¡¼­ ¼¼¼Ç Á¦°Å
+                    sessions_.erase(it);  // ì»¬ë ‰ì…˜ì—ì„œ ì„¸ì…˜ ì œê±°
                     spdlog::info("Session {} removed from server", token);
                 }
             }
@@ -115,12 +115,12 @@ namespace game_server {
     std::string Server::registerSession(std::shared_ptr<Session> session) {
         std::lock_guard<std::mutex> lock(sessions_mutex_);
 
-        // ±âÁ¸ ¼¼¼ÇÀÌ Á¸ÀçÇÏ¸é Á¦°Å
+        // ê¸°ì¡´ ì„¸ì…˜ì´ ì¡´ì¬í•˜ë©´ ì œê±°
         for (auto it = sessions_.begin(); it != sessions_.end(); ++it) {
             if (it->second.lock() == session) {
                 spdlog::info("Existing session found, removing old token: {}", it->first);
                 sessions_.erase(it);
-                break;  // ÇÑ °³¸¸ »èÁ¦ÇÏ¸é µÇ¹Ç·Î ·çÇÁ Á¾·á
+                break;  // í•œ ê°œë§Œ ì‚­ì œí•˜ë©´ ë˜ë¯€ë¡œ ë£¨í”„ ì¢…ë£Œ
             }
         }
 
@@ -137,12 +137,12 @@ namespace game_server {
     void Server::registerMirrorSession(std::shared_ptr<Session> session, int port) {
         std::lock_guard<std::mutex> lock(mirrors_mutex_);
 
-        // ±âÁ¸ ¼¼¼ÇÀÌ Á¸ÀçÇÏ¸é Á¦°Å
+        // ê¸°ì¡´ ì„¸ì…˜ì´ ì¡´ì¬í•˜ë©´ ì œê±°
         for (auto it = mirrors_.begin(); it != mirrors_.end(); ++it) {
             if (it->second.lock() == session) {
                 spdlog::info("Existing mirror session found, removing old session: {}", it->first);
                 mirrors_.erase(it);
-                break;  // ÇÑ °³¸¸ »èÁ¦ÇÏ¸é µÇ¹Ç·Î ·çÇÁ Á¾·á
+                break;  // í•œ ê°œë§Œ ì‚­ì œí•˜ë©´ ë˜ë¯€ë¡œ ë£¨í”„ ì¢…ë£Œ
             }
         }
 
@@ -189,7 +189,7 @@ namespace game_server {
                 return session;
             }
             else {
-                // ¼¼¼ÇÀÌ ÀÌ¹Ì ¼Ò¸êµÈ °æ¿ì ¸Ê¿¡¼­ Á¦°Å
+                // ì„¸ì…˜ì´ ì´ë¯¸ ì†Œë©¸ëœ ê²½ìš° ë§µì—ì„œ ì œê±°
                 sessions_.erase(it);
                 spdlog::info("Removed expired session from map: {}", token);
             }
@@ -206,7 +206,7 @@ namespace game_server {
                 return session;
             }
             else {
-                // ¼¼¼ÇÀÌ ÀÌ¹Ì ¼Ò¸êµÈ °æ¿ì ¸Ê¿¡¼­ Á¦°Å
+                // ì„¸ì…˜ì´ ì´ë¯¸ ì†Œë©¸ëœ ê²½ìš° ë§µì—ì„œ ì œê±°
                 mirrors_.erase(it);
                 spdlog::info("Removed expired mirror session from map port: {}", port);
             }
@@ -256,15 +256,15 @@ namespace game_server {
     }
 
     void Server::stop() {
-        if (!running_) return;  // ÀÌ¹Ì ÁßÁöµÈ °æ¿ì Áßº¹ ½ÇÇà ¹æÁö
+        if (!running_) return;  // ì´ë¯¸ ì¤‘ì§€ëœ ê²½ìš° ì¤‘ë³µ ì‹¤í–‰ ë°©ì§€
 
         running_ = false;
         timeout_check_running_ = false;
 
-        // Å¸ÀÌ¸Ó Ãë¼Ò ¹× ´ë±â
+        // íƒ€ì´ë¨¸ ì·¨ì†Œ ë° ëŒ€ê¸°
         session_check_timer_.cancel();
 
-        // ¸ğµç ¼¼¼Ç¿¡ Á¾·á ¾Ë¸²
+        // ëª¨ë“  ì„¸ì…˜ì— ì¢…ë£Œ ì•Œë¦¼
         {
             std::lock_guard<std::mutex> lock(sessions_mutex_);
             for (auto& [token, wsession] : sessions_) {
@@ -281,7 +281,7 @@ namespace game_server {
             sessions_.clear();
         }
 
-        // acceptor ´İ±â
+        // acceptor ë‹«ê¸°
         try {
             if (acceptor_.is_open()) {
                 acceptor_.close();

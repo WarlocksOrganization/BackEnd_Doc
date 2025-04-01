@@ -1,6 +1,6 @@
-// service/auth_service.cpp
-// ÀÎÁõ ¼­ºñ½º ±¸Çö ÆÄÀÏ
-// »ç¿ëÀÚ µî·Ï ¹× ·Î±×ÀÎ ºñÁî´Ï½º ·ÎÁ÷À» Ã³¸®
+ï»¿// service/auth_service.cpp
+// ì¸ì¦ ì„œë¹„ìŠ¤ êµ¬í˜„ íŒŒì¼
+// ì‚¬ìš©ì ë“±ë¡ ë° ë¡œê·¸ì¸ ë¹„ì¦ˆë‹ˆìŠ¤ ë¡œì§ì„ ì²˜ë¦¬
 #include "auth_service.h"
 #include "../util/password_util.h"
 #include "../repository/user_repository.h"
@@ -11,44 +11,44 @@ namespace game_server {
     using json = nlohmann::json;
 
     namespace {
-        // »ç¿ëÀÚ ÀÌ¸§ À¯È¿¼º °ËÁõ ÇÔ¼ö
+        // ì‚¬ìš©ì ì´ë¦„ ìœ íš¨ì„± ê²€ì¦ í•¨ìˆ˜
         bool isValidUserName(const std::string& name) {
-            // ºó ÀÌ¸§Àº À¯È¿ÇÏÁö ¾ÊÀ½
+            // ë¹ˆ ì´ë¦„ì€ ìœ íš¨í•˜ì§€ ì•ŠìŒ
             if (name.empty()) {
                 return false;
             }
 
-            // 30¹ÙÀÌÆ® ÀÌ³»ÀÎÁö È®ÀÎ
+            // 30ë°”ì´íŠ¸ ì´ë‚´ì¸ì§€ í™•ì¸
             if (name.size() > 30) {
                 return false;
             }
 
-            // "mirror" ´Ü¾î°¡ Æ÷ÇÔµÇ¾î ÀÖ´ÂÁö È®ÀÎ (´ë¼Ò¹®ÀÚ ±¸ºĞ ¾øÀÌ)
+            // "mirror" ë‹¨ì–´ê°€ í¬í•¨ë˜ì–´ ìˆëŠ”ì§€ í™•ì¸ (ëŒ€ì†Œë¬¸ì êµ¬ë¶„ ì—†ì´)
             if (name.find("mirror") != std::string::npos) {
                 return false;
             }
 
-            // ÀÌ¸ŞÀÏ Çü½ÄÀÎÁö È®ÀÎ
+            // ì´ë©”ì¼ í˜•ì‹ì¸ì§€ í™•ì¸
             bool isEmail = (name.find('@') != std::string::npos) &&
                 (name.find('.', name.find('@')) != std::string::npos);
 
-            // ÀÌ¸ŞÀÏÀÌ ¾Æ´Ñ °æ¿ì ¿µ¾î, ÇÑ±Û, ¼ıÀÚ, @ ¹®ÀÚ¸¸ Æ÷ÇÔÇÏ´ÂÁö È®ÀÎ
+            // ì´ë©”ì¼ì´ ì•„ë‹Œ ê²½ìš° ì˜ì–´, í•œê¸€, ìˆ«ì, @ ë¬¸ìë§Œ í¬í•¨í•˜ëŠ”ì§€ í™•ì¸
             if (!isEmail) {
                 for (unsigned char c : name) {
-                    // ASCII ¿µ¾î¿Í ¼ıÀÚ È®ÀÎ
+                    // ASCII ì˜ì–´ì™€ ìˆ«ì í™•ì¸
                     if ((c >= 'A' && c <= 'Z') ||
                         (c >= 'a' && c <= 'z') ||
                         (c >= '0' && c <= '9')) {
                         continue;
                     }
 
-                    // Çã¿ëµÇÁö ¾Ê´Â ¹®ÀÚ
+                    // í—ˆìš©ë˜ì§€ ì•ŠëŠ” ë¬¸ì
                     return false;
                 }
             }
             else {
-                // ÀÌ¸ŞÀÏÀÎ °æ¿ì Ãß°¡ °ËÁõ (°£´ÜÇÑ ÀÌ¸ŞÀÏ Çü½Ä °Ë»ç)
-                // ¿©±â¼­´Â Ç¥ÁØÀûÀÎ ÀÌ¸ŞÀÏ ¹®ÀÚµé(¿µ¾î, ¼ıÀÚ, ÀÏºÎ Æ¯¼ö¹®ÀÚ) Çã¿ë
+                // ì´ë©”ì¼ì¸ ê²½ìš° ì¶”ê°€ ê²€ì¦ (ê°„ë‹¨í•œ ì´ë©”ì¼ í˜•ì‹ ê²€ì‚¬)
+                // ì—¬ê¸°ì„œëŠ” í‘œì¤€ì ì¸ ì´ë©”ì¼ ë¬¸ìë“¤(ì˜ì–´, ìˆ«ì, ì¼ë¶€ íŠ¹ìˆ˜ë¬¸ì) í—ˆìš©
                 for (unsigned char c : name) {
                     if ((c >= 'A' && c <= 'Z') ||
                         (c >= 'a' && c <= 'z') ||
@@ -58,7 +58,7 @@ namespace game_server {
                         continue;
                     }
 
-                    // ÀÌ¸ŞÀÏ¿¡ ÇÑ±ÛÀº Çã¿ëÇÏÁö ¾ÊÀ½ (IDN ÀÌ¸ŞÀÏ Á¦¿Ü)
+                    // ì´ë©”ì¼ì— í•œê¸€ì€ í—ˆìš©í•˜ì§€ ì•ŠìŒ (IDN ì´ë©”ì¼ ì œì™¸)
                     return false;
                 }
             }
@@ -67,47 +67,47 @@ namespace game_server {
         }
 
         bool isValidNickName(const std::string& nickName) {
-            // ºó ÀÌ¸§Àº À¯È¿ÇÏÁö ¾ÊÀ½
+            // ë¹ˆ ì´ë¦„ì€ ìœ íš¨í•˜ì§€ ì•ŠìŒ
             if (nickName.empty()) {
                 return false;
             }
 
-            // 16¹ÙÀÌÆ® ÀÌ³»ÀÎÁö È®ÀÎ
+            // 16ë°”ì´íŠ¸ ì´ë‚´ì¸ì§€ í™•ì¸
             if (nickName.size() > 16) {
                 return false;
             }
 
-            // "mirror" ´Ü¾î°¡ Æ÷ÇÔµÇ¾î ÀÖ´ÂÁö È®ÀÎ (´ë¼Ò¹®ÀÚ ±¸ºĞ ¾øÀÌ)
+            // "mirror" ë‹¨ì–´ê°€ í¬í•¨ë˜ì–´ ìˆëŠ”ì§€ í™•ì¸ (ëŒ€ì†Œë¬¸ì êµ¬ë¶„ ì—†ì´)
             if (nickName.find("mirror") != std::string::npos) {
                 return false;
             }
 
             for (unsigned char c : nickName) {
-                // ASCII ¿µ¾î¿Í ¼ıÀÚ È®ÀÎ
+                // ASCII ì˜ì–´ì™€ ìˆ«ì í™•ì¸
                 if ((c >= 'A' && c <= 'Z') ||
                     (c >= 'a' && c <= 'z') ||
                     (c >= '0' && c <= '9')) {
                     continue;
                 }
 
-                // UTF-8 ÇÑ±Û ¹üÀ§ È®ÀÎ (Ã¹ ¹ÙÀÌÆ®°¡ 0xEA~0xED ¹üÀ§)
+                // UTF-8 í•œê¸€ ë²”ìœ„ í™•ì¸ (ì²« ë°”ì´íŠ¸ê°€ 0xEA~0xED ë²”ìœ„)
                 if ((c & 0xF0) == 0xE0) {
                     continue;
                 }
 
-                // ÇÑ±Û ¹®ÀÚÀÇ ¿¬¼Ó ¹ÙÀÌÆ® (0x80~0xBF ¹üÀ§)
+                // í•œê¸€ ë¬¸ìì˜ ì—°ì† ë°”ì´íŠ¸ (0x80~0xBF ë²”ìœ„)
                 if ((c & 0xC0) == 0x80) {
                     continue;
                 }
 
-                // Çã¿ëµÇÁö ¾Ê´Â ¹®ÀÚ
+                // í—ˆìš©ë˜ì§€ ì•ŠëŠ” ë¬¸ì
                 return false;
             }
             return true;
         }
     }
 
-    // ¼­ºñ½º ±¸ÇöÃ¼
+    // ì„œë¹„ìŠ¤ êµ¬í˜„ì²´
     class AuthServiceImpl : public AuthService {
     public:
         explicit AuthServiceImpl(std::shared_ptr<UserRepository> userRepo)
@@ -117,7 +117,7 @@ namespace game_server {
         json registerUser(const json& request) override {
             json response;
 
-            // »ç¿ëÀÚ¸í À¯È¿¼º °ËÁõ
+            // ì‚¬ìš©ìëª… ìœ íš¨ì„± ê²€ì¦
             if (!request.contains("userName") || !request.contains("password")) {
                 response["status"] = "error";
                 response["message"] = "The request json doesn't have userName or password";
@@ -132,7 +132,7 @@ namespace game_server {
                 return response;
             }
 
-            // ºñ¹Ğ¹øÈ£ À¯È¿¼º °ËÁõ
+            // ë¹„ë°€ë²ˆí˜¸ ìœ íš¨ì„± ê²€ì¦
             if (request["password"].get<std::string>().size() < 6) {
                 response["status"] = "error";
                 response["message"] = "Password must be at least 6 characters";
@@ -140,7 +140,7 @@ namespace game_server {
                 return response;
             }
 
-            // »ç¿ëÀÚ¸í Áßº¹ È®ÀÎ
+            // ì‚¬ìš©ìëª… ì¤‘ë³µ í™•ì¸
             const json& userInfo = userRepo_->findByUsername(request["userName"]);
             if (userInfo["userId"] != -1) {
                 response["status"] = "error";
@@ -149,10 +149,10 @@ namespace game_server {
                 return response;
             }
 
-            // PasswordUtilÀ» »ç¿ëÇÏ¿© ºñ¹Ğ¹øÈ£ ÇØ½Ì
+            // PasswordUtilì„ ì‚¬ìš©í•˜ì—¬ ë¹„ë°€ë²ˆí˜¸ í•´ì‹±
             std::string hashedPassword = PasswordUtil::hashPassword(request["password"]);
 
-            // »õ »ç¿ëÀÚ »ı¼º
+            // ìƒˆ ì‚¬ìš©ì ìƒì„±
             int userId = userRepo_->create(request["userName"], hashedPassword);
             if (userId < 0) {
                 response["status"] = "error";
@@ -161,7 +161,7 @@ namespace game_server {
                 return response;
             }
 
-            // ¼º°ø ÀÀ´ä »ı¼º
+            // ì„±ê³µ ì‘ë‹µ ìƒì„±
             response["action"] = "register";
             response["status"] = "success";
             response["message"] = "Registration successful";
@@ -175,7 +175,7 @@ namespace game_server {
         json loginUser(const json& request) override {
             json response;
 
-            // »ç¿ëÀÚ¸í À¯È¿¼º °ËÁõ
+            // ì‚¬ìš©ìëª… ìœ íš¨ì„± ê²€ì¦
             if (!request.contains("userName") || !request.contains("password")) {
                 response["status"] = "error";
                 response["message"] = "The request json doesn't have userName or password";
@@ -183,7 +183,7 @@ namespace game_server {
                 return response;
             }
 
-            // »ç¿ëÀÚ Ã£±â
+            // ì‚¬ìš©ì ì°¾ê¸°
             const json& userInfo = userRepo_->findByUsername(request["userName"]);
             if (userInfo["userId"] == -1) {
                 response["status"] = "error";
@@ -191,17 +191,17 @@ namespace game_server {
                 return response;
             }
 
-            // PasswordUtilÀ» »ç¿ëÇÏ¿© ºñ¹Ğ¹øÈ£ °ËÁõ
+            // PasswordUtilì„ ì‚¬ìš©í•˜ì—¬ ë¹„ë°€ë²ˆí˜¸ ê²€ì¦
             if (!PasswordUtil::verifyPassword(request["password"], userInfo["passwordHash"])) {
                 response["status"] = "error";
                 response["message"] = "Invalid password";
                 return response;
             }
 
-            // ·Î±×ÀÎ ½Ã°£ ¾÷µ¥ÀÌÆ®
+            // ë¡œê·¸ì¸ ì‹œê°„ ì—…ë°ì´íŠ¸
             userRepo_->updateLastLogin(userInfo["userId"]);
 
-            // ¼º°ø ÀÀ´ä »ı¼º
+            // ì„±ê³µ ì‘ë‹µ ìƒì„±
             response["action"] = "login";
             response["status"] = "success";
             response["message"] = "Login successful";
@@ -216,7 +216,7 @@ namespace game_server {
         json registerCheckAndLogin(const nlohmann::json& request) {
             json response;
 
-            // »ç¿ëÀÚ¸í À¯È¿¼º °ËÁõ
+            // ì‚¬ìš©ìëª… ìœ íš¨ì„± ê²€ì¦
             if (!request.contains("userName") || !request.contains("password")) {
                 response["status"] = "error";
                 response["message"] = "The request json doesn't have userName or password";
@@ -224,14 +224,14 @@ namespace game_server {
                 return response;
             }
 
-            // »ç¿ëÀÚ Ã£±â
+            // ì‚¬ìš©ì ì°¾ê¸°
             const json& userInfo = userRepo_->findByUsername(request["userName"]);
             int userId = -1;
             if (userInfo["userId"] == -1) {
-                // PasswordUtilÀ» »ç¿ëÇÏ¿© ºñ¹Ğ¹øÈ£ ÇØ½Ì
+                // PasswordUtilì„ ì‚¬ìš©í•˜ì—¬ ë¹„ë°€ë²ˆí˜¸ í•´ì‹±
                 std::string hashedPassword = PasswordUtil::hashPassword(request["password"]);
 
-                // »õ »ç¿ëÀÚ »ı¼º
+                // ìƒˆ ì‚¬ìš©ì ìƒì„±
                 userId = userRepo_->create(request["userName"], hashedPassword);
                 if (userId < 0) {
                     response["status"] = "error";
@@ -241,10 +241,10 @@ namespace game_server {
                 }
             }
 
-            // ·Î±×ÀÎ ½Ã°£ ¾÷µ¥ÀÌÆ®
+            // ë¡œê·¸ì¸ ì‹œê°„ ì—…ë°ì´íŠ¸
             userRepo_->updateLastLogin(userId);
 
-            // ¼º°ø ÀÀ´ä »ı¼º
+            // ì„±ê³µ ì‘ë‹µ ìƒì„±
             response["action"] = "login";
             response["status"] = "success";
             response["message"] = "Login successful";
@@ -259,7 +259,7 @@ namespace game_server {
         json updateNickName(const nlohmann::json& request) {
             json response;
 
-            // »ç¿ëÀÚ¸í À¯È¿¼º °ËÁõ
+            // ì‚¬ìš©ìëª… ìœ íš¨ì„± ê²€ì¦
             if (!request.contains("userId") || !request.contains("nickName")) {
                 response["status"] = "error";
                 response["message"] = "The request json doesn't have userId or nickName";
@@ -274,7 +274,7 @@ namespace game_server {
                 return response;
             }
 
-            // »ç¿ëÀÚ Ã£±â
+            // ì‚¬ìš©ì ì°¾ê¸°
             if (!userRepo_->updateUserNickName(request["userId"], request["nickName"])) {
                 response["status"] = "error";
                 response["message"] = "Fail to update user nickname";
@@ -282,7 +282,7 @@ namespace game_server {
                 return response;
             }
 
-            // ¼º°ø ÀÀ´ä »ı¼º
+            // ì„±ê³µ ì‘ë‹µ ìƒì„±
             response["action"] = "updateNickName";
             response["status"] = "success";
             response["message"] = "Update nickname successful";
@@ -294,7 +294,7 @@ namespace game_server {
         std::shared_ptr<UserRepository> userRepo_;
     };
 
-    // ÆÑÅä¸® ¸Ş¼­µå ±¸Çö
+    // íŒ©í† ë¦¬ ë©”ì„œë“œ êµ¬í˜„
     std::unique_ptr<AuthService> AuthService::create(std::shared_ptr<UserRepository> userRepo) {
         return std::make_unique<AuthServiceImpl>(userRepo);
     }

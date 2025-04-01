@@ -1,6 +1,6 @@
-// core/session.cpp
-// 세션 관리 클래스 구현
-// 클라이언트와의 통신 세션을 처리하는 핵심 파일
+﻿// core/session.cpp
+// ?몄뀡 愿由??대옒??援ы쁽
+// ?대씪?댁뼵?몄????듭떊 ?몄뀡??泥섎━?섎뒗 ?듭떖 ?뚯씪
 #include "session.h"
 #include "server.h"
 #include <iostream>
@@ -37,7 +37,7 @@ namespace game_server {
     }
 
     void Session::initialize() {
-        // 서버에 세션 등록 및 토큰 받기
+        // ?쒕쾭???몄뀡 ?깅줉 諛??좏겙 諛쏄린
         token_ = server_->registerSession(shared_from_this());
         spdlog::info("Session initialized with token {}", token_);
     }
@@ -66,12 +66,12 @@ namespace game_server {
         return token_;
     }
 
-    // 세션 시작 - 핸드셰이크부터 시작
+    // ?몄뀡 ?쒖옉 - ?몃뱶?곗씠?щ????쒖옉
     void Session::start() {
-        read_handshake();  // 먼저 핸드셰이크 처리
+        read_handshake();  // 癒쇱? ?몃뱶?곗씠??泥섎━
     }
 
-    // 핸드셰이크 메시지 처리
+    // ?몃뱶?곗씠??硫붿떆吏 泥섎━
     void Session::read_handshake() {
         auto self(shared_from_this());
         socket_.async_read_some(
@@ -82,21 +82,21 @@ namespace game_server {
                         std::string data(buffer_.data(), length);
                         json handshake = json::parse(data);
 
-                        // 미러 서버 구분 로직
+                        // 誘몃윭 ?쒕쾭 援щ텇 濡쒖쭅
                         if (handshake.contains("connectionType") &&
                             handshake["connectionType"] == "mirror" && 
                             handshake.contains("port")) {
 
-                            // 미러 서버 세션으로 설정
+                            // 誘몃윭 ?쒕쾭 ?몄뀡?쇰줈 ?ㅼ젙
                             is_mirror_ = true;
                             mirror_port_ = handshake["port"];
                             spdlog::info("Mirror server connection established port: {}", mirror_port_);
 
-                            // 미러 서버 전용 초기화
+                            // 誘몃윭 ?쒕쾭 ?꾩슜 珥덇린??
                             server_->registerMirrorSession(shared_from_this(), handshake["port"]);
                             user_id_ = handshake["port"];
 
-                            // 확인 응답 전송
+                            // ?뺤씤 ?묐떟 ?꾩넚
                             json response = {
                                 {"status", "success"},
                                 {"message", "Mirror server connected"}
@@ -104,15 +104,15 @@ namespace game_server {
                             write_handshake_response(response.dump());
                         }
                         else {
-                            // 일반 클라이언트 세션 초기화
+                            // ?쇰컲 ?대씪?댁뼵???몄뀡 珥덇린??
                             initialize();
 
-                            // 핸드셰이크가 실제 요청인 경우 처리
+                            // ?몃뱶?곗씠?ш? ?ㅼ젣 ?붿껌??寃쎌슦 泥섎━
                             if (handshake.contains("action")) {
                                 process_request(handshake);
                             }
                             else {
-                                // 일반 클라이언트에게 연결 확인 메시지 전송
+                                // ?쇰컲 ?대씪?댁뼵?몄뿉寃??곌껐 ?뺤씤 硫붿떆吏 ?꾩넚
                                 json response = {
                                     {"status", "success"},
                                     {"message", "Connected to server"}
@@ -122,7 +122,7 @@ namespace game_server {
                         }
                     }
                     catch (const std::exception& e) {
-                        // 핸드셰이크 실패 처리
+                        // ?몃뱶?곗씠???ㅽ뙣 泥섎━
                         spdlog::error("Handshake error: {}", e.what());
                         handle_error("Invalid handshake format");
                     }
@@ -133,7 +133,7 @@ namespace game_server {
             });
     }
 
-    // 핸드셰이크 응답 전송 (응답 후 일반 메시지 처리로 전환)
+    // ?몃뱶?곗씠???묐떟 ?꾩넚 (?묐떟 ???쇰컲 硫붿떆吏 泥섎━濡??꾪솚)
     void Session::write_handshake_response(const std::string& response) {
         auto self(shared_from_this());
         boost::asio::async_write(
@@ -141,7 +141,7 @@ namespace game_server {
             boost::asio::buffer(response),
             [this, self](boost::system::error_code ec, std::size_t /*length*/) {
                 if (!ec) {
-                    // 핸드셰이크 완료 후 일반 메시지 처리 시작
+                    // ?몃뱶?곗씠???꾨즺 ???쇰컲 硫붿떆吏 泥섎━ ?쒖옉
                     read_message();
                 }
                 else {
@@ -153,23 +153,23 @@ namespace game_server {
     void Session::read_message() {
         auto self(shared_from_this());
 
-        // 비동기적으로 데이터 읽기
+        // 鍮꾨룞湲곗쟻?쇰줈 ?곗씠???쎄린
         socket_.async_read_some(
             boost::asio::buffer(buffer_),
             [this, self](boost::system::error_code ec, std::size_t length) {
                 if (!ec) {
                     try {
-                        // 수신된 데이터를 문자열로 변환
+                        // ?섏떊???곗씠?곕? 臾몄옄?대줈 蹂??
                         std::string data(buffer_.data(), length);
 
-                        // JSON 파싱
+                        // JSON ?뚯떛
                         json request = json::parse(data);
 
-                        // 요청 처리
+                        // ?붿껌 泥섎━
                         process_request(request);
                     }
                     catch (const std::exception& e) {
-                        // JSON 파싱 오류 등 예외 처리
+                        // JSON ?뚯떛 ?ㅻ쪟 ???덉쇅 泥섎━
                         spdlog::error("Error processing request data: {}", e.what());
                         json error_response = {
                             {"status", "error"},
@@ -187,12 +187,12 @@ namespace game_server {
     void Session::process_request(json& request) {
         try {
             spdlog::debug("Processing request...");
-            // action 필드로 요청 타입 확인
+            // action ?꾨뱶濡??붿껌 ????뺤씤
             std::string action = request["action"];
             spdlog::debug("Action: {}", action);
             std::string controller_type;
 
-            // 컨트롤러 타입 결정
+            // 而⑦듃濡ㅻ윭 ???寃곗젙
             if (action == "register" || action == "login" || action == "SSAFYlogin" || action == "updateNickName") {
                 if (user_id_) request["userId"] = user_id_;
                 controller_type = "auth";
@@ -249,7 +249,7 @@ namespace game_server {
                 return;
             }
             else {
-                // 알 수 없는 액션 처리
+                // ?????녿뒗 ?≪뀡 泥섎━
                 spdlog::warn("Unknown action: {}", action);
                 json error_response = {
                     {"status", "error"},
@@ -285,7 +285,7 @@ namespace game_server {
                 else if (action == "createRoom" &&  response["status"] == "success") {
                     spdlog::debug("Processing createRoom response");
 
-                    // response 객체 디버깅 로그
+                    // response 媛앹껜 ?붾쾭源?濡쒓렇
                     spdlog::debug("Response content: {}", response.dump());
 
                     try {
@@ -310,7 +310,7 @@ namespace game_server {
                     }
                     catch (const std::exception& e) {
                         spdlog::error("Error in createRoom response handling: {}", e.what());
-                        // 예외가 발생해도 원래 응답은 전송
+                        // ?덉쇅媛 諛쒖깮?대룄 ?먮옒 ?묐떟? ?꾩넚
                     }
                 }
 
@@ -345,7 +345,7 @@ namespace game_server {
             boost::asio::buffer(response),
             [mirror](boost::system::error_code ec, std::size_t /*length*/) {
                 if (!ec) {
-                    // 다음 요청 대기
+                    // ?ㅼ쓬 ?붿껌 ?湲?
                     mirror->read_message();
                 }
                 else {
@@ -357,13 +357,13 @@ namespace game_server {
     void Session::write_response(const std::string& response) {
         auto self(shared_from_this());
 
-        // 클라이언트로 응답 데이터 전송
+        // ?대씪?댁뼵?몃줈 ?묐떟 ?곗씠???꾩넚
         boost::asio::async_write(
             socket_,
             boost::asio::buffer(response),
             [this, self](boost::system::error_code ec, std::size_t /*length*/) {
                 if (!ec) {
-                    // 다음 요청 대기
+                    // ?ㅼ쓬 ?붿껌 ?湲?
                     read_message();
                 }
                 else {
@@ -373,10 +373,10 @@ namespace game_server {
     }
 
     void Session::handle_error(const std::string& error_message) {
-        // 오류 로깅
+        // ?ㅻ쪟 濡쒓퉭
         spdlog::info(error_message);
 
-        // 사용자가 방에 참여 중이었다면 나가기 처리
+        // ?ъ슜?먭? 諛⑹뿉 李몄뿬 以묒씠?덈떎硫??섍?湲?泥섎━
         try {
             auto controller_it = controllers_.find("room");
             if (controller_it != controllers_.end() && user_id_ > 0) {
@@ -398,7 +398,7 @@ namespace game_server {
             spdlog::error("Error during automatic room exit: {}", e.what());
         }
 
-        // 소켓 리소스 정리
+        // ?뚯폆 由ъ냼???뺣━
         if (socket_.is_open()) {
             boost::system::error_code ec;
             socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_both, ec);

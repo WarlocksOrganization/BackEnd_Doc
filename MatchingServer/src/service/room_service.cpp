@@ -1,4 +1,4 @@
-#include "room_service.h"
+ï»¿#include "room_service.h"
 #include "../repository/room_repository.h"
 #include <spdlog/spdlog.h>
 #include <random>
@@ -10,21 +10,21 @@ namespace game_server {
     using json = nlohmann::json;
 
     namespace {
-        // ¹æ ÀÌ¸§ À¯È¿¼º °ËÁõ ÇÔ¼ö
+        // ë°© ì´ë¦„ ìœ íš¨ì„± ê²€ì¦ í•¨ìˆ˜
         bool isValidRoomName(const std::string& name) {
-            // ºó ÀÌ¸§Àº À¯È¿ÇÏÁö ¾ÊÀ½
+            // ë¹ˆ ì´ë¦„ì€ ìœ íš¨í•˜ì§€ ì•ŠìŒ
             if (name.empty()) {
                 return false;
             }
 
-            // 40¹ÙÀÌÆ®(UTF-8 Ç¥ÁØ) ÀÌ³»ÀÎÁö È®ÀÎ
+            // 40ë°”ì´íŠ¸(UTF-8 í‘œì¤€) ì´ë‚´ì¸ì§€ í™•ì¸
             if (name.size() > 40) {
                 return false;
             }
 
-            // ¿µ¾î, ÇÑ±Û, ¼ıÀÚ¸¸ Æ÷ÇÔÇÏ´ÂÁö È®ÀÎ
+            // ì˜ì–´, í•œê¸€, ìˆ«ìë§Œ í¬í•¨í•˜ëŠ”ì§€ í™•ì¸
             for (unsigned char c : name) {
-                // ASCII ¿µ¾î¿Í ¼ıÀÚ È®ÀÎ
+                // ASCII ì˜ì–´ì™€ ìˆ«ì í™•ì¸
                 if ((c >= 'A' && c <= 'Z') ||
                     (c >= 'a' && c <= 'z') ||
                     (c >= '0' && c <= '9') ||
@@ -32,18 +32,18 @@ namespace game_server {
                     continue;
                 }
 
-                // UTF-8 ÇÑ±Û ¹üÀ§ È®ÀÎ (Ã¹ ¹ÙÀÌÆ®°¡ 0xEA~0xED ¹üÀ§)
+                // UTF-8 í•œê¸€ ë²”ìœ„ í™•ì¸ (ì²« ë°”ì´íŠ¸ê°€ 0xEA~0xED ë²”ìœ„)
                 if ((c & 0xF0) == 0xE0) {
-                    // ÇÑ±Û ¹®ÀÚÀÇ Ã¹ ¹ÙÀÌÆ® °¡´É¼º, Á» ´õ Á¤È®ÇÑ È®ÀÎ ÇÊ¿ä
+                    // í•œê¸€ ë¬¸ìì˜ ì²« ë°”ì´íŠ¸ ê°€ëŠ¥ì„±, ì¢€ ë” ì •í™•í•œ í™•ì¸ í•„ìš”
                     continue;
                 }
 
-                // ÇÑ±Û ¹®ÀÚÀÇ ¿¬¼Ó ¹ÙÀÌÆ® (0x80~0xBF ¹üÀ§)
+                // í•œê¸€ ë¬¸ìì˜ ì—°ì† ë°”ì´íŠ¸ (0x80~0xBF ë²”ìœ„)
                 if ((c & 0xC0) == 0x80) {
                     continue;
                 }
 
-                // Çã¿ëµÇÁö ¾Ê´Â ¹®ÀÚ
+                // í—ˆìš©ë˜ì§€ ì•ŠëŠ” ë¬¸ì
                 return false;
             }
 
@@ -51,7 +51,7 @@ namespace game_server {
         }
     }
 
-    // ¼­ºñ½º ±¸ÇöÃ¼
+    // ì„œë¹„ìŠ¤ êµ¬í˜„ì²´
     class RoomServiceImpl : public RoomService {
     public:
         explicit RoomServiceImpl(std::shared_ptr<RoomRepository> roomRepo)
@@ -62,7 +62,7 @@ namespace game_server {
             json response;
 
             try {
-                // ¿äÃ» À¯È¿¼º °ËÁõ
+                // ìš”ì²­ ìœ íš¨ì„± ê²€ì¦
                 if (!request.contains("roomName") || !request.contains("userId") || !request.contains("maxPlayers")) {
                     response["status"] = "error";
                     response["message"] = "Missing required fields in request";
@@ -81,7 +81,7 @@ namespace game_server {
                     return response;
                 }
 
-                // ´ÜÀÏ Æ®·£Àè¼ÇÀ¸·Î ¹æ »ı¼º ¹× È£½ºÆ® Ãß°¡
+                // ë‹¨ì¼ íŠ¸ëœì­ì…˜ìœ¼ë¡œ ë°© ìƒì„± ë° í˜¸ìŠ¤íŠ¸ ì¶”ê°€
                 json result = roomRepo_->createRoomWithHost(
                     request["userId"], request["roomName"], request["maxPlayers"]);
                 if (result["roomId"] == -1) {
@@ -90,7 +90,7 @@ namespace game_server {
                     return response;
                 }
 
-                // ¼º°ø ÀÀ´ä »ı¼º
+                // ì„±ê³µ ì‘ë‹µ ìƒì„±
                 response["action"] = "createRoom";
                 response["status"] = "success";
                 response["message"] = "Room successfully created";
@@ -116,7 +116,7 @@ namespace game_server {
             json response;
 
             try {
-                // ¿äÃ» À¯È¿¼º °ËÁõ
+                // ìš”ì²­ ìœ íš¨ì„± ê²€ì¦
                 if (!request.contains("roomId") || !request.contains("userId")) {
                     response["status"] = "error";
                     response["message"] = "Missing required fields in request";
@@ -126,14 +126,14 @@ namespace game_server {
                 int roomId = request["roomId"];
                 int userId = request["userId"];
 
-                // ¹æ¿¡ Âü°¡ÀÚ Ãß°¡
+                // ë°©ì— ì°¸ê°€ì ì¶”ê°€
                 if (!roomRepo_->addPlayer(roomId, userId)) {
                     response["status"] = "error";
                     response["message"] = "Failed to join room - room may be full or not in WAITING state";
                     return response;
                 }
 
-                // ¼º°ø ÀÀ´ä »ı¼º
+                // ì„±ê³µ ì‘ë‹µ ìƒì„±
                 response["action"] = "joinRoom";
                 response["status"] = "success";
                 response["message"] = "Successfully joined room";
@@ -153,7 +153,7 @@ namespace game_server {
             json response;
 
             try {
-                // ¿äÃ» À¯È¿¼º °ËÁõ
+                // ìš”ì²­ ìœ íš¨ì„± ê²€ì¦
                 if (!request.contains("userId")) {
                     response["status"] = "error";
                     response["message"] = "Missing userId in request";
@@ -162,14 +162,14 @@ namespace game_server {
 
                 int userId = request["userId"];
 
-                // ÇÃ·¹ÀÌ¾î¸¦ ¹æ¿¡¼­ Á¦°Å 
+                // í”Œë ˆì´ì–´ë¥¼ ë°©ì—ì„œ ì œê±° 
                 if (!roomRepo_->removePlayer(userId)) {
                     response["status"] = "error";
                     response["message"] = "User not found in any room";
                     return response;
                 }
 
-                // ¼º°ø ÀÀ´ä »ı¼º
+                // ì„±ê³µ ì‘ë‹µ ìƒì„±
                 response["action"] = "exitRoom";
                 response["status"] = "success";
                 response["message"] = "Successfully exited room";
@@ -189,10 +189,10 @@ namespace game_server {
             json response;
 
             try {
-                // ¿­¸° ¹æ ¸ñ·Ï °¡Á®¿À±â
+                // ì—´ë¦° ë°© ëª©ë¡ ê°€ì ¸ì˜¤ê¸°
                 auto rooms = roomRepo_->findAllOpen();
 
-                // ÀÀ´ä »ı¼º
+                // ì‘ë‹µ ìƒì„±
                 response["action"] = "listRooms";
                 response["status"] = "success";
                 response["message"] = "Successfully retrieved room list";
@@ -218,7 +218,7 @@ namespace game_server {
         std::shared_ptr<RoomRepository> roomRepo_;
     };
 
-    // ÆÑÅä¸® ¸Ş¼­µå ±¸Çö
+    // íŒ©í† ë¦¬ ë©”ì„œë“œ êµ¬í˜„
     std::unique_ptr<RoomService> RoomService::create(std::shared_ptr<RoomRepository> roomRepo) {
         return std::make_unique<RoomServiceImpl>(roomRepo);
     }
