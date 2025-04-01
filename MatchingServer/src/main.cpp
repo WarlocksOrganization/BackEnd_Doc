@@ -48,7 +48,7 @@ int main(int argc, char* argv[])
         server->run();
 
         // IO 컨텍스트 실행 (이벤트 루프)
-        spdlog::info("Server running on port {}", port);
+        spdlog::info("서버 시작 포트 : {}", port);
         io_context.run();
     }
     catch (std::exception& e) {
