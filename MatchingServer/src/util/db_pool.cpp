@@ -35,7 +35,7 @@ namespace game_server {
             spdlog::info("{}개의 데이터베이스 풀 초기화 성공", poolSize);
         }
         catch (const std::exception& e) {
-            spdlog::error("데이터베이스 풀 초기화 중 예외가 발생하였습니다. : {}", e.what());
+            spdlog::error("데이터베이스 풀 초기화 중 예외가 발생하였습니다: {}", e.what());
             throw;
         }
     }
@@ -63,7 +63,7 @@ namespace game_server {
                         connections_[i] = std::make_shared<pqxx::connection>(connection_string_);
                     }
                     catch (const std::exception& e) {
-                        spdlog::error("재 연결에 중 예외가 발생하였습니다. : {}", e.what());
+                        spdlog::error("재연결 중 예외가 발생하였습니다: {}", e.what());
                         in_use_[i] = false;
                         throw;
                     }
@@ -74,7 +74,7 @@ namespace game_server {
         }
 
         // 사용 가능한 연결이 없으면 새 연결 생성
-        spdlog::warn("사용 가능한 연결이 없습니다, 연결을 추가로 생성합니다.");
+        spdlog::warn("사용 가능한 연결이 없습니다, 연결을 추가로 생성합니다");
         try {
             auto conn = std::make_shared<pqxx::connection>(connection_string_);
             connections_.push_back(conn);
@@ -82,7 +82,7 @@ namespace game_server {
             return conn;
         }
         catch (const std::exception& e) {
-            spdlog::error("연결 추가 중 예외가 발생하였습니다. : {}", e.what());
+            spdlog::error("연결 추가 중 예외가 발생하였습니다: {}", e.what());
             throw;
         }
     }
@@ -99,7 +99,7 @@ namespace game_server {
             }
         }
 
-        spdlog::warn("데이터베이스 풀로 반환 가능한 연결을 찾지 못했습니다.");
+        spdlog::warn("데이터베이스 풀로 반환 가능한 연결을 찾지 못했습니다");
     }
 
 } // namespace game_server

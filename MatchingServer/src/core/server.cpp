@@ -35,7 +35,7 @@ namespace game_server {
 
         spdlog::info("서버 초기화 완료! 포트 번호 : {}", port);
     }
-    
+
     Server::~Server()
     {
         if (running_) {
@@ -225,7 +225,7 @@ namespace game_server {
     }
 
     void Server::init_controllers() {
-        // Create repositories
+        // 레포지토리 생성
         auto userRepo = UserRepository::create(db_pool_.get());
         auto roomRepo = RoomRepository::create(db_pool_.get());
         auto gameRepo = GameRepository::create(db_pool_.get());
@@ -235,13 +235,13 @@ namespace game_server {
         std::shared_ptr<GameRepository> sharedGameRepo = std::move(gameRepo);
         spdlog::info("레포지토리 객체 생성 및 포인터화 완료");
 
-        // Create services
+        // 서비스 생성
         auto authService = AuthService::create(sharedUserRepo);
         auto roomService = RoomService::create(sharedRoomRepo);
         auto gameService = GameService::create(sharedGameRepo);
         spdlog::info("레포지토리와 서비스 연동 및 서비스 객체 생성 완료");
 
-        // Create and register controllers
+        // 컨트롤러 생성 및 등록
         controllers_["auth"] = std::make_shared<AuthController>(std::move(authService));
         controllers_["room"] = std::make_shared<RoomController>(std::move(roomService));
         controllers_["game"] = std::make_shared<GameController>(std::move(gameService));
@@ -300,7 +300,7 @@ namespace game_server {
         acceptor_.async_accept(
             [this](boost::system::error_code ec, boost::asio::ip::tcp::socket socket) {
                 if (!ec) {
-                    // Create and start session
+                    // 세션 생성 및 시작
                     auto session = std::make_shared<Session>(std::move(socket), controllers_, this);
                     session->start();
                 }
@@ -308,7 +308,7 @@ namespace game_server {
                     spdlog::error("클라이언트 연결을 받아 들이던 중 에러가 발생하였습니다. : {}", ec.message());
                 }
 
-                // Continue accepting connections (if server is still running)
+                // 계속해서 연결 수락 (서버가 여전히 실행 중인 경우)
                 if (running_) {
                     do_accept();
                 }

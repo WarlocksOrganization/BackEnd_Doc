@@ -1,6 +1,6 @@
 ﻿// controller/auth_controller.cpp
-// ?몄쬆 而⑦듃濡ㅻ윭 援ы쁽 ?뚯씪
-// ?ъ슜???깅줉 諛?濡쒓렇???붿껌??泥섎━?섎뒗 而⑦듃濡ㅻ윭
+// 인증 컨트롤러 구현 파일
+// 사용자 등록 및 로그인 요청을 처리하는 컨트롤러
 #include "auth_controller.h"
 #include <spdlog/spdlog.h>
 #include <nlohmann/json.hpp>
@@ -14,7 +14,7 @@ namespace game_server {
     }
 
     nlohmann::json AuthController::handleRequest(json& request) {
-        // ?붿껌??action ?꾨뱶???곕씪 ?곸젅???몃뱾???몄텧
+        // 요청의 action 필드에 따라 적절한 핸들러 호출
         std::string action = request["action"];
 
         if (action == "register") {
@@ -32,14 +32,14 @@ namespace game_server {
         else {
             json error_response = {
                 {"status", "error"},
-                {"message", "Unknown auth action"}
+                {"message", "알 수 없는 인증 액션"}
             };
             return error_response;
         }
     }
 
     nlohmann::json AuthController::handleRegister(json& request) {
-        // ?쒕퉬??怨꾩링 ?몄텧?섏뿬 ?ъ슜???깅줉 ?섑뻾
+        // 서비스 계층 호출하여 사용자 등록 실행
         json response = authService_->registerUser(request);
         return response;
     }

@@ -1,6 +1,6 @@
-﻿// controller/room_controller.cpp
-// 방 컨트롤러 구현 파일
-// 방 생성, 참가, 목록 조회 등의 요청을 처리하는 컨트롤러
+﻿// controller/game_controller.cpp
+// 게임 컨트롤러 구현 파일
+// 게임 시작 및 종료 요청을 처리하는 컨트롤러
 #include "game_controller.h"
 #include <spdlog/spdlog.h>
 #include <nlohmann/json.hpp>
@@ -26,7 +26,7 @@ namespace game_server {
         else {
             json error_response = {
                 {"status", "error"},
-                {"message", "Unknown room action"}
+                {"message", "알 수 없는 게임 액션"}
             };
             return error_response;
         }

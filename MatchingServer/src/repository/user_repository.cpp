@@ -48,7 +48,7 @@ namespace game_server {
             catch (const std::exception& e) {
                 txn.abort();
                 dbPool_->return_connection(conn);
-                spdlog::error("Database error in findByUsername: {}", e.what());
+                spdlog::error("findByUsername 데이터베이스 오류: {}", e.what());
                 return { {"userId", -1} };
             }
         }
@@ -76,7 +76,7 @@ namespace game_server {
             }
             catch (const std::exception& e) {
                 txn.abort();
-                spdlog::error("Error creating user: {}", e.what());
+                spdlog::error("사용자 생성 오류: {}", e.what());
                 dbPool_->return_connection(conn);
                 return -1;
             }
@@ -99,7 +99,7 @@ namespace game_server {
             }
             catch (const std::exception& e) {
                 txn.abort();
-                spdlog::error("Error updating last login: {}", e.what());
+                spdlog::error("마지막 로그인 업데이트 오류: {}", e.what());
                 dbPool_->return_connection(conn);
                 return false;
             }
@@ -109,7 +109,7 @@ namespace game_server {
             auto conn = dbPool_->get_connection();
             pqxx::work txn(*conn);
             try {
-                // 마지막 로그인 시간 업데이트
+                // 닉네임 업데이트
                 pqxx::result result = txn.exec_params(
                     "UPDATE users SET nick_name = $2 "
                     "WHERE user_id = $1 "
@@ -123,7 +123,7 @@ namespace game_server {
             }
             catch (const std::exception& e) {
                 txn.abort();
-                spdlog::error("Error updating last login: {}", e.what());
+                spdlog::error("닉네임 업데이트 오류: {}", e.what());
                 dbPool_->return_connection(conn);
                 return false;
             }
