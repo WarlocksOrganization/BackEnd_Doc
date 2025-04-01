@@ -23,7 +23,7 @@ namespace game_server {
                     "INSERT INTO games (room_id, map_id) "
                     "VALUES ($1, $2) "
                     "RETURNING game_id",
-                roomId, mapId);
+                    roomId, mapId);
 
                 pqxx::result updateRoom = txn.exec_params(
                     "UPDATE rooms "
@@ -33,13 +33,13 @@ namespace game_server {
                     roomId);
 
                 if (result.empty() || updateRoom.empty()) {
-                    spdlog::error("Can't created game session");
+                    spdlog::error("게임 세션을 생성할 수 없습니다");
                     txn.abort();
                     dbPool_->return_connection(conn);
                     return -1;
                 }
                 int gameId = result[0][0].as<int>();
-                spdlog::info("Created game session completely! Game ID : {}", gameId);
+                spdlog::info("게임 세션이 완전히 생성되었습니다! 게임 ID: {}", gameId);
                 txn.commit();
                 dbPool_->return_connection(conn);
                 return gameId;
@@ -47,12 +47,12 @@ namespace game_server {
             catch (const std::exception& e) {
                 txn.abort();
                 dbPool_->return_connection(conn);
-                spdlog::error("Database error in createGame : {}", e.what());
+                spdlog::error("createGame 데이터베이스 오류: {}", e.what());
                 return -1;
             }
         }
 
-        int endGame(int gameId)  {
+        int endGame(int gameId) {
             auto conn = dbPool_->get_connection();
             pqxx::work txn(*conn);
             try {
@@ -64,13 +64,13 @@ namespace game_server {
                     gameId);
 
                 if (result.empty()) {
-                    spdlog::error("Can't found roomId use to Game ID : {}", gameId);
+                    spdlog::error("게임 ID: {}에 해당하는 방 ID를 찾을 수 없습니다", gameId);
                     txn.abort();
                     dbPool_->return_connection(conn);
                     return -1;
                 }
                 int roomId = result[0][0].as<int>();
-                spdlog::info("Update status completed successful for Game ID : {}", gameId);
+                spdlog::info("게임 ID: {}의 상태가 성공적으로 완료로 업데이트되었습니다", gameId);
 
                 pqxx::result res = txn.exec_params(
                     "UPDATE rooms "
@@ -80,12 +80,12 @@ namespace game_server {
                     roomId);
 
                 if (res.empty() || roomId != res[0][0].as<int>()) {
-                    spdlog::error("Update room status fail Room ID : {}", roomId);
+                    spdlog::error("방 ID: {}의 상태 업데이트 실패", roomId);
                     txn.abort();
                     dbPool_->return_connection(conn);
                     return -1;
                 }
-                spdlog::info("Update room status competely Room ID : {}", roomId);
+                spdlog::info("방 ID: {}의 상태가 완전히 업데이트되었습니다", roomId);
 
                 txn.commit();
                 dbPool_->return_connection(conn);
@@ -94,11 +94,11 @@ namespace game_server {
             catch (const std::exception& e) {
                 txn.abort();
                 dbPool_->return_connection(conn);
-                spdlog::error("Database error in findByUsername: {}", e.what());
+                spdlog::error("endGame 데이터베이스 오류: {}", e.what());
                 return -1;
             }
         }
-        
+
 
     private:
         DbPool* dbPool_;

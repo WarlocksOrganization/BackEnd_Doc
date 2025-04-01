@@ -47,7 +47,7 @@ namespace game_server {
                 return rooms;
             }
             catch (const std::exception& e) {
-                spdlog::error("Error retrieving open rooms list: {}", e.what());
+                spdlog::error("열린 방 목록 가져오기 오류: {}", e.what());
                 txn.abort();
                 dbPool_->return_connection(conn);
                 return rooms;
@@ -103,7 +103,7 @@ namespace game_server {
                 return result;
             }
             catch (const std::exception& e) {
-                spdlog::error("Error in createRoomWithHost: {}", e.what());
+                spdlog::error("createRoomWithHost 오류: {}", e.what());
                 txn.abort();
                 dbPool_->return_connection(conn);
                 return result;
@@ -120,7 +120,7 @@ namespace game_server {
                     roomId);
 
                 if (roomCheck.empty()) {
-                    spdlog::error("Room {} does not exist", roomId);
+                    spdlog::error("방 {}이(가) 존재하지 않습니다", roomId);
                     txn.abort();
                     dbPool_->return_connection(conn);
                     return false;
@@ -128,7 +128,7 @@ namespace game_server {
 
                 std::string status = roomCheck[0][0].as<std::string>();
                 if (status != "WAITING") {
-                    spdlog::error("Cannot join room {} - status is {}", roomId, status);
+                    spdlog::error("방 {}에 참가할 수 없습니다 - 상태가 {}입니다", roomId, status);
                     txn.abort();
                     dbPool_->return_connection(conn);
                     return false;
@@ -142,7 +142,7 @@ namespace game_server {
 
                 if (!checkResult.empty()) {
                     // 이미 참가한 상태
-                    spdlog::error("User {} already exists in room {}", userId, roomId);
+                    spdlog::error("사용자 {}는 이미 방 {}에 있습니다", userId, roomId);
                     txn.abort();
                     dbPool_->return_connection(conn);
                     return false;
@@ -159,7 +159,7 @@ namespace game_server {
                 int currentPlayers = maxPlayersResult[0]["current_players"].as<int>();
 
                 if (currentPlayers >= maxPlayers) {
-                    spdlog::error("Room {} is full ({}/{})", roomId, currentPlayers, maxPlayers);
+                    spdlog::error("방 {}이(가) 가득 찼습니다 ({}/{})", roomId, currentPlayers, maxPlayers);
                     txn.abort();
                     dbPool_->return_connection(conn);
                     return false;
@@ -179,11 +179,11 @@ namespace game_server {
 
                 txn.commit();
                 dbPool_->return_connection(conn);
-                spdlog::debug("User {} joined room {}", userId, roomId);
+                spdlog::debug("사용자 {}이(가) 방 {}에 참가했습니다", userId, roomId);
                 return true;
             }
             catch (const std::exception& e) {
-                spdlog::error("Error adding player to room: {}", e.what());
+                spdlog::error("방에 플레이어 추가 오류: {}", e.what());
                 txn.abort();
                 dbPool_->return_connection(conn);
                 return false;
@@ -203,7 +203,7 @@ namespace game_server {
                     // 사용자가 어떤 방에도 없음
                     txn.abort();
                     dbPool_->return_connection(conn);
-                    spdlog::warn("User {} is not in any room", userId);
+                    spdlog::warn("사용자 {}은(는) 어떤 방에도 없습니다", userId);
                     return false;
                 }
 
@@ -230,18 +230,18 @@ namespace game_server {
                     txn.exec_params(
                         "UPDATE games SET status = 'COMPLETED', completed_at = CURRENT_TIMESTAMP WHERE status = 'IN_PROGRESS' AND room_id = $1",
                         room_id);
-                    
-                    spdlog::debug("Room {} marked as TERMINATED (no players left) and completed games that inprogress at room : {}", room_id, room_id);
+
+                    spdlog::debug("방 {}이(가) 종료 처리되었습니다 (남은 플레이어 없음), 해당 방의 진행 중 게임들도 완료 처리: {}", room_id, room_id);
                 }
 
                 txn.commit();
                 dbPool_->return_connection(conn);
-                spdlog::debug("User {} left room {}, {} players remaining",
+                spdlog::debug("사용자 {}이(가) 방 {}을(를) 나갔습니다, 남은 플레이어 {}명",
                     userId, room_id, remaining_players);
                 return true;
             }
             catch (const std::exception& e) {
-                spdlog::error("Error removing player from room: {}", e.what());
+                spdlog::error("방에서 플레이어 제거 오류: {}", e.what());
                 txn.abort();
                 dbPool_->return_connection(conn);
                 return false;
@@ -263,7 +263,7 @@ namespace game_server {
                 return result.empty() ? 0 : result[0][0].as<int>();
             }
             catch (const std::exception& e) {
-                spdlog::error("Error retrieving room player count: {}", e.what());
+                spdlog::error("방 플레이어 수 가져오기 오류: {}", e.what());
                 txn.abort();
                 dbPool_->return_connection(conn);
                 return -1;
@@ -289,10 +289,10 @@ namespace game_server {
                     playerIds.push_back(row[0].as<int>());
                 }
 
-                spdlog::debug("Found {} players in room {}", playerIds.size(), roomId);
+                spdlog::debug("방 {}에서 {}명의 플레이어를 찾았습니다", roomId, playerIds.size());
             }
             catch (const std::exception& e) {
-                spdlog::error("Error retrieving room player list: {}", e.what());
+                spdlog::error("방 플레이어 목록 가져오기 오류: {}", e.what());
                 txn.abort();
                 dbPool_->return_connection(conn);
             }

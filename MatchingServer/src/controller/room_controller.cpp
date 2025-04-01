@@ -20,7 +20,7 @@ namespace game_server {
         if (action == "createRoom") {
             return handleCreateRoom(request);
         }
-        else if (action == "joinRoom") { 
+        else if (action == "joinRoom") {
             return handleJoinRoom(request);
         }
         else if (action == "exitRoom") {
@@ -32,7 +32,7 @@ namespace game_server {
         else {
             json error_response = {
                 {"status", "error"},
-                {"message", "Unknown room action"}
+                {"message", "알 수 없는 방 액션"}
             };
             return error_response;
         }
