@@ -72,7 +72,7 @@ namespace game_server {
                 return false;
             }
 
-            // 30바이트 이내인지 확인
+            // 16바이트 이내인지 확인
             if (nickName.size() > 16) {
                 return false;
             }

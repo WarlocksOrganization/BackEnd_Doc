@@ -29,7 +29,6 @@ namespace game_server {
         bool isActive(std::chrono::seconds timeout) const;
         void handle_error(const std::string& error_message);
         void setToken(const std::string& token);
-        bool is_mirror_ = false;
         int getUserId();
 
     private:
@@ -51,6 +50,8 @@ namespace game_server {
         Server* server_;
         std::chrono::steady_clock::time_point last_activity_time_;
         std::string token_;
+        bool is_mirror_ = false;
+        int mirror_port_;
     };
 
 } // namespace game_server
