@@ -220,6 +220,11 @@ namespace game_server {
                 handlePing();
                 return;
             }
+            else if (action == "logout") {
+                std::string logMessage = user_name_ + " had logout";
+                handle_error(logMessage);
+                return;
+            }
             else {
                 // 알 수 없는 액션 처리
                 spdlog::warn("Unknown action: {}", action);
@@ -270,7 +275,7 @@ namespace game_server {
                         int port = response["port"];
                         if (server_->mirrors_.count(port)) {
                             spdlog::debug("Mirror found, broadcasting message");
-                            write_broadcast(broad_response.dump(), server_->mirrors_[port]);
+                            write_broadcast(broad_response.dump(), port);
                         }
                     }
                     catch (const std::exception& e) {
@@ -304,7 +309,13 @@ namespace game_server {
         }
     }
 
-    void Session::write_broadcast(const std::string& response, std::shared_ptr<Session>& mirror) {
+    void Session::write_broadcast(const std::string& response, int port) {
+        auto mirror = server_->mirrors_[port].lock();
+        if (!mirror) {
+            spdlog::warn("Mirror for port {} no longer exists", port);
+            server_->mirrors_.erase(port);  // 미러 맵에서 해당 항목 제거
+            return;
+        }
         boost::asio::async_write(
             mirror->socket_,
             boost::asio::buffer(response),
@@ -339,7 +350,7 @@ namespace game_server {
 
     void Session::handle_error(const std::string& error_message) {
         // 오류 로깅
-        spdlog::error(error_message);
+        spdlog::info(error_message);
 
         // 사용자가 방에 참여 중이었다면 나가기 처리
         try {

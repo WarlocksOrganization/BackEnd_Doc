@@ -4,8 +4,8 @@ import com.smashup.indicator.module.gamerhint.controller.dto.request.InsertDataL
 import com.smashup.indicator.module.gamerhint.controller.dto.request.InsertDataRequestDto;
 import com.smashup.indicator.module.gamerhint.domain.entity.GamerHintDocument1;
 import com.smashup.indicator.module.gamerhint.repository.GamerHintRepository1;
-import com.smashup.indicator.module.version.BatchCountManager;
 import com.smashup.indicator.module.version.PoolManager;
+import com.smashup.indicator.module.version.service.impl.VersionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,7 +18,7 @@ public class GamerHintService {
     // 의존성 주입
     private final GamerHintRepository1 gamerHintRepository1;
     private final PoolManager poolManager;
-    private final BatchCountManager batchCountManager;
+    private final VersionService versionService;
 
     // 상수
     private final String NO_CARD = "NO_CARD";
@@ -35,7 +35,7 @@ public class GamerHintService {
 
 
         /// documentID 재료
-        String documentId = String.join("/", dto.getPatchVersion(), batchCountManager.getBatchCount()+"");
+        String documentId = String.join("/", dto.getPatchVersion(), versionService.getBatchCount()+"");
 
         /// 전체 직업을 관리하는 Map<documentId, Map<deckId, List<카드ID> > > 세팅.
         Map<String, Map<String, List<Integer> > > resultMap = new HashMap<>();

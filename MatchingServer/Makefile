@@ -1,4 +1,4 @@
-CXX = g++
+CXX = ccache g++
 # vcpkg 헤더 파일 경로 추가
 CXXFLAGS = -std=c++20 -Wall -Wextra -I./ -I./src -I./src/core -I./src/controller -I./src/service -I./src/repository -I./src/util -I./vcpkg_installed/x64-linux/include
 # vcpkg 라이브러리 경로 추가
@@ -19,7 +19,7 @@ SOURCES = $(SRC_DIR)/main.cpp \
           $(SRC_DIR)/repository/room_repository.cpp \
           $(SRC_DIR)/repository/game_repository.cpp \
           $(SRC_DIR)/util/db_pool.cpp \
-          $(SRC_DIR)/util/password_util.cpp \
+          $(SRC_DIR)/util/password_util.cpp
 OBJECTS = $(SOURCES:$(SRC_DIR)/%.cpp=$(BUILD_DIR)/%.o)
 TARGET = $(BIN_DIR)/MatchingServer
 # 디렉토리 자동 생성

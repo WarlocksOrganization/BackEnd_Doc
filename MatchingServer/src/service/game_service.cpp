@@ -41,7 +41,7 @@ namespace game_server {
                 response["message"] = "game successfully created";
                 response["gameId"] = gameId;
 
-                spdlog::info("Room {} created new gameId: {}",
+                spdlog::debug("Room {} created new gameId: {}",
                     request["roomId"].get<int>(), gameId);
 
                 return response;
@@ -76,7 +76,7 @@ namespace game_server {
                 response["status"] = "success";
                 response["message"] = "The game is ended successfully";
 
-                spdlog::info("Room {} ended the gameId: {}",
+                spdlog::debug("Room {} ended the gameId: {}",
                     roomId, request["gameId"].get<int>());
                 return response;
             }
