@@ -134,6 +134,22 @@ namespace game_server {
         return token;
     }
 
+    void Server::registerMirrorSession(std::shared_ptr<Session> session, int port) {
+        std::lock_guard<std::mutex> lock(mirrors_mutex_);
+
+        // 기존 세션이 존재하면 제거
+        for (auto it = mirrors_.begin(); it != mirrors_.end(); ++it) {
+            if (it->second.lock() == session) {
+                spdlog::info("Existing mirror session found, removing old session: {}", it->first);
+                mirrors_.erase(it);
+                break;  // 한 개만 삭제하면 되므로 루프 종료
+            }
+        }
+
+        mirrors_[port] = session;
+        return;
+    }
+
     void Server::removeSession(const std::string& token, int userId) {
         {
             std::lock_guard<std::mutex> lock(sessions_mutex_);
@@ -153,6 +169,17 @@ namespace game_server {
         }
     }
 
+    void Server::removeMirrorSession(int port) {
+        {
+            std::lock_guard<std::mutex> lock(mirrors_mutex_);
+            auto it = mirrors_.find(port);
+            if (it != mirrors_.end()) {
+                mirrors_.erase(it);
+                spdlog::info("Mirror session removed port: {}", port);
+            }
+        }
+    }
+
     std::shared_ptr<Session> Server::getSession(const std::string& token) {
         std::lock_guard<std::mutex> lock(sessions_mutex_);
         auto it = sessions_.find(token);
@@ -168,6 +195,33 @@ namespace game_server {
             }
         }
         return nullptr;
+    }
+
+    std::shared_ptr<Session> Server::getMirrorSession(int port) {
+        std::lock_guard<std::mutex> lock(mirrors_mutex_);
+        auto it = mirrors_.find(port);
+        if (it != mirrors_.end()) {
+            auto session = it->second.lock();
+            if (session) {
+                return session;
+            }
+            else {
+                // 세션이 이미 소멸된 경우 맵에서 제거
+                mirrors_.erase(it);
+                spdlog::info("Removed expired mirror session from map port: {}", port);
+            }
+        }
+        return nullptr;
+    }
+
+    int Server::getCCU() {
+        std::lock_guard<std::mutex> lock(sessions_mutex_);
+        return sessions_.size();
+    }
+
+    int Server::getRoomCapacity() {
+        std::lock_guard<std::mutex> lock(mirrors_mutex_);
+        return mirrors_.size();
     }
 
     void Server::init_controllers() {
