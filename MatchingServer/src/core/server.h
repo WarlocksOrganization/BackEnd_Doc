@@ -21,7 +21,7 @@ namespace game_server {
         Server(boost::asio::io_context& io_context,
             short port,
             const std::string& db_connection_string,
-            const std::string& VERSION);
+            const std::string& version);
         ~Server();
 
         void run();
