@@ -89,15 +89,28 @@ GRANT ALL PRIVILEGES ON SEQUENCES TO admin;
 
 INSERT INTO users (user_id, user_name, nick_name, password_hash)
 VALUES (0, 'Mirror', 'Manager', 'Mirror');
+INSERT INTO users (user_name, nick_name, password_hash)
+VALUES ('rnqhscjf3333', '[GM]구본관', '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918');
+INSERT INTO users (user_name, nick_name, password_hash)
+VALUES ('superAdmin1234', '😋G김성일M😋', '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918');
+INSERT INTO users (user_name, nick_name, password_hash)
+VALUES ('thswjdcks2480', '😎타락파워정찬😎', '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918');
+INSERT INTO users (user_name, nick_name, password_hash)
+VALUES ('zzzz955', '😍산혁😍', '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918');
+INSERT INTO users (user_name, nick_name, password_hash)
+VALUES ('loge5490', '[GM]2^e', '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918');
+INSERT INTO users (user_name, nick_name, password_hash)
+VALUES ('te04072', '[GM]쌀숭이', '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918');
 
 INSERT INTO maps (map_name) VALUES ('SSAFY');
-INSERT INTO maps (map_name) VALUES ('Playground');
+INSERT INTO maps (map_name) VALUES ('Magma');
+INSERT INTO maps (map_name) VALUES ('Space');
 
 DO $$
 DECLARE
     i INTEGER;
 BEGIN
-    FOR i IN 0..19 LOOP
+    FOR i IN 0..9 LOOP
         INSERT INTO rooms (room_name, host_id, ip_address, port)
         VALUES ('room' || i, 0, '127.0.0.1', 40000 + i);
     END LOOP;
