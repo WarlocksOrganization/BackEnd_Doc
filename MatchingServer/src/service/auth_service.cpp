@@ -78,30 +78,47 @@ namespace game_server {
             }
 
             // "mirror" 단어가 포함되어 있는지 확인 (대소문자 구분 없이)
-            std::string lowerNickName = nickName;
-            std::transform(lowerNickName.begin(), lowerNickName.end(), lowerNickName.begin(), ::tolower);
+            std::string lowerNickName;
+            for (char c : nickName) {
+                lowerNickName += std::tolower(static_cast<unsigned char>(c));
+            }
             if (lowerNickName.find("mirror") != std::string::npos) {
                 return false;
             }
 
-            // UTF-8 문자열 검증을 위한 정규식 패턴
-            std::locale::global(std::locale(""));
-            for (char32_t c : nickName) {
-                // ASCII 영어와 숫자 확인
+            // UTF-8 문자열 순회하며 검증
+            for (size_t i = 0; i < nickName.size(); ) {
+                unsigned char c = nickName[i];
+
+                // ASCII 영어와 숫자 확인 (0x00-0x7F: 1바이트)
                 if ((c >= 'A' && c <= 'Z') ||
                     (c >= 'a' && c <= 'z') ||
                     (c >= '0' && c <= '9')) {
+                    i++;
                     continue;
                 }
 
-                // 한글 유니코드 범위 확인 (U+AC00 ~ U+D7A3: 완성형 한글)
-                if (c >= 0xAC00 && c <= 0xD7A3) {
-                    continue;
+                // UTF-8 한글 확인 (3바이트)
+                if (i + 2 < nickName.size() &&
+                    (c >= 0xE0 && c <= 0xEF) &&
+                    (nickName[i + 1] & 0xC0) == 0x80 &&
+                    (nickName[i + 2] & 0xC0) == 0x80) {
+
+                    // 한글 범위 추가 검증 (완성형 한글 U+AC00 ~ U+D7A3)
+                    unsigned int codePoint = ((c & 0x0F) << 12) |
+                        ((nickName[i + 1] & 0x3F) << 6) |
+                        (nickName[i + 2] & 0x3F);
+
+                    if (codePoint >= 0xAC00 && codePoint <= 0xD7A3) {
+                        i += 3;  // 3바이트 건너뛰기
+                        continue;
+                    }
                 }
 
                 // 허용되지 않는 문자
                 return false;
             }
+
             return true;
         }
     }
