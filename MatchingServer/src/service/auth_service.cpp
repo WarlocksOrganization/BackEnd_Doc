@@ -5,6 +5,7 @@
 #include "../util/password_util.h"
 #include "../repository/user_repository.h"
 #include <spdlog/spdlog.h>
+#include <regex>
 
 namespace game_server {
 
@@ -66,60 +67,13 @@ namespace game_server {
             return true;
         }
 
-        bool isValidNickName(const std::string& nickName) {
-            // 빈 이름은 유효하지 않음
-            if (nickName.empty()) {
-                return false;
-            }
+        bool isKoreanEnglishNumberOnly(const std::string& str) {
+            // 정규식 패턴: 한글(가-힣), 영어(A-Za-z), 숫자(0-9)만 허용
+            if (str.size() > 16) return false;
+            std::regex pattern("^[가-힣A-Za-z0-9]+$");
 
-            // 16바이트 이내인지 확인
-            if (nickName.size() > 16) {
-                return false;
-            }
-
-            // "mirror" 단어가 포함되어 있는지 확인 (대소문자 구분 없이)
-            std::string lowerNickName;
-            for (char c : nickName) {
-                lowerNickName += std::tolower(static_cast<unsigned char>(c));
-            }
-            if (lowerNickName.find("mirror") != std::string::npos) {
-                return false;
-            }
-
-            // UTF-8 문자열 순회하며 검증
-            for (size_t i = 0; i < nickName.size(); ) {
-                unsigned char c = nickName[i];
-
-                // ASCII 영어와 숫자 확인 (0x00-0x7F: 1바이트)
-                if ((c >= 'A' && c <= 'Z') ||
-                    (c >= 'a' && c <= 'z') ||
-                    (c >= '0' && c <= '9')) {
-                    i++;
-                    continue;
-                }
-
-                // UTF-8 한글 확인 (3바이트)
-                if (i + 2 < nickName.size() &&
-                    (c >= 0xE0 && c <= 0xEF) &&
-                    (nickName[i + 1] & 0xC0) == 0x80 &&
-                    (nickName[i + 2] & 0xC0) == 0x80) {
-
-                    // 한글 범위 추가 검증 (완성형 한글 U+AC00 ~ U+D7A3)
-                    unsigned int codePoint = ((c & 0x0F) << 12) |
-                        ((nickName[i + 1] & 0x3F) << 6) |
-                        (nickName[i + 2] & 0x3F);
-
-                    if (codePoint >= 0xAC00 && codePoint <= 0xD7A3) {
-                        i += 3;  // 3바이트 건너뛰기
-                        continue;
-                    }
-                }
-
-                // 허용되지 않는 문자
-                return false;
-            }
-
-            return true;
+            // 문자열이 패턴과 일치하는지 확인
+            return std::regex_match(str, pattern);
         }
     }
 
