@@ -9,7 +9,7 @@
 
 // 시그널 핸들러용 전역 서버 변수
 std::unique_ptr<game_server::Server> server;
-const std::string VERSION = "0.5.0";
+const std::string VERSION = "1.0.0";
 
 // 시그널 핸들러 함수
 void signal_handler(int signal)
