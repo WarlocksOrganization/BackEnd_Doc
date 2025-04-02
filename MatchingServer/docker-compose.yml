@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:14
+    container_name: game_db
+    restart: always
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: gamedata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./db_init:/docker-entrypoint-initdb.d
+    ports:
+      - "5432:5432"
+    networks:
+      - game_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d gamedata"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  matching_server:
+    build:
+      context: .
+      dockerfile: Dockerfile.optimized
+      cache_from:
+        - ${IMAGE_REGISTRY:-localhost}/matching-server-vcpkg:latest
+        - ${IMAGE_REGISTRY:-localhost}/matching-server-builder:latest
+        - ${IMAGE_REGISTRY:-localhost}/matching-server:latest
+    image: ${IMAGE_REGISTRY:-localhost}/matching-server:latest
+    container_name: matching_server
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: gamedata
+      DB_USER: admin
+      DB_PASSWORD: admin
+    ports:
+      - "8080:8080"
+    networks:
+      - game_network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  game_network:
+    driver: bridge
+
+volumes:
+  postgres_data:

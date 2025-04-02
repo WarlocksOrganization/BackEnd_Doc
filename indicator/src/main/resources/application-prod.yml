@@ -1,0 +1,29 @@
+# application-prod.yml (서버 운영 설정)
+# 운영 서버 환경 설정
+server:
+  port: 8085
+
+spring:
+  data:
+    # MongoDB 설정
+    mongodb:
+      database: ${PROD_MONGODB_DATABASE}
+      uri: mongodb://${PROD_MONGODB_USERNAME}:${PROD_MONGODB_PASSWORD}@${PROD_MONGODB_HOST}:${PROD_MONGODB_PORT:27017}/${PROD_MONGODB_DATABASE}?authSource=admin
+
+## 운영 환경 로깅 설정
+#logging:
+#  config: classpath:log4j2-prod.xml
+#  level:
+#    root: WARN
+#    org.springframework.web: INFO
+#    org.springframework.security: INFO
+#    com.smashup.indicator: INFO  # 패키지명 변경
+#    com.zaxxer.hikari.pool: WARN
+#    # JPA 로깅 설정
+#    org.hibernate.SQL: WARN
+#    org.hibernate.type.descriptor.sql: WARN
+#    org.springframework.orm.jpa: WARN
+#    org.springframework.transaction: WARN
+#  pattern:
+#    console: '%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n'
+#    file: '%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n'

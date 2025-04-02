@@ -1,0 +1,9 @@
+spring.application.name: logging
+
+kafka:
+  url: kraft-cluster-kafka-bootstrap.kafka.svc:9092
+server:
+  port: 8001
+feign:
+  indicator-service:
+     url: smashup-indicator-service.indicator.svc.cluster.local:8085
