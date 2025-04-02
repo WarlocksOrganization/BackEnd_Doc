@@ -69,11 +69,16 @@ namespace game_server {
 
         bool isValidNickName(const std::string& str) {
             // 정규식 패턴: 한글(가-힣), 영어(A-Za-z), 숫자(0-9)만 허용
-            if (str.size() > 16) return false;
-            std::regex pattern("^[가-힣A-Za-z0-9]+$");
+            if (str.size() > 24) return false;
 
-            // 문자열이 패턴과 일치하는지 확인
-            return std::regex_match(str, pattern);
+            try {
+                std::regex pattern("^[가-힣A-Za-z0-9]+$");
+                return std::regex_match(str, pattern);
+            }
+            catch (const std::regex_error& e) {
+                spdlog::error("닉네임 {}에 대한 검증 시 정규식 오류 발생 : {}",str,  e.what());
+                return false;
+            }
         }
     }
 
