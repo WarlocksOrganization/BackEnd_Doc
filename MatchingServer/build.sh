@@ -48,7 +48,7 @@ sudo docker-compose down && sudo docker-compose up -d --build
 
 echo "도커 컨테이너 실행 완료"
 cd
-cd /BackEnd_Doc/MatchingServer
+cd ./BackEnd_Doc/MatchingServer
 
 echo "서버 실행 중..."
 ./build/bin/MatchingServer
