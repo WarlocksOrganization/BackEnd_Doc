@@ -17,4 +17,5 @@ public class UpdatePoolRequestDto {
     private List<Integer> mapPool;
     private List<Integer> playerNumPool;
     private String timeStamp;
+    private String patchVersion;
 }

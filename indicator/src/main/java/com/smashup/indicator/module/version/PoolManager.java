@@ -8,6 +8,8 @@ import java.util.*;
 @Component
 public class PoolManager {
     // 필드 변수
+    private String patchVersion = "not yet set";
+
     private final List<Integer> classPool = new ArrayList<>();
     private final List<Integer> mapPool = new ArrayList<>();
     private final List<Integer> playerNumPool = new ArrayList<>();
@@ -16,6 +18,9 @@ public class PoolManager {
     private final Map<Integer, Integer> cardPoolIndex = new HashMap<>();
 
     public synchronized void updatePoolPost(UpdatePoolRequestDto dto) {
+        // 패치 수정 안전 프로세스
+        patchVersion = dto.getPatchVersion();
+
         cardPool.clear();
         cardPoolIndex.clear();
         //====== 다른 풀도 추가=======
@@ -60,6 +65,10 @@ public class PoolManager {
 //            cardPoolIndex.put(cardPool.get(i), i);
 //
 //        }
+    }
+
+    public String getPatchVersion() {
+        return patchVersion;
     }
 
     public List<Integer> getCardPool() {
