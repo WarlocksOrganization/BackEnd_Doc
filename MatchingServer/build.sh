@@ -42,5 +42,13 @@ else
 fi
 
 echo "===== 빌드 완료 ====="
-echo "서버 실행 중..."
+echo "도커 컨테이너 실행 중..."
+cd /home/ubuntu/smashup-server/
+sudo docker-compose down && sudo docker-compose up -d --build
+
+echo "도커 컨테이너 실행 완료"
+cd
 ./build/bin/MatchingServer
+
+echo "서버 실행 중..."
+/BackEnd_Doc/MatchingServer
