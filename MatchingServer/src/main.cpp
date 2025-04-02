@@ -6,6 +6,7 @@
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <csignal>
+#include <cstdlib>
 
 // 시그널 핸들러용 전역 서버 변수
 std::unique_ptr<game_server::Server> server;
@@ -37,8 +38,10 @@ int main(int argc, char* argv[])
 
         // 기본 설정
         short port = 8080;
+        std::string db_host = std::getenv("DB_HOST");
+        std::string db_port = std::getenv("DB_PORT");
         std::string db_connection_string =
-            "dbname=gamedata user=admin password=admin host=localhost port=5432 client_encoding=UTF8";
+            "dbname=gamedata user=admin password=admin host=" + db_host +  " port=" + db_port +" client_encoding=UTF8";
 
         // IO 컨텍스트 및 서버 생성
         boost::asio::io_context io_context;
