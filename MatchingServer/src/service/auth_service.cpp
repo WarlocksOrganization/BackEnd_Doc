@@ -78,11 +78,15 @@ namespace game_server {
             }
 
             // "mirror" 단어가 포함되어 있는지 확인 (대소문자 구분 없이)
-            if (nickName.find("mirror") != std::string::npos) {
+            std::string lowerNickName = nickName;
+            std::transform(lowerNickName.begin(), lowerNickName.end(), lowerNickName.begin(), ::tolower);
+            if (lowerNickName.find("mirror") != std::string::npos) {
                 return false;
             }
 
-            for (unsigned char c : nickName) {
+            // UTF-8 문자열 검증을 위한 정규식 패턴
+            std::locale::global(std::locale(""));
+            for (char32_t c : nickName) {
                 // ASCII 영어와 숫자 확인
                 if ((c >= 'A' && c <= 'Z') ||
                     (c >= 'a' && c <= 'z') ||
@@ -90,13 +94,8 @@ namespace game_server {
                     continue;
                 }
 
-                // UTF-8 한글 범위 확인 (첫 바이트가 0xEA~0xED 범위)
-                if ((c & 0xF0) == 0xE0) {
-                    continue;
-                }
-
-                // 한글 문자의 연속 바이트 (0x80~0xBF 범위)
-                if ((c & 0xC0) == 0x80) {
+                // 한글 유니코드 범위 확인 (U+AC00 ~ U+D7A3: 완성형 한글)
+                if (c >= 0xAC00 && c <= 0xD7A3) {
                     continue;
                 }
 
@@ -120,23 +119,23 @@ namespace game_server {
             // 사용자명 유효성 검증
             if (!request.contains("userName") || !request.contains("password")) {
                 response["status"] = "error";
-                response["message"] = "요청 JSON에 userName 또는 password가 없습니다";
-                spdlog::error("요청 JSON에 userName 또는 password가 없습니다");
+                response["message"] = "The request json doesn't have userName or password";
+                spdlog::error("The request json doesn't have userName or password");
                 return response;
             }
 
             if (!isValidUserName(request["userName"])) {
                 response["status"] = "error";
-                response["message"] = "사용자 이름이 유효하지 않습니다";
-                spdlog::error("사용자 이름이 유효하지 않습니다");
+                response["message"] = "user name is unvalid";
+                spdlog::error("user name is unvalid");
                 return response;
             }
 
             // 비밀번호 유효성 검증
             if (request["password"].get<std::string>().size() < 6) {
                 response["status"] = "error";
-                response["message"] = "비밀번호는 최소 6자 이상이어야 합니다";
-                spdlog::error("비밀번호는 최소 6자 이상이어야 합니다");
+                response["message"] = "Password must be at least 6 characters";
+                spdlog::error("Password must be at least 6 characters");
                 return response;
             }
 
@@ -144,8 +143,8 @@ namespace game_server {
             const json& userInfo = userRepo_->findByUsername(request["userName"]);
             if (userInfo["userId"] != -1) {
                 response["status"] = "error";
-                response["message"] = "이미 존재하는 사용자 이름입니다";
-                spdlog::error("이미 존재하는 사용자 이름입니다");
+                response["message"] = "Username already exists";
+                spdlog::error("Username already exists");
                 return response;
             }
 
@@ -156,19 +155,19 @@ namespace game_server {
             int userId = userRepo_->create(request["userName"], hashedPassword);
             if (userId < 0) {
                 response["status"] = "error";
-                response["message"] = "사용자 생성에 실패했습니다";
-                spdlog::error("사용자 생성에 실패했습니다");
+                response["message"] = "Failed to create user";
+                spdlog::error("Failed to create user");
                 return response;
             }
 
             // 성공 응답 생성
             response["action"] = "register";
             response["status"] = "success";
-            response["message"] = "회원가입에 성공했습니다";
+            response["message"] = "Registration successful";
             response["userId"] = userId;
             response["userName"] = request["userName"];
 
-            spdlog::info("새 사용자 등록: {} (ID: {})", request["userName"].get<std::string>(), userId);
+            spdlog::info("New user registered: {} (ID: {})", request["userName"].get<std::string>(), userId);
             return response;
         }
 
@@ -178,8 +177,8 @@ namespace game_server {
             // 사용자명 유효성 검증
             if (!request.contains("userName") || !request.contains("password")) {
                 response["status"] = "error";
-                response["message"] = "요청 JSON에 userName 또는 password가 없습니다";
-                spdlog::error("요청 JSON에 userName 또는 password가 없습니다");
+                response["message"] = "The request json doesn't have userName or password";
+                spdlog::error("The request json doesn't have userName or password");
                 return response;
             }
 
@@ -187,14 +186,14 @@ namespace game_server {
             const json& userInfo = userRepo_->findByUsername(request["userName"]);
             if (userInfo["userId"] == -1) {
                 response["status"] = "error";
-                response["message"] = "유효하지 않은 사용자 이름입니다";
+                response["message"] = "Invalid username";
                 return response;
             }
 
             // PasswordUtil을 사용하여 비밀번호 검증
             if (!PasswordUtil::verifyPassword(request["password"], userInfo["passwordHash"])) {
                 response["status"] = "error";
-                response["message"] = "유효하지 않은 비밀번호입니다";
+                response["message"] = "Invalid password";
                 return response;
             }
 
@@ -204,7 +203,7 @@ namespace game_server {
             // 성공 응답 생성
             response["action"] = "login";
             response["status"] = "success";
-            response["message"] = "로그인에 성공했습니다";
+            response["message"] = "Login successful";
             response["userId"] = userInfo["userId"];
             response["userName"] = userInfo["userName"];
             response["nickName"] = userInfo["nickName"];
@@ -219,8 +218,8 @@ namespace game_server {
             // 사용자명 유효성 검증
             if (!request.contains("userName") || !request.contains("password")) {
                 response["status"] = "error";
-                response["message"] = "요청 JSON에 userName 또는 password가 없습니다";
-                spdlog::error("요청 JSON에 userName 또는 password가 없습니다");
+                response["message"] = "The request json doesn't have userName or password";
+                spdlog::error("The request json doesn't have userName or password");
                 return response;
             }
 
@@ -235,8 +234,8 @@ namespace game_server {
                 userId = userRepo_->create(request["userName"], hashedPassword);
                 if (userId < 0) {
                     response["status"] = "error";
-                    response["message"] = "사용자 생성에 실패했습니다";
-                    spdlog::error("사용자 생성에 실패했습니다");
+                    response["message"] = "Failed to create user";
+                    spdlog::error("Failed to create user");
                     return response;
                 }
             }
@@ -247,7 +246,7 @@ namespace game_server {
             // 성공 응답 생성
             response["action"] = "login";
             response["status"] = "success";
-            response["message"] = "로그인에 성공했습니다";
+            response["message"] = "Login successful";
             response["userId"] = userInfo["userId"];
             response["userName"] = userInfo["userName"];
             response["nickName"] = userInfo["nickName"];
@@ -262,31 +261,31 @@ namespace game_server {
             // 사용자명 유효성 검증
             if (!request.contains("userId") || !request.contains("nickName")) {
                 response["status"] = "error";
-                response["message"] = "요청 JSON에 userId 또는 nickName이 없습니다";
-                spdlog::error("요청 JSON에 userId 또는 nickName이 없습니다");
+                response["message"] = "The request json doesn't have userId or nickName";
+                spdlog::error("The request json doesn't have userId or nickName");
                 return response;
             }
 
             if (!isValidNickName(request["nickName"])) {
                 response["status"] = "error";
-                response["message"] = "유효하지 않은 닉네임 형식입니다";
-                spdlog::error("유효하지 않은 닉네임 형식입니다");
+                response["message"] = "Invalid nickname type";
+                spdlog::error("Invalid nickname type");
                 return response;
             }
 
             // 사용자 찾기
             if (!userRepo_->updateUserNickName(request["userId"], request["nickName"])) {
                 response["status"] = "error";
-                response["message"] = "사용자 닉네임 업데이트에 실패했습니다";
-                spdlog::error("사용자 닉네임 업데이트에 실패했습니다");
+                response["message"] = "Fail to update user nickname";
+                spdlog::error("Fail to update user nickname");
                 return response;
             }
 
             // 성공 응답 생성
             response["action"] = "updateNickName";
             response["status"] = "success";
-            response["message"] = "닉네임 업데이트에 성공했습니다";
-            spdlog::info("사용자 ID: {}가 닉네임을 {}(으)로 설정했습니다", request["userId"].get<int>(), request["nickName"].get<std::string>());
+            response["message"] = "Update nickname successful";
+            spdlog::info("User ID : {} set nickname to {}", request["userId"].get<int>(), request["nickName"].get<std::string>());
             return response;
         }
 
