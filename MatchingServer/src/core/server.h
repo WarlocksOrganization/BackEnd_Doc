@@ -20,7 +20,8 @@ namespace game_server {
     public:
         Server(boost::asio::io_context& io_context,
             short port,
-            const std::string& db_connection_string);
+            const std::string& db_connection_string,
+            const std::string& VERSION);
         ~Server();
 
         void run();
@@ -39,6 +40,7 @@ namespace game_server {
         void setSessionTimeout(std::chrono::seconds timeout);
         void startSessionTimeoutCheck();
         bool checkAlreadyLogin(int userId);
+        std::string getServerVersion();
     private:
         void do_accept();
         void init_controllers();
@@ -61,6 +63,9 @@ namespace game_server {
         std::chrono::seconds session_timeout_{ 12 }; // 기본 12초
         boost::asio::steady_timer session_check_timer_;
         bool timeout_check_running_{ false };
+        
+        // 버전 관리 데이터
+        std::string version_;
     };
 
 } // namespace game_server

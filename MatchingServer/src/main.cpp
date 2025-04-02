@@ -9,6 +9,7 @@
 
 // 시그널 핸들러용 전역 서버 변수
 std::unique_ptr<game_server::Server> server;
+const std::string VERSION = "0.5.0";
 
 // 시그널 핸들러 함수
 void signal_handler(int signal)
@@ -28,7 +29,7 @@ int main(int argc, char* argv[])
         auto console = spdlog::stdout_color_mt("console");
         spdlog::set_default_logger(console);
         spdlog::set_level(spdlog::level::info);
-        spdlog::info("서버 버전 v1.0.2");
+        spdlog::info("서버 버전 : {}", VERSION);
 
         // 시그널 핸들러 등록
         std::signal(SIGINT, signal_handler);
@@ -42,7 +43,7 @@ int main(int argc, char* argv[])
         // IO 컨텍스트 및 서버 생성
         boost::asio::io_context io_context;
         server = std::make_unique<game_server::Server>(
-            io_context, port, db_connection_string);
+            io_context, port, db_connection_string, VERSION);
 
         // 서버 실행
         server->run();

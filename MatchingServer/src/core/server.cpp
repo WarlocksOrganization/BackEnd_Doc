@@ -20,12 +20,14 @@ namespace game_server {
 
     Server::Server(boost::asio::io_context& io_context,
         short port,
-        const std::string& db_connection_string)
+        const std::string& db_connection_string,
+        const std::string& VERSION)
         : io_context_(io_context),
         acceptor_(io_context, boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), port)),
         running_(false),
         uuid_generator_(),
-        session_check_timer_(io_context)
+        session_check_timer_(io_context),
+        version_(VERSION)
     {
         // DB풀 생성
         db_pool_ = std::make_unique<DbPool>(db_connection_string, 20);
@@ -41,6 +43,10 @@ namespace game_server {
         if (running_) {
             stop();
         }
+    }
+
+    std::string Server::getServerVersion() {
+        return version_;
     }
 
     bool Server::checkAlreadyLogin(int userId) {

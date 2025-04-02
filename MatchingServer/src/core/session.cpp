@@ -105,6 +105,13 @@ namespace game_server {
                         }
                         else {
                             // 일반 클라이언트 세션 초기화
+                            if (handshake.contains("version")) {
+                                std::string serverVersion = server_->getServerVersion();
+                                if (serverVersion != handshake["version"].get<std::string>()) {
+                                    handle_error("최신 버전이 아닌 클라이언트 접속 반려");
+                                    return;
+                                }
+                            }
                             initialize();
 
                             // 핸드셰이크가 실제 요청인 경우 처리
