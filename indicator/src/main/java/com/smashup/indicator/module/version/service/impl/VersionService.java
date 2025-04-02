@@ -1,7 +1,9 @@
 package com.smashup.indicator.module.version.service.impl;
 
 import com.smashup.indicator.module.gamerhint.domain.entity.MatrixDocument;
+import com.smashup.indicator.module.gamerhint.domain.entity.WinMatrixDocument;
 import com.smashup.indicator.module.gamerhint.repository.MatrixRepository;
+import com.smashup.indicator.module.gamerhint.repository.WinMatrixRepository;
 import com.smashup.indicator.module.gamerhint.service.impl.GamerHintMatrixSubService;
 import com.smashup.indicator.module.version.PoolManager;
 import com.smashup.indicator.module.version.controller.dto.request.UpdatePatchVersionRequestDto;
@@ -21,14 +23,15 @@ public class VersionService {
     private final PoolManager poolManager;
     private final GamerHintMatrixSubService gamerHintMatrixSubService;
     private final MatrixRepository matrixRepository;
+    private final WinMatrixRepository winMatrixRepository;
 
     // 필드 변수
-    private String oldPatchVersion = null;  // 기본 값 // 중앙 관리
-    private String currentPatchVersion = "1.0.0";  // 기본 값 // 중앙 관리
+    private String oldPatchVersion = "not yet set";  // 기본 값 // 중앙 관리
+    private String currentPatchVersion = "not yet set";  // 기본 값 // 중앙 관리
     private int batchCount = 1;
 
     @Transactional
-    public String updatePatchVersion(UpdatePatchVersionRequestDto dto) {
+    public String updatePatchVersion(UpdatePatchVersionRequestDto dto) throws Exception {
         // 임시방편으로 비밀번호 틀리면 작동안하게.
         // 인증인가가 없어서.
         // timeStamp라고 이름 속이기.
@@ -39,6 +42,9 @@ public class VersionService {
 
         String newVersion = dto.getNewPatchVersion();
         if (!this.currentPatchVersion.equals(newVersion)) {  // 실제 변경될 때만 실행
+            if( ! poolManager.getPatchVersion().equals(newVersion)){    // newVersion값과 poolManager가 가진 값이 다르면 예외처리
+                throw new Exception("poolManger 세팅 먼저.");
+            }
             this.oldPatchVersion = currentPatchVersion;
             this.currentPatchVersion = newVersion;
             // 서버 내려가고 다시 초기화해줄때,요청에서 직전 버전까지 주입해주기.
@@ -73,6 +79,11 @@ public class VersionService {
                 for (MatrixDocument doc : docs) {
                     matrixRepository.save(doc);
                 }
+                // win 버전
+                List<WinMatrixDocument> winDocs = gamerHintMatrixSubService.generateWinDocument(currentPatchVersion, batchCount);
+                for (WinMatrixDocument winDoc : winDocs) {
+                    winMatrixRepository.save(winDoc);
+                }
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -96,6 +107,7 @@ public class VersionService {
                 .classPool(poolManager.getClassPool())
                 .mapPool(poolManager.getMapPool())
                 .playerNumPool(poolManager.getPlayerNumPool())
+                .patchVersion(poolManager.getPatchVersion())
                 .build();
         return returnDto;
     }
