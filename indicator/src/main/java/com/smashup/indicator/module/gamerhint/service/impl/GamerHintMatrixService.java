@@ -4,7 +4,9 @@ import com.smashup.indicator.module.gamerhint.controller.dto.request.GameEndRequ
 import com.smashup.indicator.module.gamerhint.controller.dto.request.LogServerRequestDto;
 import com.smashup.indicator.module.gamerhint.controller.dto.request.PlayerLogRequestDto;
 import com.smashup.indicator.module.gamerhint.domain.entity.MatrixDocument;
+import com.smashup.indicator.module.gamerhint.domain.entity.WinMatrixDocument;
 import com.smashup.indicator.module.gamerhint.repository.MatrixRepository;
+import com.smashup.indicator.module.gamerhint.repository.WinMatrixRepository;
 import com.smashup.indicator.module.version.PoolManager;
 import com.smashup.indicator.module.version.service.impl.VersionService;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +25,7 @@ public class GamerHintMatrixService {
     // 의존성 주입
     private final GamerHintMatrixSubService gamerHintMatrixSubService;
     private final MatrixRepository matrixRepository;
+    private final WinMatrixRepository winMatrixRepository;
     private final PoolManager poolManager;
     private final VersionService versionService;
 
@@ -68,13 +71,22 @@ public class GamerHintMatrixService {
     public List<MatrixDocument> insertData(LogServerRequestDto dto) throws Exception {
         // 도큐먼트 세팅
         List<MatrixDocument> docs = gamerHintMatrixSubService.getDocumentByBatch(versionService.getCurrentPatchVersion(), versionService.getBatchCount());
+        List<WinMatrixDocument> winDocs = gamerHintMatrixSubService.getWinDocumentByBatch(versionService.getCurrentPatchVersion(), versionService.getBatchCount());
 
         // 여러 게임 받도록 설계 변경.
         for (GameEndRequestDto game: dto.getData()) {
-            // 이상한 버전의 게임은 처리X => early return
-            if (game.getPatchVersion().equals(versionService.getCurrentPatchVersion()) == false) {
+//            // 이상한 버전의 게임은 처리X => early return => 밸런스 패치 버전만 확인.
+            String balancePatchVersion = game.getPatchVersion().split("\\.")[2]; // 3번째 자리가 밸패 버전.
+            if (balancePatchVersion.equals(versionService.getCurrentPatchVersion()) == false) {
                 continue;
             }
+            // 우승자 찾기
+            int winnerScore = 0;
+            for ( PlayerLogRequestDto playerLog: game.getPlayerLogs()) {
+                List<Integer> roundScores = playerLog.getRoundScore();
+                winnerScore = Math.max(winnerScore, roundScores.get(roundScores.size()-1)); //2
+            }
+
             // playerLog 단위 작업
             for ( PlayerLogRequestDto playerLog: game.getPlayerLogs()) {
 
@@ -90,11 +102,24 @@ public class GamerHintMatrixService {
                 List<int[]> coexistenceXYList = gamerHintMatrixSubService.generateCoexistenceXY(playerLog);
                 // 전이 빈도 행렬 상에서 ++ 할 좌표 생성 => 전이 빈도 행렬 docT에 id와 좌표에 맞게 반영
                 List<int[]> transitionXYList = gamerHintMatrixSubService.generateTransitionXY(playerLog);
+
+                // 픽률만
                 for (MatrixDocument doc : docs) {
                     if(doc.getType().equals("C")){
                         gamerHintMatrixSubService.updateMatrix(doc, targetMatrixIdList, coexistenceXYList);
                     } else{
                         gamerHintMatrixSubService.updateMatrix(doc, targetMatrixIdList, transitionXYList);
+                    }
+                }
+                // 우승 찾기
+                List<Integer> roundScores = playerLog.getRoundScore();
+                if(roundScores.get(roundScores.size()-1) == winnerScore){
+                    for (WinMatrixDocument winDoc : winDocs) {
+                        if(winDoc.getType().equals("C")){
+                            gamerHintMatrixSubService.updateWinMatrix(winDoc, targetMatrixIdList, coexistenceXYList);
+                        } else{
+                            gamerHintMatrixSubService.updateWinMatrix(winDoc, targetMatrixIdList, transitionXYList);
+                        }
                     }
                 }
             }
@@ -105,6 +130,9 @@ public class GamerHintMatrixService {
         // 새로 들어온 data 전부 반영된 상태이므로 저장.
         for (MatrixDocument doc : docs) {
             matrixRepository.save(doc);
+        }
+        for (WinMatrixDocument winDoc : winDocs) {
+            winMatrixRepository.save(winDoc);
         }
 
         return docs;
