@@ -253,7 +253,7 @@ namespace game_server {
             response["action"] = "updateNickName";
             response["status"] = "success";
             response["message"] = "Update nickname successful";
-            spdlog::info("User ID : {} set nickname to {}", request["userId"].get<int>(), request["nickName"].get<std::string>());
+            spdlog::info("유저 ID : {}가 닉네임을 {}로 변경하였습니다.", request["userId"].get<int>(), request["nickName"].get<std::string>());
             return response;
         }
 
