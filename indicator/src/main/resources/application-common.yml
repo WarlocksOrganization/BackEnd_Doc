@@ -1,0 +1,46 @@
+# application-common.yml
+#server:
+#  port: 8085
+#  servlet:
+#    context-path: /
+#    encoding:
+#      charset: UTF-8
+#      force: true
+#  tomcat:
+#    max-swallow-size: -1
+#    max-http-form-post-size: 10MB
+#    connection-timeout: 20000
+#    accept-count: 25
+#  tomcat.threads:
+#    max: 50
+#    min-spare: 10
+#  forward-headers-strategy: native
+
+spring:
+  application:
+    name: ${APPLICATION_NAME:indicator}
+
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    property-naming-strategy: LOWER_CAMEL_CASE
+    serialization:
+      fail-on-empty-beans: false
+    time-zone: Asia/Seoul
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: always
+      probes:
+        enabled: true
+  health:
+    mail:
+      enabled: false
+    livenessState:
+      enabled: true
+    readinessState:
+      enabled: true

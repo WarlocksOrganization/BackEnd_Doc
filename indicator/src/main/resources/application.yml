@@ -1,0 +1,8 @@
+# application.yml (기본 설정)
+spring:
+  profiles:
+    active: local   # local, dev, prod 중 선택
+    group:
+      local: "common,local"
+      dev: "common,dev"
+      prod: "common,prod" 

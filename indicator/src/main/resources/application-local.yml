@@ -1,0 +1,23 @@
+# application-local.yml
+server:
+  port: 8085
+
+spring:
+  data:
+    mongodb:
+      database: ${LOCAL_MONGODB_DATABASE}
+      uri: mongodb://${LOCAL_MONGODB_USERNAME}:${LOCAL_MONGODB_PASSWORD}@${LOCAL_MONGODB_HOST:localhost}:${LOCAL_MONGODB_PORT:27017}/${LOCAL_MONGODB_DATABASE}?authSource=admin
+
+#logging:
+#  config: classpath:log4j2-local.xml
+#  level:
+#    root: DEBUG
+#    org:
+#      springframework:
+#        web: DEBUG
+#        security: DEBUG
+#        transaction: DEBUG
+#    com:
+#      .smashup.indicator: DEBUG
+#  pattern:
+#    console: '%style{%d{HH:mm:ss.SSS}}{cyan} %highlight{[%t] %-5level %logger{36} - %msg%n}'
