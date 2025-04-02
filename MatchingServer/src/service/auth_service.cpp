@@ -189,7 +189,6 @@ namespace game_server {
             if (!request.contains("userName") || !request.contains("password")) {
                 response["status"] = "error";
                 response["message"] = "The request json doesn't have userName or password";
-                spdlog::error("The request json doesn't have userName or password");
                 return response;
             }
 
@@ -205,7 +204,7 @@ namespace game_server {
                 if (userId < 0) {
                     response["status"] = "error";
                     response["message"] = "Failed to create user";
-                    spdlog::error("Failed to create user");
+                    spdlog::error("새로운 사용자를 생성하는 도중 에러가 발생하였습니다.");
                     return response;
                 }
             }
@@ -234,14 +233,12 @@ namespace game_server {
             if (!request.contains("userId") || !request.contains("nickName")) {
                 response["status"] = "error";
                 response["message"] = "The request json doesn't have userId or nickName";
-                spdlog::error("The request json doesn't have userId or nickName");
                 return response;
             }
 
             if (!isValidNickName(request["nickName"])) {
                 response["status"] = "error";
                 response["message"] = "Invalid nickname type";
-                spdlog::error("Invalid nickname type");
                 return response;
             }
 
@@ -249,7 +246,6 @@ namespace game_server {
             if (!userRepo_->updateUserNickName(request["userId"], request["nickName"])) {
                 response["status"] = "error";
                 response["message"] = "Fail to update user nickname";
-                spdlog::error("Fail to update user nickname");
                 return response;
             }
 
