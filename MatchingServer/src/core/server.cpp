@@ -21,13 +21,13 @@ namespace game_server {
     Server::Server(boost::asio::io_context& io_context,
         short port,
         const std::string& db_connection_string,
-        const std::string& VERSION)
+        const std::string& version)
         : io_context_(io_context),
         acceptor_(io_context, boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), port)),
         running_(false),
         uuid_generator_(),
         session_check_timer_(io_context),
-        version_(VERSION)
+        version_(version)
     {
         // DB풀 생성
         db_pool_ = std::make_unique<DbPool>(db_connection_string, 20);
