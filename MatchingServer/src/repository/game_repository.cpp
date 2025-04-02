@@ -72,20 +72,20 @@ namespace game_server {
                 int roomId = result[0][0].as<int>();
                 spdlog::info("게임 ID: {}의 상태가 성공적으로 완료로 업데이트되었습니다", gameId);
 
-                pqxx::result res = txn.exec_params(
-                    "UPDATE rooms "
-                    "SET status = 'WAITING' "
-                    "WHERE room_id = $1 "
-                    "RETURNING room_id",
-                    roomId);
+                //pqxx::result res = txn.exec_params(
+                //    "UPDATE rooms "
+                //    "SET status = 'WAITING' "
+                //    "WHERE room_id = $1 "
+                //    "RETURNING room_id",
+                //    roomId);
 
-                if (res.empty() || roomId != res[0][0].as<int>()) {
-                    spdlog::error("방 ID: {}의 상태 업데이트 실패", roomId);
-                    txn.abort();
-                    dbPool_->return_connection(conn);
-                    return -1;
-                }
-                spdlog::info("방 ID: {}의 상태가 완전히 업데이트되었습니다", roomId);
+                //if (res.empty() || roomId != res[0][0].as<int>()) {
+                //    spdlog::error("방 ID: {}의 상태 업데이트 실패", roomId);
+                //    txn.abort();
+                //    dbPool_->return_connection(conn);
+                //    return -1;
+                //}
+                //spdlog::info("방 ID: {}의 상태가 완전히 업데이트되었습니다", roomId);
 
                 txn.commit();
                 dbPool_->return_connection(conn);
