@@ -400,7 +400,7 @@ namespace game_server {
             }
         }
         catch (const std::exception& e) {
-            spdlog::error("Error during automatic room exit: {}", e.what());
+            spdlog::error("방 퇴장 중 에러가 발생하였습니다. : {}", e.what());
         }
 
         // ?뚯폆 由ъ냼???뺣━
@@ -408,15 +408,15 @@ namespace game_server {
             boost::system::error_code ec;
             socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_both, ec);
             if (ec) {
-                spdlog::error("Socket shutdown error: {}", ec.message());
+                spdlog::error("소켓 종료 중 에러가 발생하였습니다. : {}", ec.message());
             }
 
             socket_.close(ec);
             if (ec) {
-                spdlog::error("Socket close error: {}", ec.message());
+                spdlog::error("소켓 종료 중 에러가 발생하였습니다. : {}", ec.message());
             }
             else {
-                spdlog::info("Socket closed successfully");
+                spdlog::info("소켓을 정상적으로 종료하였습니다.");
             }
         }
     }
