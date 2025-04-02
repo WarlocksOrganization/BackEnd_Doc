@@ -67,7 +67,7 @@ namespace game_server {
             return true;
         }
 
-        bool isKoreanEnglishNumberOnly(const std::string& str) {
+        bool isValidNickName(const std::string& str) {
             // 정규식 패턴: 한글(가-힣), 영어(A-Za-z), 숫자(0-9)만 허용
             if (str.size() > 16) return false;
             std::regex pattern("^[가-힣A-Za-z0-9]+$");
