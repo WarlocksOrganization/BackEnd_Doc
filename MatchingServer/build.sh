@@ -41,6 +41,8 @@ else
     exit 1
 fi
 
+sudo docker-compose down && sudo docker-composer up -d --build
+
 echo "===== 빌드 완료 ====="
 echo "도커 컨테이너 실행 중..."
 cd /home/ubuntu/smashup-server/
@@ -49,6 +51,3 @@ sudo docker-compose down && sudo docker-compose up -d --build
 echo "도커 컨테이너 실행 완료"
 cd
 cd ./BackEnd_Doc/MatchingServer
-
-echo "서버 실행 중..."
-./build/bin/MatchingServer
