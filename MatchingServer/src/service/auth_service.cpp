@@ -96,14 +96,12 @@ namespace game_server {
             if (!request.contains("userName") || !request.contains("password")) {
                 response["status"] = "error";
                 response["message"] = "The request json doesn't have userName or password";
-                spdlog::error("The request json doesn't have userName or password");
                 return response;
             }
 
             if (!isValidUserName(request["userName"])) {
                 response["status"] = "error";
                 response["message"] = "user name is unvalid";
-                spdlog::error("user name is unvalid");
                 return response;
             }
 
@@ -111,7 +109,6 @@ namespace game_server {
             if (request["password"].get<std::string>().size() < 6) {
                 response["status"] = "error";
                 response["message"] = "Password must be at least 6 characters";
-                spdlog::error("Password must be at least 6 characters");
                 return response;
             }
 
@@ -120,7 +117,6 @@ namespace game_server {
             if (userInfo["userId"] != -1) {
                 response["status"] = "error";
                 response["message"] = "Username already exists";
-                spdlog::error("Username already exists");
                 return response;
             }
 
@@ -132,7 +128,6 @@ namespace game_server {
             if (userId < 0) {
                 response["status"] = "error";
                 response["message"] = "Failed to create user";
-                spdlog::error("Failed to create user");
                 return response;
             }
 
@@ -143,7 +138,7 @@ namespace game_server {
             response["userId"] = userId;
             response["userName"] = request["userName"];
 
-            spdlog::info("New user registered: {} (ID: {})", request["userName"].get<std::string>(), userId);
+            spdlog::info("새로운 유저가 계정을 생성하였습니다, 유저 이름 : {} (ID: {})", request["userName"].get<std::string>(), userId);
             return response;
         }
 
@@ -154,7 +149,6 @@ namespace game_server {
             if (!request.contains("userName") || !request.contains("password")) {
                 response["status"] = "error";
                 response["message"] = "The request json doesn't have userName or password";
-                spdlog::error("The request json doesn't have userName or password");
                 return response;
             }
 
@@ -200,7 +194,7 @@ namespace game_server {
             }
 
             // 사용자 찾기
-            const json& userInfo = userRepo_->findByUsername(request["userName"]);
+            json userInfo = userRepo_->findByUsername(request["userName"]);
             int userId = -1;
             if (userInfo["userId"] == -1) {
                 // PasswordUtil을 사용하여 비밀번호 해싱
@@ -216,6 +210,8 @@ namespace game_server {
                 }
             }
 
+            userInfo = userRepo_->findByUsername(request["userName"]);
+            
             // 로그인 시간 업데이트
             userRepo_->updateLastLogin(userId);
 
