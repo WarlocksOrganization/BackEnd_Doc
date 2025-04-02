@@ -25,8 +25,8 @@ public class BatchCountScheduler {
 
 
 
-//    @Scheduled(fixedRate = 1000*60*60*1) // 1시간마다 실행
-    @Scheduled(fixedRate = 1000*60) // 1시간마다 실행
+    @Scheduled(fixedRate = 1000*60*60*1) // 1시간마다 실행
+//    @Scheduled(fixedRate = 1000*60) // 1시간마다 실행
     public synchronized void incrementBatchCount() {
 //        System.out.println("⏰ 스케줄러 진입");
         try {
