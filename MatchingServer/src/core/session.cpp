@@ -433,7 +433,7 @@ namespace game_server {
         if (response.contains("userId")) user_id_ = response["userId"];
         if (response.contains("userName")) user_name_ = response["userName"];
         if (response.contains("nickName")) nick_name_ = response["nickName"];
-        spdlog::info("User logged in: {} (ID: {}) nickname : {}", user_name_, user_id_, nick_name_);
+        spdlog::info("{}유저가 로그인 하였습니다. (ID: {}) 닉네임 : {}", user_name_, user_id_, nick_name_);
     }
 
 } // namespace game_server
