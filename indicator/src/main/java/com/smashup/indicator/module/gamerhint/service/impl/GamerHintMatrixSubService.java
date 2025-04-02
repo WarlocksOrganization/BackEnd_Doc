@@ -2,6 +2,7 @@ package com.smashup.indicator.module.gamerhint.service.impl;
 
 import com.smashup.indicator.module.gamerhint.controller.dto.request.PlayerLogRequestDto;
 import com.smashup.indicator.module.gamerhint.domain.entity.MatrixDocument;
+import com.smashup.indicator.module.gamerhint.domain.entity.WinMatrixDocument;
 import com.smashup.indicator.module.version.PoolManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
@@ -29,6 +30,22 @@ public class GamerHintMatrixSubService {
         String regex1 = String.join("/", inputPatchVersion,batchCount+"","");
         query.addCriteria(Criteria.where("_id").regex("^"+regex1));
         List<MatrixDocument> results = mongoTemplate.find(query, MatrixDocument.class);
+
+        // 만약 C, T 중 하나만 존재하는 경우에 대한 처리
+        if (results.size() == 1) {
+            // 로그 추가 or 예외 처리 (C, T가 항상 있어야 하는데 1개만 존재할 경우 대비)
+            // System.out.println("경고: " + lastBatchCount + "의 C 또는 T 중 하나가 누락됨");
+        }
+        return results;
+    }
+
+    // 현재 batchCount의 document 2개 가져오기.
+    @Transactional
+    public List<WinMatrixDocument> getWinDocumentByBatch(String inputPatchVersion, Integer batchCount) throws Exception {
+        Query query = new Query();
+        String regex1 = String.join("/", inputPatchVersion,batchCount+"","");
+        query.addCriteria(Criteria.where("_id").regex("^"+regex1));
+        List<WinMatrixDocument> results = mongoTemplate.find(query, WinMatrixDocument.class);
 
         // 만약 C, T 중 하나만 존재하는 경우에 대한 처리
         if (results.size() == 1) {
@@ -101,6 +118,35 @@ public class GamerHintMatrixSubService {
         for (int i = 0; i < types.length; i++) {
             // doc 하나 만들기 => id랑 type만 다르게 하면 됨.
             MatrixDocument doc = MatrixDocument.builder()
+                    .id(String.join("/", inputPatchVersion,batchCount+"",types[i]))
+                    .type(types[i])
+                    .cardPool(poolManager.getCardPool())
+                    .matrixMap(new HashMap<>())
+                    .build();
+
+            // 모든 ID + Matrix 스켈레톤을 matrixMap에 put.
+            for (String id : idList) {
+                doc.getMatrixMap().put(id, generateSkeletonMatrix());
+            }
+            // 리턴 값에 저장.
+            result.add(doc);
+        }
+
+        return result;
+    }
+    // win 버전
+    @Transactional
+    public List<WinMatrixDocument> generateWinDocument(String inputPatchVersion, Integer batchCount) throws Exception {
+        List<WinMatrixDocument> result = new ArrayList<>();
+        String[] types = {"C","T"};
+        // 모든 경우의 수의 ID 생성 => 공통적으로 사용 가능.
+        List<Integer> classPool = poolManager.getClassPool();
+        List<Integer> mapPool = poolManager.getMapPool();
+        List<Integer> playerNumPool = poolManager.getPlayerNumPool();
+        List<String> idList = generateMatrixId(classPool,mapPool,playerNumPool);
+        for (int i = 0; i < types.length; i++) {
+            // doc 하나 만들기 => id랑 type만 다르게 하면 됨.
+            WinMatrixDocument doc = WinMatrixDocument.builder()
                     .id(String.join("/", inputPatchVersion,batchCount+"",types[i]))
                     .type(types[i])
                     .cardPool(poolManager.getCardPool())
@@ -286,6 +332,18 @@ public class GamerHintMatrixSubService {
 
     // private 써도 되겠지? 이 서비스에서만 쓸건데 [완료]
     public void updateMatrix(MatrixDocument docC, List<String> targetMatrixIdList, List<int[]> coexistenceXYList) {
+        for (String id : targetMatrixIdList){
+            List<List<Integer>> matrix= docC.getMatrixMap().get(id);
+            for(int[] xy:coexistenceXYList){
+                int row = xy[0];
+                int col = xy[1];
+                int oldValue = matrix.get(row).get(col);
+                matrix.get(row).set(col, oldValue+1);
+            }
+        }
+    }
+
+    public void updateWinMatrix(WinMatrixDocument docC, List<String> targetMatrixIdList, List<int[]> coexistenceXYList) {
         for (String id : targetMatrixIdList){
             List<List<Integer>> matrix= docC.getMatrixMap().get(id);
             for(int[] xy:coexistenceXYList){
