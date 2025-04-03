@@ -33,13 +33,13 @@ namespace game_server {
                     roomId);
 
                 if (result.empty() || updateRoom.empty()) {
-                    spdlog::error("게임 세션을 생성할 수 없습니다");
+                    spdlog::error("방 번호 : {}에 대한 게임 세션을 생성할 수 없습니다", roomId);
                     txn.abort();
                     dbPool_->return_connection(conn);
                     return -1;
                 }
                 int gameId = result[0][0].as<int>();
-                spdlog::info("게임 세션이 완전히 생성되었습니다! 게임 ID: {}", gameId);
+                spdlog::info("방 번호 : {}에 대한 게임 세션이 생성되었습니다 게임 ID: {}", roomId, gameId);
                 txn.commit();
                 dbPool_->return_connection(conn);
                 return gameId;
