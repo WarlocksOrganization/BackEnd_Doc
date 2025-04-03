@@ -43,7 +43,10 @@ fi
 
 echo "===== 빌드 완료 ====="
 echo "매칭 서버 도커 컨테이너 실행 중..."
-sudo docker-compose down && sudo docker-composer up -d --build
+sudo docker-compose down
+sudo docker-compose build --no-cache cpp-app
+sudo docker-compose up -d
+
 
 echo "미러 서버 컨테이너 실행 중..."
 cd /home/ubuntu/smashup-server/
