@@ -22,7 +22,7 @@ namespace game_server {
                 // 요청 유효성 검증
                 if (!request.contains("roomId") || !request.contains("mapId")) {
                     response["status"] = "error";
-                    response["message"] = "요청에 필수 필드가 누락되었습니다";
+                    response["message"] = "게임 시작 요청에 필수 필드가 누락되었습니다";
                     return response;
                 }
 
@@ -60,7 +60,7 @@ namespace game_server {
                 // 요청 유효성 검증
                 if (!request.contains("gameId")) {
                     response["status"] = "error";
-                    response["message"] = "요청에 필수 필드가 누락되었습니다";
+                    response["message"] = "게임 종료 요청에 필수 필드가 누락되었습니다";
                     return response;
                 }
 
