@@ -13,11 +13,11 @@ $$;
 -- 아래 부분은 PostgreSQL 클라이언트에서 DB로 이동 후 명령으로 연결 변경 필요
 
 -- 테이블 삭제 (역순으로 삭제하여 참조 무결성 유지)
-DROP TABLE IF EXISTS games CASCADE;
-DROP TABLE IF EXISTS room_users CASCADE;
-DROP TABLE IF EXISTS rooms CASCADE;
-DROP TABLE IF EXISTS maps CASCADE;
-DROP TABLE IF EXISTS users CASCADE;
+-- DROP TABLE IF EXISTS games CASCADE;
+-- DROP TABLE IF EXISTS room_users CASCADE;
+-- DROP TABLE IF EXISTS rooms CASCADE;
+-- DROP TABLE IF EXISTS maps CASCADE;
+-- DROP TABLE IF EXISTS users CASCADE;
 
 -- 사용자 테이블
 CREATE TABLE users (
@@ -101,6 +101,8 @@ INSERT INTO users (user_name, nick_name, password_hash)
 VALUES ('loge5490', '[GM]2^e', '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918');
 INSERT INTO users (user_name, nick_name, password_hash)
 VALUES ('te04072', '[GM]쌀숭이', '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918');
+INSERT INTO users (user_name, nick_name, password_hash)
+VALUES ('consultant', '컨설턴트님짱😍', 'a515519adc491e150ad0cfd8529f17748677812b026d07f35cc90b94acd0421a');
 
 INSERT INTO maps (map_name) VALUES ('SSAFY');
 INSERT INTO maps (map_name) VALUES ('Magma');
