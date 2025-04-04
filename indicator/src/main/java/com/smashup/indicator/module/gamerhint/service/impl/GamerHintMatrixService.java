@@ -107,6 +107,10 @@ public class GamerHintMatrixService {
 
             // playerLog 단위 작업
             for ( PlayerLogRequestDto playerLog: game.getPlayerLogs()) {
+                // classCode : 100인 버그 로그 패스
+                if(playerLog.getClassCode()==100){
+                    continue;
+                }
 
                 // targetMatrixId 생성
                 /// pool 세팅
