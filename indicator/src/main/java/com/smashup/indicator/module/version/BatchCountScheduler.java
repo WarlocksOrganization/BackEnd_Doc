@@ -43,7 +43,8 @@ public class BatchCountScheduler {
             // 직전 배치카운트 가져와서 현재 배치카운트에 맞게 각종 필드값 바꾸기.
             for (MatrixDocument doc: docs) {
                 // 현재(새로 바뀐) 배치카운트 사용해서 id 교체.
-                String id = String.join("/", versionService.getCurrentPatchVersion(),versionService.getBatchCount()+"",doc.getType() );
+                String docClass = doc.getId().split("/")[3];
+                String id = String.join("/", versionService.getCurrentPatchVersion(),versionService.getBatchCount()+"",doc.getType(), docClass );
                 doc.setId(id);
                 // version 처음부터 시작하니까 교체. 1L => 0L => null
                 doc.setVersion(null);
@@ -53,7 +54,8 @@ public class BatchCountScheduler {
             // win버전
             for (WinMatrixDocument winDoc: winDocs) {
                 // 현재(새로 바뀐) 배치카운트 사용해서 id 교체.
-                String id = String.join("/", versionService.getCurrentPatchVersion(),versionService.getBatchCount()+"",winDoc.getType() );
+                String winDocClass = winDoc.getId().split("/")[3];
+                String id = String.join("/", versionService.getCurrentPatchVersion(),versionService.getBatchCount()+"",winDoc.getType(), winDocClass );
                 winDoc.setId(id);
                 // version 처음부터 시작하니까 교체. 1L => 0L => null
                 winDoc.setVersion(null);

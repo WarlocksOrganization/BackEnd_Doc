@@ -5,7 +5,7 @@ import com.smashup.indicator.module.gamerhint.controller.dto.request.LogServerRe
 import com.smashup.indicator.module.gamerhint.domain.entity.MatrixDocument;
 import com.smashup.indicator.module.gamerhint.domain.entity.WinMatrixDocument;
 import com.smashup.indicator.module.gamerhint.service.impl.GamerHintMatrixService;
-import com.smashup.indicator.module.gamerhint.service.impl.GamerHintService;
+//import com.smashup.indicator.module.gamerhint.service.impl.GamerHintService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -22,7 +22,7 @@ import java.util.Map;
 public class GamerHintController extends AbstractRestController {
 
     // 의존성 주입
-    private final GamerHintService gamerHintService;
+//    private final GamerHintService gamerHintService;
     private final GamerHintMatrixService gamerHintMatrixService;
 
     // 데이터 수집 => API 테스트 성공

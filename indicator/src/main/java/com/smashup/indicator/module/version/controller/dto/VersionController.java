@@ -22,7 +22,7 @@ public class VersionController extends AbstractRestController {
     private final VersionService versionService;
 
 
-    // 밸런스 패치 버전 수정 => API 테스트 성공
+    // 풀 업데이트 => 밸런스 패치 버전 수정 => API 테스트 성공
     @PostMapping("")
     public ResponseEntity<Map<String, Object>> updatePatchVersion(
             @RequestBody UpdatePatchVersionRequestDto dto
@@ -36,7 +36,7 @@ public class VersionController extends AbstractRestController {
         }
     }
 
-    // 밸런스 패치 버전 => 풀 업데이트 => API 테스트 성공
+    // 풀 업데이트 => API 테스트 성공
     @PostMapping("/pool")
     public ResponseEntity<Map<String, Object>> updatePool(
             @RequestBody UpdatePoolRequestDto dto
