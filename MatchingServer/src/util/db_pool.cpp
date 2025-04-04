@@ -1,16 +1,16 @@
-#include "db_pool.h"
+ï»¿#include "db_pool.h"
 
-// Ç¥ÁØ ¶óÀÌºê·¯¸® Çì´õ Æ÷ÇÔ
+// í‘œì¤€ ë¼ì´ë¸ŒëŸ¬ë¦¬ í—¤ë” í¬í•¨
 #include <memory>
 #include <mutex>
 #include <string>
 #include <vector>
 #include <stdexcept>
 
-// ·Î±ë ¶óÀÌºê·¯¸®
+// ë¡œê¹… ë¼ì´ë¸ŒëŸ¬ë¦¬
 #include <spdlog/spdlog.h>
 
-// PostgreSQL Å¬¶óÀÌ¾ğÆ® ¶óÀÌºê·¯¸®
+// PostgreSQL í´ë¼ì´ì–¸íŠ¸ ë¼ì´ë¸ŒëŸ¬ë¦¬
 #include <pqxx/pqxx>
 
 namespace game_server {
@@ -19,51 +19,51 @@ namespace game_server {
         : connection_string_(connectionString)
     {
         try {
-            // ¿¬°á Ç® ÃÊ±âÈ­
+            // ì—°ê²° í’€ ì´ˆê¸°í™”
             connections_.reserve(poolSize);
             in_use_.reserve(poolSize);
 
             for (int i = 0; i < poolSize; ++i) {
-                // »õ ¿¬°á »ı¼º ¹× Ç®¿¡ Ãß°¡
+                // ìƒˆ ì—°ê²° ìƒì„± ë° í’€ì— ì¶”ê°€
                 auto conn = std::make_shared<pqxx::connection>(connectionString);
                 connections_.push_back(conn);
                 in_use_.push_back(false);
 
-                spdlog::info("Created database connection {}/{}", i + 1, poolSize);
+                spdlog::info("ë°ì´í„°ë² ì´ìŠ¤ ì—°ê²° ìƒì„± {}/{}", i + 1, poolSize);
             }
 
-            spdlog::info("Database connection pool initialized with {} connections", poolSize);
+            spdlog::info("{}ê°œì˜ ë°ì´í„°ë² ì´ìŠ¤ í’€ ì´ˆê¸°í™” ì„±ê³µ", poolSize);
         }
         catch (const std::exception& e) {
-            spdlog::error("Failed to initialize database connection pool: {}", e.what());
+            spdlog::error("ë°ì´í„°ë² ì´ìŠ¤ í’€ ì´ˆê¸°í™” ì¤‘ ì˜ˆì™¸ê°€ ë°œìƒí•˜ì˜€ìŠµë‹ˆë‹¤: {}", e.what());
             throw;
         }
     }
 
     DbPool::~DbPool()
     {
-        // ¸ğµç ¿¬°á Á¾·á
+        // ëª¨ë“  ì—°ê²° ì¢…ë£Œ
         connections_.clear();
-        spdlog::info("Database connection pool destroyed");
+        spdlog::info("ë°ì´í„°ë² ì´ìŠ¤ í’€ ì‚­ì œ");
     }
 
     std::shared_ptr<pqxx::connection> DbPool::get_connection()
     {
         std::lock_guard<std::mutex> lock(mutex_);
 
-        // »ç¿ë °¡´ÉÇÑ ¿¬°á Ã£±â
+        // ì‚¬ìš© ê°€ëŠ¥í•œ ì—°ê²° ì°¾ê¸°
         for (size_t i = 0; i < connections_.size(); ++i) {
             if (!in_use_[i]) {
                 in_use_[i] = true;
 
-                // ¿¬°áÀÌ À¯È¿ÇÑÁö È®ÀÎ
+                // ì—°ê²°ì´ ìœ íš¨í•œì§€ í™•ì¸
                 if (!connections_[i]->is_open()) {
-                    spdlog::warn("Connection {} was closed, reconnecting...", i);
+                    spdlog::warn("{}ë²ˆì§¸ ì—°ê²°ì´ ì¢…ë£Œë˜ì—ˆìŠµë‹ˆë‹¤, ì¬ì—°ê²° ì§„í–‰ ì¤‘...", i);
                     try {
                         connections_[i] = std::make_shared<pqxx::connection>(connection_string_);
                     }
                     catch (const std::exception& e) {
-                        spdlog::error("Failed to reconnect: {}", e.what());
+                        spdlog::error("ì¬ì—°ê²° ì¤‘ ì˜ˆì™¸ê°€ ë°œìƒí•˜ì˜€ìŠµë‹ˆë‹¤: {}", e.what());
                         in_use_[i] = false;
                         throw;
                     }
@@ -73,8 +73,8 @@ namespace game_server {
             }
         }
 
-        // »ç¿ë °¡´ÉÇÑ ¿¬°áÀÌ ¾øÀ¸¸é »õ ¿¬°á »ı¼º
-        spdlog::warn("No available connections in pool, creating a new one");
+        // ì‚¬ìš© ê°€ëŠ¥í•œ ì—°ê²°ì´ ì—†ìœ¼ë©´ ìƒˆ ì—°ê²° ìƒì„±
+        spdlog::warn("ì‚¬ìš© ê°€ëŠ¥í•œ ì—°ê²°ì´ ì—†ìŠµë‹ˆë‹¤, ì—°ê²°ì„ ì¶”ê°€ë¡œ ìƒì„±í•©ë‹ˆë‹¤");
         try {
             auto conn = std::make_shared<pqxx::connection>(connection_string_);
             connections_.push_back(conn);
@@ -82,7 +82,7 @@ namespace game_server {
             return conn;
         }
         catch (const std::exception& e) {
-            spdlog::error("Failed to create new connection: {}", e.what());
+            spdlog::error("ì—°ê²° ì¶”ê°€ ì¤‘ ì˜ˆì™¸ê°€ ë°œìƒí•˜ì˜€ìŠµë‹ˆë‹¤: {}", e.what());
             throw;
         }
     }
@@ -91,7 +91,7 @@ namespace game_server {
     {
         std::lock_guard<std::mutex> lock(mutex_);
 
-        // ¹İÈ¯µÈ ¿¬°á Ã£¾Æ¼­ »ç¿ë °¡´É »óÅÂ·Î º¯°æ
+        // ë°˜í™˜ëœ ì—°ê²° ì°¾ì•„ì„œ ì‚¬ìš© ê°€ëŠ¥ ìƒíƒœë¡œ ë³€ê²½
         for (size_t i = 0; i < connections_.size(); ++i) {
             if (connections_[i] == conn) {
                 in_use_[i] = false;
@@ -99,7 +99,7 @@ namespace game_server {
             }
         }
 
-        spdlog::warn("Attempted to return a connection not from this pool");
+        spdlog::warn("ë°ì´í„°ë² ì´ìŠ¤ í’€ë¡œ ë°˜í™˜ ê°€ëŠ¥í•œ ì—°ê²°ì„ ì°¾ì§€ ëª»í–ˆìŠµë‹ˆë‹¤");
     }
 
 } // namespace game_server
