@@ -44,7 +44,7 @@ int main(int argc, char* argv[])
         std::string db_password = std::getenv("DB_PASSWORD");
         std::string db_name = std::getenv("DB_NAME");
         std::string db_connection_string =
-            "dbname=" + db_name + " user= " + db_user + " password= " + db_password + " host=" + db_host +  " port=" + db_port +" client_encoding=UTF8";
+            "dbname=" + db_name + " user=" + db_user + " password=" + db_password + " host=" + db_host +  " port=" + db_port +" client_encoding=UTF8";
 
         spdlog::info("환경 변수 불러오기 완료! 매칭 서버 버전 : {}, 포트 번호 : {}", version, port);
 
