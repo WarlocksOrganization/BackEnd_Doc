@@ -347,10 +347,10 @@ public class GamerHintMatrixSubService {
         }
     }
 
-    public void updateWinMatrix(WinMatrixDocument docC, List<String> targetMatrixIdList, List<int[]> coexistenceXYList) {
+    public void updateWinMatrix(WinMatrixDocument doc, List<String> targetMatrixIdList, List<int[]> xyList) {
         for (String id : targetMatrixIdList){
-            List<List<Integer>> matrix= docC.getMatrixMap().get(id);
-            for(int[] xy:coexistenceXYList){
+            List<List<Integer>> matrix= doc.getMatrixMap().get(id);
+            for(int[] xy:xyList){
                 int row = xy[0];
                 int col = xy[1];
                 int oldValue = matrix.get(row).get(col);
