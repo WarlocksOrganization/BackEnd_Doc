@@ -25,7 +25,7 @@ namespace game_server {
                 pqxx::result result = txn.exec_params(
                     "SELECT room_id, room_name, host_id, ip_address, port, "
                     "max_players, status, created_at "
-                    "FROM rooms WHERE status = 'WAITING' AND status = 'GAME_IN_PROGRESS' "
+                    "FROM rooms WHERE status = 'WAITING' OR status = 'GAME_IN_PROGRESS' "
                     "ORDER BY created_at DESC");
 
                 txn.commit();
