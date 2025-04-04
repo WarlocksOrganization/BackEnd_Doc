@@ -98,19 +98,27 @@ public class GamerHintMatrixService {
             int winnerScore = 0;
             for ( PlayerLogRequestDto playerLog: game.getPlayerLogs()) {
                 List<Integer> roundScores = playerLog.getRoundScore();
-                winnerScore = Math.max(winnerScore, roundScores.get(roundScores.size()-1)); //2
+                int scoreSum = 0;
+                for(int score : roundScores){
+                    scoreSum += score;
+                }
+                winnerScore = Math.max(winnerScore, scoreSum);
             }
 
             // playerLog 단위 작업
             for ( PlayerLogRequestDto playerLog: game.getPlayerLogs()) {
+                // classCode : 100인 버그 로그 패스
+                if(playerLog.getClassCode()==100){
+                    continue;
+                }
 
                 // targetMatrixId 생성
                 /// pool 세팅
-                List<Integer> classPool = List.of(playerLog.getClassCode(),-1);
+//                List<Integer> classPool = List.of(playerLog.getClassCode(),-1);
                 List<Integer> mapPool = List.of(game.getMapId(),-1);
                 List<Integer> playerNumPool = List.of(game.getPlayerCount(),-1);
 
-                List<String> targetMatrixIdList = gamerHintMatrixSubService.generateMatrixId(classPool,mapPool,playerNumPool);
+                List<String> targetMatrixIdList = gamerHintMatrixSubService.generateMatrixId(mapPool,playerNumPool);
 
                 // 공존 빈도 행렬 상에서 ++ 할 좌표 생성 => 공존 빈도 행렬 docC에 id와 좌표에 맞게 반영
                 List<int[]> coexistenceXYList = gamerHintMatrixSubService.generateCoexistenceXY(playerLog);
@@ -119,6 +127,12 @@ public class GamerHintMatrixService {
 
                 // 픽률만
                 for (MatrixDocument doc : docs) {
+                    // 다른 직업은 패싱
+                    String docClass = doc.getId().split("/")[3];
+                    if( docClass.equals(playerLog.getClassCode()+"") == false ){
+                        continue;
+                    }
+                    // C | T 구분
                     if(doc.getType().equals("C")){
                         gamerHintMatrixSubService.updateMatrix(doc, targetMatrixIdList, coexistenceXYList);
                     } else{
@@ -127,8 +141,18 @@ public class GamerHintMatrixService {
                 }
                 // 우승 찾기
                 List<Integer> roundScores = playerLog.getRoundScore();
-                if(roundScores.get(roundScores.size()-1) == winnerScore){
+                int scoreSum = 0;
+                for(int score : roundScores){
+                    scoreSum += score;
+                }
+                if(scoreSum == winnerScore){
                     for (WinMatrixDocument winDoc : winDocs) {
+                        // 다른 직업은 패싱
+                        String docClass = winDoc.getId().split("/")[3];
+                        if( docClass.equals(playerLog.getClassCode()+"") == false ){
+                            continue;
+                        }
+                        // C | T 구분
                         if(winDoc.getType().equals("C")){
                             gamerHintMatrixSubService.updateWinMatrix(winDoc, targetMatrixIdList, coexistenceXYList);
                         } else{
