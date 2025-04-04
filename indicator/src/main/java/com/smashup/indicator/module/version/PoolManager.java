@@ -14,65 +14,66 @@ public class PoolManager {
     private final List<Integer> mapPool = new ArrayList<>();
     private final List<Integer> playerNumPool = new ArrayList<>();
 
-    private final List<Integer> cardPool = new ArrayList<>();
-    private final Map<Integer, Integer> cardPoolIndex = new HashMap<>();
+//    private final List<Integer> cardPool = new ArrayList<>();
+    // Map<classCode, classCardPool>
+    private final Map<Integer, List<Integer>> classCardPoolMap = new HashMap<>();
+
+//    private final Map<Integer, Integer> cardPoolIndex = new HashMap<>();
+    // Map<classCode, Map<classCardId, classCardPoolIndex>>
+    private final Map<Integer, Map<Integer, Integer>> classCardPoolIndexMap = new HashMap<>();
 
     public synchronized void updatePoolPost(UpdatePoolRequestDto dto) {
         // 패치 수정 안전 프로세스
         patchVersion = dto.getPatchVersion();
 
-        cardPool.clear();
-        cardPoolIndex.clear();
-        //====== 다른 풀도 추가=======
         classPool.clear();
         mapPool.clear();
         playerNumPool.clear();
-
-        // 새로운 카드 풀 세팅 (예제 데이터)
-        // 이것도 좀 동적이어야 좋은데 // 입력을 API로 받을까?
-        // 그래도 혹시 모르니까, 비밀번호 하나 달자 ㅋㅋ.. 비번을 일치하는 값만 변경 가능하게
-        cardPool.addAll(dto.getCardPool());
-
         classPool.addAll(dto.getClassPool());
-        classPool.add(-1);
+//        classPool.add(-1); // 도큐먼트를 직업별로 쪼개서 필요없어짐.
         mapPool.addAll(dto.getMapPool());
         mapPool.add(-1);
         playerNumPool.addAll(dto.getPlayerNumPool());
         playerNumPool.add(-1);
-        //
-        Collections.sort(cardPool);
+
         Collections.sort(classPool);
         Collections.sort(mapPool);
         Collections.sort(playerNumPool);
-        // 인덱스 맵 업데이트
-        for (int i = 0; i < cardPool.size(); i++) {
-            cardPoolIndex.put(cardPool.get(i), i);
+        //====== 다른 풀도 추가됨=======
+
+//        cardPool.clear();
+//        classCardPoolIndex.clear();
+        classCardPoolMap.clear();
+        classCardPoolIndexMap.clear();
+
+        // 구조 잡으면서 정렬 후 바로 삽입. classCardPoolIndexMap도 생성하기.
+        Map<Integer, List<Integer>> cardPoolMap = dto.getCardPoolMap();
+        for(int classCode : classPool){
+            // 클래스 별로 카드풀 저장
+            List<Integer> classCardPool = cardPoolMap.get(classCode);
+            Collections.sort(classCardPool);
+            classCardPoolMap.put(classCode, classCardPool);
+
+            // 클래스 별로 카드풀의 인덱스를 관리하는 맵 저장
+            Map<Integer, Integer> classCardPoolIndex = new HashMap<>();
+            for (int i = 0; i < classCardPool.size(); i++) {
+                classCardPoolIndex.put(classCardPool.get(i), i);
+            }
+            classCardPoolIndexMap.put(classCode,classCardPoolIndex);
         }
     }
 
-
-    public synchronized void updateCardPoolGet() {
-//        cardPool.clear();
-//        cardPoolIndex.clear();
-//
-//        // 새로운 카드 풀 세팅 (예제 데이터)
-////        List<Integer> cardPoolInMySQL = 서비스 호출. 디비에 있는 카드풀 가져오기.
-////        cardPool.addAll(cardPoolInMySQL);
-//        Collections.sort(cardPool);
-////        cardPool.sort();
-//        // 인덱스 맵 업데이트
-//        for (int i = 0; i < cardPool.size(); i++) {
-//            cardPoolIndex.put(cardPool.get(i), i);
-//
-//        }
-    }
 
     public String getPatchVersion() {
         return patchVersion;
     }
 
-    public List<Integer> getCardPool() {
-        return Collections.unmodifiableList(cardPool);
+    public Map<Integer, List<Integer>> getClassCardPoolMap() {
+        return Collections.unmodifiableMap(classCardPoolMap);
+    }
+
+    public Map<Integer, Map<Integer, Integer>> getClassCardPoolIndexMap() {
+        return Collections.unmodifiableMap(classCardPoolIndexMap);
     }
     public List<Integer> getClassPool() {
         return Collections.unmodifiableList(classPool);
@@ -82,8 +83,5 @@ public class PoolManager {
     }
     public List<Integer> getMapPool() {
         return Collections.unmodifiableList(mapPool);
-    }
-    public Map<Integer, Integer> getCardPoolIndex() {
-        return Collections.unmodifiableMap(cardPoolIndex);
     }
 }

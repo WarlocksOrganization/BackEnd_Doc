@@ -103,7 +103,7 @@ public class VersionService {
         poolManager.updatePoolPost(dto);
 
         UpdatePoolRequestDto returnDto = UpdatePoolRequestDto.builder()
-                .cardPool(poolManager.getCardPool())
+                .cardPoolMap(poolManager.getClassCardPoolMap())
                 .classPool(poolManager.getClassPool())
                 .mapPool(poolManager.getMapPool())
                 .playerNumPool(poolManager.getPlayerNumPool())
