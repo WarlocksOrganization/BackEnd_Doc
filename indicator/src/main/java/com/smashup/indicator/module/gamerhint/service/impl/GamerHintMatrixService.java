@@ -48,14 +48,9 @@ public class GamerHintMatrixService {
                     .cardPool(doc.getCardPool())
                     .matrixMap(new HashMap<>())
                     .build();
-            // 필요한 값만 extractDoc에 넣기.
-            for( int classCode : poolManager.getClassPool()){
-                if(classCode==-1)
-                    continue;
-                String matrixId = String.join("/",classCode+"","-1/-1");
-                extractDoc.getMatrixMap().put(matrixId, doc.getMatrixMap().get(matrixId));
-            }
-            // extractDoc를 리턴 값에 저장
+            String matrixId = "-1/-1";
+            extractDoc.getMatrixMap().put(matrixId, doc.getMatrixMap().get(matrixId));
+
             results.add(extractDoc);
         }
         return results;
