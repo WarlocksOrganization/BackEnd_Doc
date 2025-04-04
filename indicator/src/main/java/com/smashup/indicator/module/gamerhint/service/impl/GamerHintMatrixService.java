@@ -98,7 +98,11 @@ public class GamerHintMatrixService {
             int winnerScore = 0;
             for ( PlayerLogRequestDto playerLog: game.getPlayerLogs()) {
                 List<Integer> roundScores = playerLog.getRoundScore();
-                winnerScore = Math.max(winnerScore, roundScores.get(roundScores.size()-1)); //2
+                int scoreSum = 0;
+                for(int score : roundScores){
+                    scoreSum += score;
+                }
+                winnerScore = Math.max(winnerScore, scoreSum);
             }
 
             // playerLog 단위 작업
@@ -133,7 +137,11 @@ public class GamerHintMatrixService {
                 }
                 // 우승 찾기
                 List<Integer> roundScores = playerLog.getRoundScore();
-                if(roundScores.get(roundScores.size()-1) == winnerScore){
+                int scoreSum = 0;
+                for(int score : roundScores){
+                    scoreSum += score;
+                }
+                if(scoreSum == winnerScore){
                     for (WinMatrixDocument winDoc : winDocs) {
                         // 다른 직업은 패싱
                         String docClass = winDoc.getId().split("/")[3];
