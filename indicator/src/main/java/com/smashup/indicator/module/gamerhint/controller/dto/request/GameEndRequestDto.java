@@ -13,6 +13,7 @@ import java.util.List;
 @Builder
 public class GameEndRequestDto {
     // 게임당 공통데이터.
+    private String gameId;
     private String patchVersion;
     private Integer mapId;
     private Integer playerCount;

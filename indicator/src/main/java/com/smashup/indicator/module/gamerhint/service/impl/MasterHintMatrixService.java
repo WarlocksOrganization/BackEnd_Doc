@@ -3,6 +3,7 @@ package com.smashup.indicator.module.gamerhint.service.impl;
 import com.smashup.indicator.module.gamerhint.controller.dto.request.GameEndRequestDto;
 import com.smashup.indicator.module.gamerhint.controller.dto.request.LogServerRequestDto;
 import com.smashup.indicator.module.gamerhint.controller.dto.request.PlayerLogRequestDto;
+import com.smashup.indicator.module.gamerhint.controller.dto.response.CountResponseDto;
 import com.smashup.indicator.module.gamerhint.controller.dto.response.RebalanceResponseDto;
 import com.smashup.indicator.module.gamerhint.domain.entity.MatrixDocument;
 import com.smashup.indicator.module.gamerhint.domain.entity.WinMatrixDocument;
@@ -35,7 +36,7 @@ public class MasterHintMatrixService {
 
     // 직업간 리밸런스 지표 계산하기
     @Transactional
-    public List<RebalanceResponseDto> generateRebalance() throws Exception {
+    public List<RebalanceResponseDto> generateRebalanceClass() throws Exception {
         // 제출할 것들 저장할 리스트 생성
         List<RebalanceResponseDto> results = new ArrayList<>();
 
@@ -43,6 +44,16 @@ public class MasterHintMatrixService {
             RebalanceResponseDto dto = RebalanceResponseDto.builder()
                     .type("class")
                     .id(classCode)
+                    .pick(CountResponseDto.builder()
+                            .down(0)
+                            .up(0)
+                            .rate(0D)
+                            .build())
+                    .win(CountResponseDto.builder()
+                            .down(0)
+                            .up(0)
+                            .rate(0D)
+                            .build())
                     .build();
             results.add(dto);
         }
