@@ -1,27 +1,20 @@
-package com.smashup.indicator.module.gamerhint.service.impl;
+package com.smashup.indicator.module.masterhint.service.impl;
 
-import com.smashup.indicator.module.gamerhint.controller.dto.request.GameEndRequestDto;
-import com.smashup.indicator.module.gamerhint.controller.dto.request.LogServerRequestDto;
-import com.smashup.indicator.module.gamerhint.controller.dto.request.PlayerLogRequestDto;
-import com.smashup.indicator.module.gamerhint.controller.dto.response.CountResponseDto;
-import com.smashup.indicator.module.gamerhint.controller.dto.response.RebalanceResponseDto;
 import com.smashup.indicator.module.gamerhint.domain.entity.MatrixDocument;
 import com.smashup.indicator.module.gamerhint.domain.entity.WinMatrixDocument;
 import com.smashup.indicator.module.gamerhint.repository.MatrixRepository;
 import com.smashup.indicator.module.gamerhint.repository.WinMatrixRepository;
+import com.smashup.indicator.module.gamerhint.service.impl.GamerHintMatrixSubService;
+import com.smashup.indicator.module.masterhint.controller.dto.response.CountResponseDto;
+import com.smashup.indicator.module.masterhint.controller.dto.response.RebalanceResponseDto;
 import com.smashup.indicator.module.version.PoolManager;
 import com.smashup.indicator.module.version.service.impl.VersionService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.dao.OptimisticLockingFailureException;
-import org.springframework.retry.annotation.Backoff;
-import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
