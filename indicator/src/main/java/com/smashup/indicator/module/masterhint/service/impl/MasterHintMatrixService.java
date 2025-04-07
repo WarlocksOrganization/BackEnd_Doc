@@ -50,8 +50,10 @@ public class MasterHintMatrixService {
                     .build();
             results.add(dto);
         }
-        List<MatrixDocument> pickMatrix = gamerHintMatrixSubService.getDocumentByBatch(versionService.getCurrentPatchVersion(),versionService.getBatchCount());
-        List<WinMatrixDocument> winMatrix = gamerHintMatrixSubService.getWinDocumentByBatch(versionService.getCurrentPatchVersion(),versionService.getBatchCount());
+        List<MatrixDocument> pickMatrix = gamerHintMatrixSubService.getDocumentByBatch(
+                versionService.getCurrentPatchVersion(),versionService.getBatchCount());
+        List<WinMatrixDocument> winMatrix = gamerHintMatrixSubService.getWinDocumentByBatch(
+                versionService.getCurrentPatchVersion(),versionService.getBatchCount());
 
         setPick(results, pickMatrix);
         setWin(results, winMatrix);
