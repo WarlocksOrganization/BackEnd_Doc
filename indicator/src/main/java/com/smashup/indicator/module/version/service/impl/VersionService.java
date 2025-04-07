@@ -31,13 +31,13 @@ public class VersionService {
     private int batchCount = 1;
 
     @Transactional
-    public String updatePatchVersion(UpdatePatchVersionRequestDto dto) throws Exception {
+    public UpdatePoolRequestDto updatePatchVersion(UpdatePoolRequestDto dto) throws Exception {
         // 임시방편으로 비밀번호 틀리면 작동안하게.
         if(dto.getTimeStamp().equals("20250320")==false){
             return null;
         }
 
-        String newVersion = dto.getNewPatchVersion();
+        String newVersion = dto.getPatchVersion();
         // 같은 버전으로 바꿀때는 작동안하게.
         if(this.currentPatchVersion.equals(newVersion)){
             return null;
@@ -46,11 +46,19 @@ public class VersionService {
         // 다른 버전일때 작동.
         // newVersion값과 poolManager가 가진 값이 다르면 예외처리.
         // 버전업할때, poolManager부터 버전업하고 와야 버전업 가능해짐.
-        if( ! poolManager.getPatchVersion().equals(newVersion)){
-            throw new Exception("poolManger 세팅 먼저.");
-        }
+        // 버전업 세팅 통합하면서 주석처리.
+//        if( ! poolManager.getPatchVersion().equals(newVersion)){
+//            throw new Exception("poolManger 세팅 먼저.");
+//        }
+
+        // 버전 업으로 인한 변경사항 세팅.
+        // 관례적으로 cardPool 세팅이 먼저.
+        UpdatePoolRequestDto result = updatePool(dto);
         this.oldPatchVersion = currentPatchVersion;
         this.currentPatchVersion = newVersion;
+
+
+
         // 서버 내려가고 다시 초기화해줄때,요청에서 직전 버전까지 주입해주기. 주입 안해줘도 됨.
         if(dto.getOldPatchVersion()!=null){
             this.oldPatchVersion = dto.getOldPatchVersion();
@@ -62,7 +70,7 @@ public class VersionService {
             // 아래 최초 스켈레톤 안 만들도록 건너뛰기.
             if(gamerHintMatrixSubService.haveDocument(currentPatchVersion)){
                 this.batchCount = gamerHintMatrixSubService.getLatestBatchCount(currentPatchVersion);
-                return currentPatchVersion;
+                return result;
             }
 
         } catch (Exception e) {
@@ -87,7 +95,7 @@ public class VersionService {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return currentPatchVersion;
+        return result;
     }
 
 //    @Transactional
