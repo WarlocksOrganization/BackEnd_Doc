@@ -77,20 +77,20 @@ public class GamerHintMatrixSubService {
         String regex1 = "^"+inputPatchVersion;
         Query batchCountCheckQuery = new Query();
         batchCountCheckQuery.addCriteria(Criteria.where("_id").regex(regex1));
-        batchCountCheckQuery.with(Sort.by(Sort.Direction.DESC, "_id"));
+//        batchCountCheckQuery.with(Sort.by(Sort.Direction.DESC, "_id"));
+        batchCountCheckQuery.with(Sort.by(Sort.Direction.DESC, "batchCount"));
         batchCountCheckQuery.limit(1);
 
         MatrixDocument lastBatchDoc = mongoTemplate.findOne(batchCountCheckQuery, MatrixDocument.class);
 
-        // 검색결과가 없음 => inputPatchVersion 에 해당되는 Document 가 없음.
-        if (lastBatchDoc == null) {
-
-            return null; // 예외처리 필요 => 호출 위치상 inputPatchVersion 에 해당되는 Document가 있을때만 호출됨.
-        }
+//        // 검색결과가 없음 => inputPatchVersion 에 해당되는 Document 가 없음.
+//        if (lastBatchDoc == null) {
+//
+//            return null; // 예외처리 필요 => 호출 위치상 inputPatchVersion 에 해당되는 Document가 있을때만 호출됨.
+//        }
 
         // 2. 마지막 batchCount를 추출
-        String lastBatchCount = lastBatchDoc.getId().split("/")[1];
-        return Integer.parseInt(lastBatchCount) ;
+        return lastBatchDoc.getBatchCount();
 
 //        // 3. 마지막 batchCount에 해당하는 C, T를 가져옴
 //        Query finalQuery = new Query();
@@ -123,6 +123,7 @@ public class GamerHintMatrixSubService {
                 // doc 하나 만들기 => id랑 type만 다르게 하면 됨.
                 MatrixDocument doc = MatrixDocument.builder()
                         .id(String.join("/", inputPatchVersion,batchCount+"",types[i],classCode+""))
+                        .batchCount(batchCount)
                         .type(types[i])
                         .cardPool(poolManager.getClassCardPoolMap().get(classCode))
                         .matrixMap(new HashMap<>())
