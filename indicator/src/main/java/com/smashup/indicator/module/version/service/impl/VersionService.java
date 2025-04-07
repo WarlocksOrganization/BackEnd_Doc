@@ -33,60 +33,59 @@ public class VersionService {
     @Transactional
     public String updatePatchVersion(UpdatePatchVersionRequestDto dto) throws Exception {
         // 임시방편으로 비밀번호 틀리면 작동안하게.
-        // 인증인가가 없어서.
-        // timeStamp라고 이름 속이기.
-        // Dto 납치되고 분석당하면 의미없음.
         if(dto.getTimeStamp().equals("20250320")==false){
             return null;
         }
 
         String newVersion = dto.getNewPatchVersion();
-        if (!this.currentPatchVersion.equals(newVersion)) {  // 실제 변경될 때만 실행
-            if( ! poolManager.getPatchVersion().equals(newVersion)){    // newVersion값과 poolManager가 가진 값이 다르면 예외처리
-                throw new Exception("poolManger 세팅 먼저.");
+        // 같은 버전으로 바꿀때는 작동안하게.
+        if(this.currentPatchVersion.equals(newVersion)){
+            return null;
+        }
+
+        // 다른 버전일때 작동.
+        // newVersion값과 poolManager가 가진 값이 다르면 예외처리.
+        // 버전업할때, poolManager부터 버전업하고 와야 버전업 가능해짐.
+        if( ! poolManager.getPatchVersion().equals(newVersion)){
+            throw new Exception("poolManger 세팅 먼저.");
+        }
+        this.oldPatchVersion = currentPatchVersion;
+        this.currentPatchVersion = newVersion;
+        // 서버 내려가고 다시 초기화해줄때,요청에서 직전 버전까지 주입해주기. 주입 안해줘도 됨.
+        if(dto.getOldPatchVersion()!=null){
+            this.oldPatchVersion = dto.getOldPatchVersion();
+        }
+        // 서버 재실행하고 패치버전 세팅할때. 기존의 batchCount값 찾아서 세팅.
+        try{
+            // 해당 patchVersion의 document있으면 가장 마지막 batchCount로 세팅해주고
+                // batchCount+1로 세팅해주면 batchCount+1의 document가 안 만들어져서. 연결이 안돼서 사고남.
+            // 아래 최초 스켈레톤 안 만들도록 건너뛰기.
+            if(gamerHintMatrixSubService.haveDocument(currentPatchVersion)){
+                this.batchCount = gamerHintMatrixSubService.getLatestBatchCount(currentPatchVersion);
+                return currentPatchVersion;
             }
-            this.oldPatchVersion = currentPatchVersion;
-            this.currentPatchVersion = newVersion;
-            // 서버 내려가고 다시 초기화해줄때,요청에서 직전 버전까지 주입해주기.
-            if(dto.getOldPatchVersion()!=null){
-                this.oldPatchVersion = dto.getOldPatchVersion();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        // 카드 풀 및 배치 카운트 업데이트
+        // poolManager.updateCardPool();
+        resetBatchCount();
+
+        // 배치 리셋이후 해당 패치버전의 첫 document 생성 및 저장 필요.
+        try{
+            List<MatrixDocument> docs = gamerHintMatrixSubService.generateDocument(currentPatchVersion, batchCount);
+            for (MatrixDocument doc : docs) {
+                matrixRepository.save(doc);
             }
-            // 서버 내려가고 다시 초기화해줄때 진행된 batchCount가 있을때.
-            if(dto.getLatestBatchCount() != null){
-                // 이전 버전batchCount를 한번에 set하기
-                this.batchCount = dto.getLatestBatchCount();
-                // 해당 patchVersion 로 작성된 문서가 이미 있으면 최초 스켈레톤 안 만들도록 건너뛰기.
-                try{
-                    // 있으면 아래 로직 건너뜀.
-                    if(gamerHintMatrixSubService.haveDocument(currentPatchVersion)){
-                        return currentPatchVersion;
-                    }
-
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-
+            // win 버전
+            List<WinMatrixDocument> winDocs = gamerHintMatrixSubService.generateWinDocument(currentPatchVersion, batchCount);
+            for (WinMatrixDocument winDoc : winDocs) {
+                winMatrixRepository.save(winDoc);
             }
-
-
-            // 카드 풀 및 배치 카운트 업데이트
-            // poolManager.updateCardPool();
-            resetBatchCount();
-
-            // 배치 리셋이후 해당 패치버전의 첫 document 생성 및 저장 필요.
-            try{
-                List<MatrixDocument> docs = gamerHintMatrixSubService.generateDocument(currentPatchVersion, batchCount);
-                for (MatrixDocument doc : docs) {
-                    matrixRepository.save(doc);
-                }
-                // win 버전
-                List<WinMatrixDocument> winDocs = gamerHintMatrixSubService.generateWinDocument(currentPatchVersion, batchCount);
-                for (WinMatrixDocument winDoc : winDocs) {
-                    winMatrixRepository.save(winDoc);
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
         return currentPatchVersion;
     }
@@ -94,9 +93,6 @@ public class VersionService {
 //    @Transactional
     public UpdatePoolRequestDto updatePool(UpdatePoolRequestDto dto) {
         // 임시방편으로 비밀번호 틀리면 작동안하게.
-        // 인증인가가 없어서.
-        // timeStamp라고 이름 속이기.
-        // Dto 납치되고 분석당하면 의미없음.
         if(dto.getTimeStamp().equals("20250320")==false){
             return null;
         }

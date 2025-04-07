@@ -69,27 +69,29 @@ public class GamerHintMatrixSubService {
         return result;
     }
 
-//    // 마지막 배치 (가장 최신 배치) load
-//    @Transactional
+    // 마지막 배치 (가장 최신 배치) load
+    @Transactional
 //    public List<MatrixDocument> getLatestDocument(String inputPatchVersion) throws Exception {
-//        // 1. 가장 마지막 batchCount 하나만 가져옴 => batchCount 안전하게 가져오기
-//        String regex1 = "^"+inputPatchVersion;
-//        Query batchCountCheckQuery = new Query();
-//        batchCountCheckQuery.addCriteria(Criteria.where("_id").regex(regex1));
-//        batchCountCheckQuery.with(Sort.by(Sort.Direction.DESC, "_id"));
-//        batchCountCheckQuery.limit(1);
-//
-//        MatrixDocument lastBatchDoc = mongoTemplate.findOne(batchCountCheckQuery, MatrixDocument.class);
-//
-//        // 검색결과가 없음 => inputPatchVersion 에 해당되는 Document 가 없음.
-//        if (lastBatchDoc == null) {
-//
-//            return null; // 예외처리 필요 => 호출 위치상 inputPatchVersion 에 해당되는 Document가 있을때만 호출됨.
-//        }
-//
-//        // 2. 마지막 batchCount를 추출
-//        String lastBatchCount = lastBatchDoc.getId().split("/")[1];
-//
+    public Integer getLatestBatchCount(String inputPatchVersion) throws Exception {
+        // 1. 가장 마지막 batchCount 하나만 가져옴 => batchCount 안전하게 가져오기
+        String regex1 = "^"+inputPatchVersion;
+        Query batchCountCheckQuery = new Query();
+        batchCountCheckQuery.addCriteria(Criteria.where("_id").regex(regex1));
+        batchCountCheckQuery.with(Sort.by(Sort.Direction.DESC, "_id"));
+        batchCountCheckQuery.limit(1);
+
+        MatrixDocument lastBatchDoc = mongoTemplate.findOne(batchCountCheckQuery, MatrixDocument.class);
+
+        // 검색결과가 없음 => inputPatchVersion 에 해당되는 Document 가 없음.
+        if (lastBatchDoc == null) {
+
+            return null; // 예외처리 필요 => 호출 위치상 inputPatchVersion 에 해당되는 Document가 있을때만 호출됨.
+        }
+
+        // 2. 마지막 batchCount를 추출
+        String lastBatchCount = lastBatchDoc.getId().split("/")[1];
+        return Integer.parseInt(lastBatchCount) ;
+
 //        // 3. 마지막 batchCount에 해당하는 C, T를 가져옴
 //        Query finalQuery = new Query();
 //        String regex2 = String.join("/", regex1,lastBatchCount,"");
@@ -104,7 +106,7 @@ public class GamerHintMatrixSubService {
 //            // System.out.println("경고: " + lastBatchCount + "의 C 또는 T 중 하나가 누락됨");
 //        }
 //        return results;
-//    }
+    }
 
     @Transactional
     public List<MatrixDocument> generateDocument(String inputPatchVersion, Integer batchCount) throws Exception {
