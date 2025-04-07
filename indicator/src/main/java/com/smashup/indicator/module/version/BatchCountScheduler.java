@@ -19,14 +19,17 @@ import java.util.List;
 
 public class BatchCountScheduler {
     private final GamerHintMatrixSubService gamerHintMatrixSubService;
+    private final GamerHintMatrixService gamerHintMatrixService;
     private final VersionService versionService;
     private final MatrixRepository matrixRepository;
     private final WinMatrixRepository winMatrixRepository;
+    private final ReadyMadeManager readyMadeManager;
 
 
 
-    @Scheduled(fixedRate = 1000*60*60*1) // 1시간마다 실행
-//    @Scheduled(fixedRate = 1000*60*2) // 2분마다 실행 테스트용
+
+//    @Scheduled(fixedRate = 1000*60*60*1) // 1시간마다 실행
+    @Scheduled(fixedRate = 1000*60*1) // 1분마다 실행 테스트용
     public synchronized void incrementBatchCount() {
 //        System.out.println("⏰ 스케줄러 진입");
         try {
@@ -62,6 +65,10 @@ public class BatchCountScheduler {
                 // 저장.
                 winMatrixRepository.save(winDoc);
             }
+
+            // pick 과 win 다 이월시킴! 이 타이밍에 getIndicator가 호출됨.
+            List<MatrixDocument> readyMade = gamerHintMatrixService.getIndicator();
+            readyMadeManager.updateGetIndicator(readyMade);
 
 
         } catch (Exception e) {

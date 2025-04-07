@@ -61,14 +61,16 @@ public class GamerHintMatrixService {
     @Transactional
     public List<MatrixDocument> getIndicatorAllPick() throws Exception {
         // 콜드스타트 문구 발송
-        List<MatrixDocument> temp = gamerHintMatrixSubService.getDocumentByBatch(versionService.getCurrentPatchVersion(),versionService.getBatchCount());
+        List<MatrixDocument> temp = gamerHintMatrixSubService.getDocumentByBatch(
+                versionService.getCurrentPatchVersion(),versionService.getBatchCount());
         return temp;
     }
     // 지표 전달하기.
     @Transactional
     public List<WinMatrixDocument> getIndicatorAllWin() throws Exception {
         // 콜드스타트 문구 발송
-        List<WinMatrixDocument> temp = gamerHintMatrixSubService.getWinDocumentByBatch(versionService.getCurrentPatchVersion(),versionService.getBatchCount());
+        List<WinMatrixDocument> temp = gamerHintMatrixSubService.getWinDocumentByBatch(
+                versionService.getCurrentPatchVersion(),versionService.getBatchCount());
         return temp;
     }
 
