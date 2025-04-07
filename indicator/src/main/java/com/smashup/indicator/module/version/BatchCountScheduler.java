@@ -49,6 +49,8 @@ public class BatchCountScheduler {
                 String docClass = doc.getId().split("/")[3];
                 String id = String.join("/", versionService.getCurrentPatchVersion(),versionService.getBatchCount()+"",doc.getType(), docClass );
                 doc.setId(id);
+                // 이월된 batchCount 세팅. batchCount가 올라갔을때 그 batchCount 사용.
+                doc.setBatchCount(versionService.getBatchCount());
                 // version 처음부터 시작하니까 교체. 1L => 0L => null
                 doc.setVersion(null);
                 // 저장.

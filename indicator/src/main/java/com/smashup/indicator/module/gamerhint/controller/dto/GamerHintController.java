@@ -56,14 +56,14 @@ public class GamerHintController extends AbstractRestController {
                     return handleSuccess("sorry, now cold start");
                 } else{
                     // result가 not null일때 업데이트!
-                    System.out.println("YES DB, YES UPDATE");
+//                    System.out.println("YES DB, YES UPDATE");
                     readyMadeManager.updateGetIndicator(result);
                     return handleSuccess(result);
                 }
             }
             // 보낼게 있다! DB 안찍고 이거 바로 보내기.
             else{
-                System.out.println("NO DB");
+//                System.out.println("NO DB");
                 return handleSuccess(readyMadeManager.getGetIndicator());
             }
         } catch (Exception e) {
