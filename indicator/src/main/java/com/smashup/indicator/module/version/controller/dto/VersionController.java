@@ -25,11 +25,11 @@ public class VersionController extends AbstractRestController {
     // 풀 업데이트 => 밸런스 패치 버전 수정 => API 테스트 성공
     @PostMapping("")
     public ResponseEntity<Map<String, Object>> updatePatchVersion(
-            @RequestBody UpdatePatchVersionRequestDto dto
+            @RequestBody UpdatePoolRequestDto dto
     ) throws Exception {
         try {
             log.debug("updatePatchVersion: {}", dto);
-            String result = versionService.updatePatchVersion(dto);
+            UpdatePoolRequestDto result = versionService.updatePatchVersion(dto);
             return handleSuccess(result);
         } catch (Exception e) {
             return handleError(e.getMessage());
