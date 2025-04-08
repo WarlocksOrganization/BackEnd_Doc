@@ -17,6 +17,8 @@ public class PoolManager {
 //    private final List<Integer> cardPool = new ArrayList<>();
     // Map<classCode, classCardPool>
     private final Map<Integer, List<Integer>> classCardPoolMap = new HashMap<>();
+    // Map<cardId, cardName>
+    private final Map<Integer, String> allCardPoolMap = new HashMap<>();
 
 //    private final Map<Integer, Integer> cardPoolIndex = new HashMap<>();
     // Map<classCode, Map<classCardId, classCardPoolIndex>>
@@ -45,6 +47,9 @@ public class PoolManager {
 //        classCardPoolIndex.clear();
         classCardPoolMap.clear();
         classCardPoolIndexMap.clear();
+        // ===== 카드별 픽률 승률 보여줄때 편하려고 cardName까지 맵핑하는 용도.
+        allCardPoolMap.clear();
+        allCardPoolMap.putAll(dto.getAllCardPoolMap());
 
         // 구조 잡으면서 정렬 후 바로 삽입. classCardPoolIndexMap도 생성하기.
         Map<Integer, List<Integer>> cardPoolMap = dto.getCardPoolMap();
@@ -66,6 +71,10 @@ public class PoolManager {
 
     public String getPatchVersion() {
         return patchVersion;
+    }
+
+    public Map<Integer, String>  getAllCardPoolMap() {
+        return Collections.unmodifiableMap(allCardPoolMap);
     }
 
     public Map<Integer, List<Integer>> getClassCardPoolMap() {
