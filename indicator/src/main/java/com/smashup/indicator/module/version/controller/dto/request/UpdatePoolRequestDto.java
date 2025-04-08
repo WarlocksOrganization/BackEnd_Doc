@@ -22,5 +22,7 @@ public class UpdatePoolRequestDto {
     private List<Integer> classPool;
     private List<Integer> mapPool;
     private List<Integer> playerNumPool;
+    // cardName 추가
+    private Map<Integer, String> allCardPoolMap;
 
 }

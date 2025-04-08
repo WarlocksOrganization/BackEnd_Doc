@@ -2,8 +2,6 @@ package com.smashup.indicator.module.version;
 
 import com.smashup.indicator.module.gamerhint.domain.entity.MatrixDocument;
 import com.smashup.indicator.module.gamerhint.service.impl.GamerHintMatrixService;
-import com.smashup.indicator.module.gamerhint.service.impl.GamerHintMatrixSubService;
-import com.smashup.indicator.module.version.controller.dto.request.UpdatePoolRequestDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
