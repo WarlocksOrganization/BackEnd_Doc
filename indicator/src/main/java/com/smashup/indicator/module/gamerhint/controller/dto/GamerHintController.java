@@ -9,9 +9,11 @@ import com.smashup.indicator.module.gamerhint.service.impl.GamerHintMatrixServic
 import com.smashup.indicator.module.version.ReadyMadeManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -35,8 +37,9 @@ public class GamerHintController extends AbstractRestController {
             @RequestBody LogServerRequestDto dto
     ) throws Exception {
         try {
+            log.debug("insertData() called!!");
             List<MatrixDocument> result = gamerHintMatrixService.insertData(dto);
-            return handleSuccess(result); //
+            return handleSuccess(result);
         } catch (Exception e) {
             return handleError(e.getMessage());
         }
@@ -46,24 +49,29 @@ public class GamerHintController extends AbstractRestController {
     @GetMapping("/hints")
     public ResponseEntity<Map<String, Object>> getIndicator() throws Exception {
         try {
-            log.debug("GetIndicator: {}");
+            log.debug("getIndicator() called!!");
 
             // 아직 보낼게 안 채워졌으면, 기존의 getIndicator로 채우고, 그거 보내기.
             // 안 채워진 예상 사유. 서버 재실행후, 배치 스케줄러 미실행된 공백기.
             if(readyMadeManager.getGetIndicator().isEmpty()){
                 List<MatrixDocument> result = gamerHintMatrixService.getIndicator();
                 if(result==null){
-                    return handleSuccess("sorry, now cold start");
+                    // 클라이언트에서 cold start에 대한 판단을 isOk = false, statusCode = 200으로 하기로 함.
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("isOk", false);
+                    map.put("data", "sorry, now cold start");
+                    return new ResponseEntity<Map<String,Object>>(map, HttpStatus.OK);
+//                    return handleError("sorry, now cold start");
                 } else{
                     // result가 not null일때 업데이트!
-//                    System.out.println("YES DB, YES UPDATE");
+                    log.debug("YES DB, YES UPDATE");
                     readyMadeManager.updateGetIndicator(result);
                     return handleSuccess(result);
                 }
             }
             // 보낼게 있다! DB 안찍고 이거 바로 보내기.
             else{
-//                System.out.println("NO DB");
+                log.debug("NO DB");
                 return handleSuccess(readyMadeManager.getGetIndicator());
             }
         } catch (Exception e) {
@@ -75,7 +83,7 @@ public class GamerHintController extends AbstractRestController {
     @GetMapping("/hints/pickrate")
     public ResponseEntity<Map<String, Object>> getIndicatorAllPick() throws Exception {
         try {
-            log.debug("GetIndicator: {}");
+            log.debug("getIndicatorAllPick: {}");
             List<MatrixDocument> result = gamerHintMatrixService.getIndicatorAllPick();
             return handleSuccess(result);
         } catch (Exception e) {
@@ -87,7 +95,7 @@ public class GamerHintController extends AbstractRestController {
     @GetMapping("/hints/winrate")
     public ResponseEntity<Map<String, Object>> getIndicatorAllWin() throws Exception {
         try {
-            log.debug("GetIndicator: {}");
+            log.debug("getIndicatorAllWin: {}");
             List<WinMatrixDocument> result = gamerHintMatrixService.getIndicatorAllWin();
             return handleSuccess(result);
         } catch (Exception e) {
