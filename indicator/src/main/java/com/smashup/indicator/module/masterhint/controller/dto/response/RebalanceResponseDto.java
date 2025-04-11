@@ -12,6 +12,7 @@ import lombok.NoArgsConstructor;
 public class RebalanceResponseDto {
     private String type;
     private Integer id;
+    private String name;
     private CountResponseDto pick;
     private CountResponseDto win;
     private Double winWhenPick;

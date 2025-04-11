@@ -6,7 +6,6 @@ import com.smashup.indicator.module.gamerhint.repository.MatrixRepository;
 import com.smashup.indicator.module.gamerhint.repository.WinMatrixRepository;
 import com.smashup.indicator.module.gamerhint.service.impl.GamerHintMatrixSubService;
 import com.smashup.indicator.module.version.PoolManager;
-import com.smashup.indicator.module.version.controller.dto.request.UpdatePatchVersionRequestDto;
 import com.smashup.indicator.module.version.controller.dto.request.UpdatePoolRequestDto;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -112,6 +111,7 @@ public class VersionService {
                 .mapPool(poolManager.getMapPool())
                 .playerNumPool(poolManager.getPlayerNumPool())
                 .patchVersion(poolManager.getPatchVersion())
+                .allCardPoolMap(poolManager.getAllCardPoolMap())
                 .build();
         return returnDto;
     }

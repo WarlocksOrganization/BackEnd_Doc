@@ -36,29 +36,5 @@ public class VersionController extends AbstractRestController {
         }
     }
 
-    // 풀 업데이트 => API 테스트 성공
-    @PostMapping("/pool")
-    public ResponseEntity<Map<String, Object>> updatePool(
-            @RequestBody UpdatePoolRequestDto dto
-    ) throws Exception {
-        try {
-            log.debug("updateCardPool: {}", dto);
-            UpdatePoolRequestDto result = versionService.updatePool(dto);
-            return handleSuccess(result);
-        } catch (Exception e) {
-            return handleError(e.getMessage());
-        }
-    }
-
-//    // 테스트용 배치카운트 변경 => API 테스트 성공 => 이제 무쓸모임. 배치카운트 올리고 싶으면 스케줄러 시간 조절해서 올리기
-//    @PostMapping("/batch")
-//    public ResponseEntity<Map<String, Object>> batchPlus() throws Exception {
-//        try {
-//            versionService.incrementBatchCount();
-//            return handleSuccess(versionService.getBatchCount());
-//        } catch (Exception e) {
-//            return handleError(e.getMessage());
-//        }
-//    }
 
 }
