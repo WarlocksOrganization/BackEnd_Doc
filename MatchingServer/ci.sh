@@ -1,4 +1,4 @@
 cd ..
-git pull
+git pull origin main
 cd ./MatchingServer
 ./build.sh
