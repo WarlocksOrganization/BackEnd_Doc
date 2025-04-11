@@ -62,6 +62,15 @@ namespace game_server {
                 {"roomId", -1}
             };
             try {
+                pqxx::result isJoined = txn.exec_params(
+                    "SELECT room_id FROM room_users WHERE user_id = $1 LIMIT 1"
+                    , hostId);
+                if (!isJoined.empty()) {
+                    txn.abort();
+                    dbPool_->return_connection(conn);
+                    return result;
+                }
+
                 // 유효한 방 ID 찾기
                 pqxx::result idResult = txn.exec(
                     "SELECT room_id FROM rooms WHERE status = 'TERMINATED' ORDER BY room_id LIMIT 1 FOR UPDATE");

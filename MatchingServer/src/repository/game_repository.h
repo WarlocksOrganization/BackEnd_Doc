@@ -13,8 +13,8 @@ namespace game_server {
     public:
         virtual ~GameRepository() = default;
 
-        virtual int createGame(const nlohmann::json& request) = 0;
-        virtual int endGame(int roomId) = 0;
+        virtual nlohmann::json createGame(const nlohmann::json& request) = 0;
+        virtual nlohmann::json endGame(int roomId) = 0;
 
         static std::unique_ptr<GameRepository> create(DbPool* dbPool);
     };

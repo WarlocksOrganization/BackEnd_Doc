@@ -6,6 +6,7 @@
 #include <iostream>
 #include <nlohmann/json.hpp>
 #include <spdlog/spdlog.h>
+#include <string>
 
 namespace game_server {
 
@@ -18,11 +19,13 @@ namespace game_server {
         controllers_(controllers),
         user_id_(0),
         server_(server),
-        last_activity_time_(std::chrono::steady_clock::now())
+        last_activity_time_(std::chrono::steady_clock::now()),
+        remote_ip_(socket_.remote_endpoint().address().to_string())
     {
         spdlog::info("새 세션이 생성되었습니다. 주소: {}:{}",
             socket_.remote_endpoint().address().to_string(),
             socket_.remote_endpoint().port());
+
     }
 
     Session::~Session() {
@@ -32,6 +35,9 @@ namespace game_server {
             }
             if (!token_.empty()) {
                 server_->removeSession(token_, user_id_);
+            }
+            if (!remote_ip_.empty()) {
+                server_->removeConnection(remote_ip_);
             }
         }
     }
@@ -44,6 +50,7 @@ namespace game_server {
 
     void Session::handlePing() {
         last_activity_time_ = std::chrono::steady_clock::now();
+        spdlog::debug("유저 ID : {}로 부터 핑을 받음", user_id_);
 
         json response = {
             {"action", "refreshSession"},
@@ -76,7 +83,7 @@ namespace game_server {
         auto self(shared_from_this());
         socket_.async_read_some(
             boost::asio::buffer(buffer_),
-            [this, self](boost::system::error_code ec, std::size_t length) {
+            [this, self](boost::system::error_code ec, std::size_t length) {                
                 if (!ec) {
                     try {
                         std::string data(buffer_.data(), length);
@@ -104,6 +111,15 @@ namespace game_server {
                             write_handshake_response(response.dump());
                         }
                         else {
+                            if (!server_->allowConnection(remote_ip_)) {
+                                json response = {
+                                    {"status", "error"},
+                                    {"message", "이미 접속 중인 IP입니다."}
+                                };
+                                write_handshake_response(response.dump());
+                                handle_error("다중 클라이언트 접속 감지 IP : " + remote_ip_);
+                            }
+
                             // 일반 클라이언트 세션 초기화
                             std::string serverVersion = server_->getServerVersion();
                             if (!handshake.contains("version") || serverVersion != handshake["version"].get<std::string>()) {
@@ -216,10 +232,10 @@ namespace game_server {
                 controller_type = "room";
             }
             else if (action == "gameStart" || action == "gameEnd") {
-                if (user_id_ == 0) {
+                if (user_id_ == 0 || !is_mirror_) {
                     json error_response = {
                         {"status", "error"},
-                        {"message", "인증이 필요합니다"}
+                        {"message", "권한이 없습니다."}
                     };
                     write_response(error_response.dump());
                     return;
@@ -311,12 +327,28 @@ namespace game_server {
                             return;
                         }
                         spdlog::debug("미러 서버 찾음, 메시지 브로드캐스팅");
-                        write_broadcast(broad_response.dump(), mirror);
+                        status_ = std::to_string(broad_response["roomId"].get<int>()) + "번 방";
+                        write_mirror(broad_response.dump(), mirror);
                     }
                     catch (const std::exception& e) {
                         spdlog::error("방 생성 응답 처리 중 오류: {}", e.what());
                         // 예외가 발생해도 원래 응답은 전송
                     }
+                }
+                else if (action == "joinRoom" && response["status"] == "success") {
+                    status_ = std::to_string(response["roomId"].get<int>()) + "번 방";
+                }
+                else if (action == "exitRoom" && response["status"] == "success") {
+                    status_ = "대기중";
+                }
+                else if (action == "gameStart" && response["status"] == "success") {
+                    server_->setSessionStatus(response, true);
+                }
+                else if (action == "gameEnd" && response["status"] == "success") {
+                    server_->setSessionStatus(response, false);
+                }
+                else if (action == "updateNickName" && response["status"] == "success") {
+                    nick_name_ = response["nickName"];
                 }
 
                 spdlog::debug("클라이언트에 응답 전송 중");
@@ -344,7 +376,7 @@ namespace game_server {
         }
     }
 
-    void Session::write_broadcast(const std::string& response, std::shared_ptr<Session> mirror) {
+    void Session::write_mirror(const std::string& response, std::shared_ptr<Session> mirror) {
         boost::asio::async_write(
             mirror->socket_,
             boost::asio::buffer(response),
@@ -355,6 +387,18 @@ namespace game_server {
                 }
                 else {
                     mirror->handle_error("응답 쓰기 오류: " + ec.message());
+                }
+            });
+    }
+
+    void Session::write_broadcast(const std::string& response) {
+        auto self = shared_from_this();
+        boost::asio::async_write(
+            socket_,
+            boost::asio::buffer(response),
+            [self](boost::system::error_code ec, std::size_t /*length*/) {
+                if (ec) {
+                    self->handle_error("동접자 수 받기 에러: " + ec.message());
                 }
             });
     }
@@ -403,7 +447,6 @@ namespace game_server {
             spdlog::error("방 퇴장 중 에러가 발생하였습니다. : {}", e.what());
         }
 
-        // ?뚯폆 由ъ냼???뺣━
         if (socket_.is_open()) {
             boost::system::error_code ec;
             socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_both, ec);
@@ -425,6 +468,18 @@ namespace game_server {
         return user_id_;
     }
 
+    std::string Session::getUserNickName() {
+        return nick_name_;
+    }
+
+    void Session::setStatus(const std::string& status) {
+        status_ = status;
+    }
+
+    std::string Session::getStatus() {
+        return status_;
+    }
+
     void Session::setToken(const std::string& token) {
         token_ = token;
     }
@@ -433,6 +488,7 @@ namespace game_server {
         if (response.contains("userId")) user_id_ = response["userId"];
         if (response.contains("userName")) user_name_ = response["userName"];
         if (response.contains("nickName")) nick_name_ = response["nickName"];
+        status_ = "대기중";
         spdlog::info("{}유저가 로그인 하였습니다. (ID: {}) 닉네임 : {}", user_name_, user_id_, nick_name_);
     }
 
