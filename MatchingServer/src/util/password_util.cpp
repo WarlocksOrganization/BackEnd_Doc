@@ -1,6 +1,6 @@
-// util/password_util.cpp
-// ºñ¹Ğ¹øÈ£ À¯Æ¿¸®Æ¼ ±¸Çö ÆÄÀÏ
-// ºñ¹Ğ¹øÈ£ ÇØ½Ì ¹× °ËÁõ ±â´É Á¦°ø
+ï»¿// util/password_util.cpp
+// ë¹„ë°€ë²ˆí˜¸ ìœ í‹¸ë¦¬í‹° êµ¬í˜„ íŒŒì¼
+// ë¹„ë°€ë²ˆí˜¸ í•´ì‹± ë° ê²€ì¦ ê¸°ëŠ¥ ì œê³µ
 #include "password_util.h"
 #include <openssl/sha.h>
 #include <iomanip>
@@ -10,12 +10,12 @@
 namespace game_server {
 
     std::string PasswordUtil::hashPassword(const std::string& password) {
-        // º¸¾È Âü°í: ½ÇÁ¦ Á¦Ç°¿¡¼­´Â ´õ ¾ÈÀüÇÑ ÇØ½Ì ¾Ë°í¸®Áò »ç¿ë ÇÊ¿ä
+        // ë³´ì•ˆ ì°¸ê³ : ì‹¤ì œ ì œí’ˆì—ì„œëŠ” ë” ì•ˆì „í•œ í•´ì‹± ì•Œê³ ë¦¬ì¦˜ ì‚¬ìš© í•„ìš”
         unsigned char hash[SHA256_DIGEST_LENGTH];
         SHA256(reinterpret_cast<const unsigned char*>(password.c_str()),
             password.length(), hash);
 
-        // ÇØ½Ã¸¦ 16Áø¼ö ¹®ÀÚ¿­·Î º¯È¯
+        // í•´ì‹œë¥¼ 16ì§„ìˆ˜ ë¬¸ìì—´ë¡œ ë³€í™˜
         std::stringstream ss;
         for (int i = 0; i < SHA256_DIGEST_LENGTH; i++) {
             ss << std::hex << std::setw(2) << std::setfill('0')
@@ -26,7 +26,7 @@ namespace game_server {
     }
 
     bool PasswordUtil::verifyPassword(const std::string& password, const std::string& hashedPassword) {
-        // ÀÔ·ÂµÈ ºñ¹Ğ¹øÈ£ÀÇ ÇØ½Ã¿Í ÀúÀåµÈ ÇØ½Ã ºñ±³
+        // ì…ë ¥ëœ ë¹„ë°€ë²ˆí˜¸ì˜ í•´ì‹œì™€ ì €ì¥ëœ í•´ì‹œ ë¹„êµ
         std::string computedHash = hashPassword(password);
         return computedHash == hashedPassword;
     }

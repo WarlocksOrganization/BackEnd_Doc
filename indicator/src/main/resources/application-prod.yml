@@ -1,74 +1,29 @@
 # application-prod.yml (서버 운영 설정)
 # 운영 서버 환경 설정
+server:
+  port: 8085
+
 spring:
   data:
-    # Redis 설정
-    redis:
-      host: ${PROD_REDIS_HOST}
-      port: ${PROD_REDIS_PORT:6379}
-      password: ${PROD_REDIS_PASSWORD}
-      timeout: 3000
-#      lettuce:
-#        pool:
-#          max-active: 50
-#          max-idle: 20
-#          min-idle: 10
-#          max-wait: 3000
     # MongoDB 설정
     mongodb:
-      database: ${PROD_MONGODB_DATABASE:indicator_db}
+      database: ${PROD_MONGODB_DATABASE}
       uri: mongodb://${PROD_MONGODB_USERNAME}:${PROD_MONGODB_PASSWORD}@${PROD_MONGODB_HOST}:${PROD_MONGODB_PORT:27017}/${PROD_MONGODB_DATABASE}?authSource=admin
-#      connection-pool-size: 50
-#      max-connection-idle-time: 60000
-#      max-connection-life-time: 120000
-  # MySQL 설정
-  datasource:
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://${PROD_DB_HOST}:${PROD_DB_PORT:3306}/${PROD_DB_NAME}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&useUniCode=yes&characterEncoding=UTF-8&rewriteBatchedStatements=true
-    username: ${PROD_DB_USERNAME}
-    password: ${PROD_DB_PASSWORD}
-#    hikari:
-#      maximum-pool-size: 50
-#      minimum-idle: 20
-#      connection-timeout: 30000
-#      idle-timeout: 600000
-#      max-lifetime: 1800000
 
-  # JPA 설정 추가
-  jpa:
-    database-platform: org.hibernate.dialect.MySQLDialect
-    show-sql: false  # 운영 환경에서는 비활성화
-    hibernate:
-      ddl-auto: none  # 운영 환경에서는 반드시 none으로 설정
-    properties:
-      hibernate:
-        format_sql: false
-        use_sql_comments: false
-#        jdbc.batch_size: 50
-#        order_inserts: true
-#        order_updates: true
-    open-in-view: false  # OSIV 비활성화
-   
-# 운영 환경 로깅 설정
-logging:
-  config: classpath:log4j2-prod.xml
-  level:
-    root: WARN
-    org.springframework.web: INFO
-    org.springframework.security: INFO
-    com.smashup.indicator: INFO  # 패키지명 변경
-    com.zaxxer.hikari.pool: WARN
-    # JPA 로깅 설정
-    org.hibernate.SQL: WARN
-    org.hibernate.type.descriptor.sql: WARN
-    org.springframework.orm.jpa: WARN
-    org.springframework.transaction: WARN
-  pattern:
-    console: '%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n'
-    file: '%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n'
-
-#app:
-#  domain: ${MY_DOMAIN}
-#  frontend-url: ${PROD_FRONTEND_URL}
-#  invitation:
-#    expiry-hours: 48  # 초대장 유효 시간 (시간)
+## 운영 환경 로깅 설정
+#logging:
+#  config: classpath:log4j2-prod.xml
+#  level:
+#    root: WARN
+#    org.springframework.web: INFO
+#    org.springframework.security: INFO
+#    com.smashup.indicator: INFO  # 패키지명 변경
+#    com.zaxxer.hikari.pool: WARN
+#    # JPA 로깅 설정
+#    org.hibernate.SQL: WARN
+#    org.hibernate.type.descriptor.sql: WARN
+#    org.springframework.orm.jpa: WARN
+#    org.springframework.transaction: WARN
+#  pattern:
+#    console: '%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n'
+#    file: '%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n'

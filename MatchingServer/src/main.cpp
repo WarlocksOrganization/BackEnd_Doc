@@ -1,19 +1,21 @@
-// main.cpp
-// ÇÁ·Î±×·¥ ÁøÀÔÁ¡ ¹× ¼­¹ö ½ÇÇà ÆÄÀÏ
+ï»¿// main.cpp
+// í”„ë¡œê·¸ë¨ ì§„ì…ì  ë° ì„œë²„ ì‹¤í–‰ íŒŒì¼
 #include "core/server.h"
 #include <boost/asio.hpp>
 #include <iostream>
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <csignal>
+#include <cstdlib>
+#include <string>
 
-// ½Ã±×³Î ÇÚµé·¯¿ë Àü¿ª ¼­¹ö º¯¼ö
+// ì‹œê·¸ë„ í•¸ë“¤ëŸ¬ìš© ì „ì—­ ì„œë²„ ë³€ìˆ˜
 std::unique_ptr<game_server::Server> server;
 
-// ½Ã±×³Î ÇÚµé·¯ ÇÔ¼ö
+// ì‹œê·¸ë„ í•¸ë“¤ëŸ¬ í•¨ìˆ˜
 void signal_handler(int signal)
 {
-    spdlog::info("Received signal {}, shutting down...", signal);
+    spdlog::info("ì‹œê·¸ë„ ë°›ìŒ {}, ì„œë²„ ì¢…ë£Œ...", signal);
     if (server) {
         server->stop();
     }
@@ -24,56 +26,45 @@ void signal_handler(int signal)
 int main(int argc, char* argv[])
 {
     try {
-        // ·Î°Å ÃÊ±âÈ­
+        // ë¡œê±° ì´ˆê¸°í™”
         auto console = spdlog::stdout_color_mt("console");
         spdlog::set_default_logger(console);
         spdlog::set_level(spdlog::level::info);
-        spdlog::info("°ÔÀÓ ¼­¹ö ½ÃÀÛ");
 
-        // ½Ã±×³Î ÇÚµé·¯ µî·Ï
+        // ì‹œê·¸ë„ í•¸ë“¤ëŸ¬ ë“±ë¡
         std::signal(SIGINT, signal_handler);
         std::signal(SIGTERM, signal_handler);
 
-        // ±âº» ¼³Á¤
-        short port = 8080;
+        // ê¸°ë³¸ ì„¤ì •
+        short port = atoi(std::getenv("SERVER_PORT"));
+        std::string version = std::getenv("SERVER_VERSION");
+        std::string db_host = std::getenv("DB_HOST");
+        std::string db_port = std::getenv("DB_PORT");
+        std::string db_user = std::getenv("DB_USER");
+        std::string db_password = std::getenv("DB_PASSWORD");
+        std::string db_name = std::getenv("DB_NAME");
         std::string db_connection_string =
-            "dbname=gamedata user=admin password=admin host=localhost port=5432 client_encoding=UTF8";
+            "dbname=" + db_name + " user=" + db_user + " password=" + db_password + " host=" + db_host +  " port=" + db_port +" client_encoding=UTF8";
 
-        // ¸í·ÉÁÙ ÀÎ¼ö Ã³¸®
-        for (int i = 1; i < argc; ++i) {
-            std::string arg = argv[i];
-            if (arg == "--port" && i + 1 < argc) {
-                port = std::stoi(argv[++i]);
-            }
-            else if (arg == "--db" && i + 1 < argc) {
-                db_connection_string = argv[++i];
-            }
-            else if (arg == "--help") {
-                std::cout << "»ç¿ë¹ı: " << argv[0] << " [¿É¼Ç]\n"
-                    << "¿É¼Ç:\n"
-                    << "  --port PORT       ¼­¹ö Æ÷Æ® (±âº»°ª: 8080)\n"
-                    << "  --db CONNSTRING   µ¥ÀÌÅÍº£ÀÌ½º ¿¬°á ¹®ÀÚ¿­\n"
-                    << "  --help            µµ¿ò¸» Ç¥½Ã\n";
-                return 0;
-            }
-        }
+        spdlog::info("í™˜ê²½ ë³€ìˆ˜ ë¶ˆëŸ¬ì˜¤ê¸° ì™„ë£Œ! ë§¤ì¹­ ì„œë²„ ë²„ì „ : {}, í¬íŠ¸ ë²ˆí˜¸ : {}", version, port);
 
-        // IO ÄÁÅØ½ºÆ® ¹× ¼­¹ö »ı¼º
+        // IO ì»¨í…ìŠ¤íŠ¸ ë° ì„œë²„ ìƒì„±
         boost::asio::io_context io_context;
         server = std::make_unique<game_server::Server>(
-            io_context, port, db_connection_string);
+            io_context, port, db_connection_string, version);
 
-        // ¼­¹ö ½ÇÇà
+        // ì„œë²„ ì‹¤í–‰
         server->run();
 
-        // IO ÄÁÅØ½ºÆ® ½ÇÇà (ÀÌº¥Æ® ·çÇÁ)
-        spdlog::info("Server running on port {}", port);
+        // IO ì»¨í…ìŠ¤íŠ¸ ì‹¤í–‰ (ì´ë²¤íŠ¸ ë£¨í”„)
+        spdlog::info("ì„œë²„ ì‹œì‘, í¬íŠ¸ : {}", port);
         io_context.run();
     }
     catch (std::exception& e) {
-        spdlog::error("Exception: {}", e.what());
+        spdlog::error("ì„œë²„ ì„¤ì • ì¤‘ ì˜ˆì™¸ ë°œìƒ: {}", e.what());
         return 1;
     }
 
     return 0;
 }
+

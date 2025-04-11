@@ -264,6 +264,10 @@ int main() {
         }
 
         // 핸드셰이크
+        //json handshake_request = {
+        //    {"connectionType", "mirror"},
+        //    {"port", 40000}
+        //};
         json handshake_request = {
             {"connectionType", "client"}
         };

@@ -1,4 +1,4 @@
-// core/server.h
+Ôªø// core/server.h
 #pragma once
 #include <boost/asio.hpp>
 #include <memory>
@@ -20,21 +20,27 @@ namespace game_server {
     public:
         Server(boost::asio::io_context& io_context,
             short port,
-            const std::string& db_connection_string);
+            const std::string& db_connection_string,
+            const std::string& version);
         ~Server();
 
         void run();
         void stop();
 
-        // ººº« ∞¸∏Æ ∏ﬁº≠µÂ
+        // ÏÑ∏ÏÖò Í¥ÄÎ¶¨ Î©îÏÑúÎìú
         std::string registerSession(std::shared_ptr<Session> session);
+        void registerMirrorSession(std::shared_ptr<Session> session, int port);
         void removeSession(const std::string& token, int userId);
+        void removeMirrorSession(int port);
         std::shared_ptr<Session> getSession(const std::string& token);
+        std::shared_ptr<Session> getMirrorSession(int port);
+        int getCCU();
+        int getRoomCapacity();
         std::string generateSessionToken();
         void setSessionTimeout(std::chrono::seconds timeout);
         void startSessionTimeoutCheck();
-        std::unordered_map<int, std::shared_ptr<Session>> mirrors_;
         bool checkAlreadyLogin(int userId);
+        std::string getServerVersion();
     private:
         void do_accept();
         void init_controllers();
@@ -46,15 +52,20 @@ namespace game_server {
         std::map<std::string, std::shared_ptr<Controller>> controllers_;
         bool running_;
 
-        // ººº« ∞¸∏Æ µ•¿Ã≈Õ
+        // ÏÑ∏ÏÖò Í¥ÄÎ¶¨ Îç∞Ïù¥ÌÑ∞
+        std::unordered_map<int, std::weak_ptr<Session>> mirrors_;
+        std::mutex mirrors_mutex_;
         std::unordered_map<std::string, std::weak_ptr<Session>> sessions_;
         std::mutex sessions_mutex_;
         std::unordered_map<int, std::string> tokens_;
         std::mutex tokens_mutex_;
         boost::uuids::random_generator uuid_generator_;
-        std::chrono::seconds session_timeout_{ 12 }; // ±‚∫ª 12√ 
+        std::chrono::seconds session_timeout_{ 12 }; // Í∏∞Î≥∏ 12Ï¥à
         boost::asio::steady_timer session_check_timer_;
         bool timeout_check_running_{ false };
+        
+        // Î≤ÑÏ†Ñ Í¥ÄÎ¶¨ Îç∞Ïù¥ÌÑ∞
+        std::string version_;
     };
 
 } // namespace game_server

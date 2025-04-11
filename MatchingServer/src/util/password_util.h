@@ -1,4 +1,4 @@
-// util/password_util.h
+﻿// util/password_util.h
 #pragma once
 #include <string>
 

@@ -1,4 +1,4 @@
-// controller/auth_controller.cpp
+﻿// controller/auth_controller.cpp
 // 인증 컨트롤러 구현 파일
 // 사용자 등록 및 로그인 요청을 처리하는 컨트롤러
 #include "auth_controller.h"
@@ -32,14 +32,14 @@ namespace game_server {
         else {
             json error_response = {
                 {"status", "error"},
-                {"message", "Unknown auth action"}
+                {"message", "알 수 없는 인증 액션"}
             };
             return error_response;
         }
     }
 
     nlohmann::json AuthController::handleRegister(json& request) {
-        // 서비스 계층 호출하여 사용자 등록 수행
+        // 서비스 계층 호출하여 사용자 등록 실행
         json response = authService_->registerUser(request);
         return response;
     }

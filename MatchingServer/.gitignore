@@ -94,3 +94,6 @@ desktop.ini
 *~
 *.bak
 *.swp
+
+# DB 관련
+postgres-data/

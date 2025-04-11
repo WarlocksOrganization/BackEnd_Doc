@@ -1,4 +1,4 @@
-// core/session.h
+﻿// core/session.h
 #pragma once
 #include "../controller/controller.h"
 #include <boost/asio.hpp>
@@ -29,7 +29,6 @@ namespace game_server {
         bool isActive(std::chrono::seconds timeout) const;
         void handle_error(const std::string& error_message);
         void setToken(const std::string& token);
-        bool is_mirror_ = false;
         int getUserId();
 
     private:
@@ -39,7 +38,7 @@ namespace game_server {
         void init_current_user(const json& response);
         void read_handshake();
         void write_handshake_response(const std::string& response);
-        void write_broadcast(const std::string& response, std::shared_ptr<Session>& mirror);
+        void write_broadcast(const std::string& response, std::shared_ptr<Session> mirror);
 
         boost::asio::ip::tcp::socket socket_;
         std::map<std::string, std::shared_ptr<Controller>>& controllers_;
@@ -51,6 +50,8 @@ namespace game_server {
         Server* server_;
         std::chrono::steady_clock::time_point last_activity_time_;
         std::string token_;
+        bool is_mirror_ = false;
+        int mirror_port_;
     };
 
 } // namespace game_server

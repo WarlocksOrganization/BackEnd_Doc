@@ -6,4 +6,4 @@ server:
   port: 8001
 feign:
   indicator-service:
-     url: indicator-service-app.indicator.svc.cluster.local:8085
+     url: smashup-indicator-service.indicator.svc.cluster.local:8085

@@ -1,6 +1,6 @@
-// controller/room_controller.cpp
-// ¹æ ÄÁÆ®·Ñ·¯ ±¸Çö ÆÄÀÏ
-// ¹æ »ı¼º, Âü°¡, ¸ñ·Ï Á¶È¸ µîÀÇ ¿äÃ»À» Ã³¸®ÇÏ´Â ÄÁÆ®·Ñ·¯
+ï»¿// controller/game_controller.cpp
+// ê²Œì„ ì»¨íŠ¸ë¡¤ëŸ¬ êµ¬í˜„ íŒŒì¼
+// ê²Œì„ ì‹œì‘ ë° ì¢…ë£Œ ìš”ì²­ì„ ì²˜ë¦¬í•˜ëŠ” ì»¨íŠ¸ë¡¤ëŸ¬
 #include "game_controller.h"
 #include <spdlog/spdlog.h>
 #include <nlohmann/json.hpp>
@@ -14,7 +14,7 @@ namespace game_server {
     }
 
     nlohmann::json GameController::handleRequest(json& request) {
-        // ¿äÃ»ÀÇ action ÇÊµå¿¡ µû¶ó ÀûÀıÇÑ ÇÚµé·¯ È£Ãâ
+        // ìš”ì²­ì˜ action í•„ë“œì— ë”°ë¼ ì ì ˆí•œ í•¸ë“¤ëŸ¬ í˜¸ì¶œ
         std::string action = request["action"];
 
         if (action == "gameStart") {
@@ -26,7 +26,7 @@ namespace game_server {
         else {
             json error_response = {
                 {"status", "error"},
-                {"message", "Unknown room action"}
+                {"message", "ì•Œ ìˆ˜ ì—†ëŠ” ê²Œì„ ì•¡ì…˜"}
             };
             return error_response;
         }
