@@ -15,8 +15,13 @@
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>
+#include <nlohmann/json.hpp>
+#include <vector>
+#include <string>
 
 namespace game_server {
+
+    using json = nlohmann::json;
 
     Server::Server(boost::asio::io_context& io_context,
         short port,
@@ -27,6 +32,7 @@ namespace game_server {
         running_(false),
         uuid_generator_(),
         session_check_timer_(io_context),
+        broadcast_timer_(io_context),
         version_(version)
     {
         // DB풀 생성
@@ -42,6 +48,27 @@ namespace game_server {
     {
         if (running_) {
             stop();
+        }
+    }
+
+    void Server::setSessionStatus(const json& users, bool flag) {
+        std::vector<std::string> tokens;
+        {
+            std::lock_guard<std::mutex> tokens_lock(tokens_mutex_);
+            for (const auto& user : users["users"]) {
+                int u = user.get<int>();
+                if (!tokens_.count(u)) continue;
+                tokens.push_back(tokens_[u]);
+            }
+        }
+        {
+            std::lock_guard<std::mutex> sesions_lock(sessions_mutex_);
+            for (const std::string& token : tokens) {
+                if (!sessions_.count(token)) continue;
+                auto session = sessions_[token].lock();
+                if (flag) session->setStatus("게임중");
+                else session->setStatus("대기중");
+            }
         }
     }
 
@@ -109,6 +136,27 @@ namespace game_server {
         session_check_timer_.async_wait([this](const boost::system::error_code& ec) {
             if (!ec) {
                 check_inactive_sessions();
+            }
+            });
+    }
+
+
+    void Server::startBroadcastTimer() {
+        if (broadcast_running_) return;
+        broadcast_running_ = true;
+        scheduleBroadcast();
+    }
+
+    void Server::scheduleBroadcast() {
+        if (!running_ || !broadcast_running_) return;
+        broadcast_timer_.expires_after(broadcast_interval_);
+        broadcast_timer_.async_wait([this](const boost::system::error_code & ec) {
+            if (!ec) {
+                broadcastCCU();
+                scheduleBroadcast();
+            }
+            else {
+                spdlog::error("동시 접속자 브로드캐스트 타이머 오류: {}", ec.message());
             }
             });
     }
@@ -230,6 +278,69 @@ namespace game_server {
         return mirrors_.size();
     }
 
+    std::vector<std::shared_ptr<Session>> Server::getWaitingSessions() {
+        std::vector<std::shared_ptr<Session>> waitingSessions;
+        std::lock_guard<std::mutex> lock(sessions_mutex_);
+        for (const auto& obj : sessions_) {
+            auto session = obj.second.lock();
+            if (!session || !session->getUserId()) continue;
+            if (session->getStatus() == "대기중") {
+                waitingSessions.push_back(session);
+            }
+        }
+        return waitingSessions;
+    }
+
+    void Server::broadcastCCU() {
+        json broadcast = {
+            {"action", "CCUList"},
+            {"users", json::array()}
+        };
+        std::vector<std::shared_ptr<Session>> waitingSessions;
+        {
+            std::lock_guard<std::mutex> lock(sessions_mutex_);
+            for (const auto& obj : sessions_) {
+                auto session = obj.second.lock();
+                if (!session || !session->getUserId()) continue;
+
+                json userInfo;
+                userInfo["nickName"] = session->getUserNickName();
+                userInfo["status"] = session->getStatus();
+                broadcast["users"].push_back(userInfo);
+
+                if (session->getStatus() == "대기중") {
+                    waitingSessions.push_back(session);
+                }
+            }
+        }
+        broadcastActiveUser(broadcast.dump(), waitingSessions);
+    }
+
+    void Server::broadcastLogin(const std::string& nickName) {
+        json broadcast = {
+            {"action", "newLogin"},
+            {"nickName", nickName}
+        };
+        auto waitingSessions = getWaitingSessions();
+        broadcastActiveUser(broadcast.dump(), waitingSessions);
+    }
+
+    void Server::broadcastChat(const std::string& nickName, const std::string& message) {
+        json broadcast = {
+            {"action", "chat"},
+            {"nickName", nickName},
+            {"message", message}
+        };
+        auto waitingSessions = getWaitingSessions();
+        broadcastActiveUser(broadcast.dump(), waitingSessions);
+    }
+
+    void Server::broadcastActiveUser(const std::string& message, const std::vector<std::shared_ptr<Session>>& sessions) {
+        for (const auto& session : sessions) {
+            session->write_broadcast(message);
+        }
+    }
+
     void Server::init_controllers() {
         // 레포지토리 생성
         auto userRepo = UserRepository::create(db_pool_.get());
@@ -259,6 +370,7 @@ namespace game_server {
         running_ = true;
         do_accept();
         startSessionTimeoutCheck();
+        startBroadcastTimer();
         spdlog::info("서버 실행 완료, 클라이언트 연결 요청을 기다리는 중...");
     }
 
@@ -267,9 +379,11 @@ namespace game_server {
 
         running_ = false;
         timeout_check_running_ = false;
+        broadcast_running_ = false;
 
         // 타이머 취소 및 대기
         session_check_timer_.cancel();
+        broadcast_timer_.cancel();
 
         // 모든 세션에 종료 알림
         {
@@ -299,6 +413,20 @@ namespace game_server {
         }
 
         spdlog::info("서버 중단");
+    }
+
+    bool Server::allowConnection(const std::string& ipAddress) {
+        std::lock_guard<std::mutex> lock(connected_ips_mutex_);
+        if (connected_ips_.count(ipAddress)) {
+            return false;
+        }
+        connected_ips_.insert(ipAddress);
+        return true;
+    }
+
+    void Server::removeConnection(const std::string& ipAddress) {
+        std::lock_guard<std::mutex> lock(connected_ips_mutex_);
+        connected_ips_.erase(ipAddress);
     }
 
     void Server::do_accept()

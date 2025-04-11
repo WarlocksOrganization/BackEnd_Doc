@@ -27,9 +27,9 @@ namespace game_server {
                 }
 
                 // 게임 ID 얻기 실패 시 -1
-                int gameId = gameRepo_->createGame(request);
+                json result = gameRepo_->createGame(request);
 
-                if (gameId == -1) {
+                if (result["gameId"] == -1) {
                     response["status"] = "error";
                     response["message"] = "새 게임 기록 추가에 실패했습니다";
                     return response;
@@ -39,10 +39,11 @@ namespace game_server {
                 response["action"] = "gameStart";
                 response["status"] = "success";
                 response["message"] = "게임이 성공적으로 생성되었습니다";
-                response["gameId"] = gameId;
+                response["gameId"] = result["gameId"];
+                response["users"] = result["users"];
 
-                spdlog::debug("방 {}가 새 게임 ID: {}를 생성했습니다",
-                    request["roomId"].get<int>(), gameId);
+                spdlog::info("방 {}가 새 게임 ID: {}를 생성했습니다",
+                    request["roomId"].get<int>(), response["gameId"].get<int>());
 
                 return response;
             }
@@ -64,8 +65,8 @@ namespace game_server {
                     return response;
                 }
 
-                int roomId = gameRepo_->endGame(request["gameId"]);
-                if (roomId == -1) {
+                json result = gameRepo_->endGame(request["gameId"]);
+                if (result["gameId"] == -1) {
                     response["status"] = "error";
                     response["message"] = "게임 종료 업데이트에 실패했습니다";
                     return response;
@@ -74,10 +75,12 @@ namespace game_server {
                 // 성공 응답 생성
                 response["action"] = "gameEnd";
                 response["status"] = "success";
+                response["roomId"] = result["roomId"];
                 response["message"] = "게임이 성공적으로 종료되었습니다";
+                response["users"] = result["users"];
 
-                spdlog::debug("방 {}가 게임 ID: {}를 종료했습니다",
-                    roomId, request["gameId"].get<int>());
+                spdlog::info("방 {}가 게임 ID: {}를 종료했습니다",
+                    response["roomId"].get<int>(), request["gameId"].get<int>());
                 return response;
             }
             catch (const std::exception& e) {

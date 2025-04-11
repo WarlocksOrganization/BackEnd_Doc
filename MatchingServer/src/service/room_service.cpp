@@ -23,8 +23,11 @@ namespace game_server {
             }
 
             // 영어, 한글, 숫자만 포함하는지 확인
-            for (unsigned char c : name) {
+            int len = name.size();
+            for (int i = 0; i < len; ++i) {
                 // ASCII 영어와 숫자 확인
+                const char& c = name[i];
+                if (i == len - 1 && c == '$') continue;
                 if ((c >= 'A' && c <= 'Z') ||
                     (c >= 'a' && c <= 'z') ||
                     (c >= '0' && c <= '9') ||
@@ -135,6 +138,7 @@ namespace game_server {
 
                 // 성공 응답 생성
                 response["action"] = "joinRoom";
+                response["roomId"] = roomId;
                 response["status"] = "success";
                 response["message"] = "방에 성공적으로 참가했습니다";
 
@@ -203,7 +207,7 @@ namespace game_server {
                     response["rooms"].push_back(room);
                 }
 
-                spdlog::info("{}개의 열린 방을 조회했습니다", response["rooms"].size());
+                spdlog::debug("{}개의 열린 방을 조회했습니다", response["rooms"].size());
             }
             catch (const std::exception& e) {
                 response["status"] = "error";

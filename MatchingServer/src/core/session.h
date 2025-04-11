@@ -21,15 +21,17 @@ namespace game_server {
         ~Session();
 
         void start();
-        boost::asio::ip::tcp::socket& get_socket();
         const std::string& getToken() const;
         void initialize();
         void handlePing();
-        std::chrono::steady_clock::time_point getLastActivityTime() const;
         bool isActive(std::chrono::seconds timeout) const;
         void handle_error(const std::string& error_message);
         void setToken(const std::string& token);
         int getUserId();
+        std::string getUserNickName();
+        void setStatus(const std:: string& status);
+        std::string getStatus();
+        void write_broadcast(const std::string& response);
 
     private:
         void read_message();
@@ -38,7 +40,7 @@ namespace game_server {
         void init_current_user(const json& response);
         void read_handshake();
         void write_handshake_response(const std::string& response);
-        void write_broadcast(const std::string& response, std::shared_ptr<Session> mirror);
+        void write_mirror(const std::string& response, std::shared_ptr<Session> mirror);
 
         boost::asio::ip::tcp::socket socket_;
         std::map<std::string, std::shared_ptr<Controller>>& controllers_;
@@ -47,11 +49,13 @@ namespace game_server {
         int user_id_;
         std::string user_name_;
         std::string nick_name_;
+        std::string status_;
         Server* server_;
         std::chrono::steady_clock::time_point last_activity_time_;
         std::string token_;
         bool is_mirror_ = false;
         int mirror_port_;
+        std::string remote_ip_;
     };
 
 } // namespace game_server
