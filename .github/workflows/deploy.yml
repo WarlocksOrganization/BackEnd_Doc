@@ -17,5 +17,5 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             cd ~/BackEnd_Doc/MatchingServer
-            chmod +x ci.sh
+            sudo chmod +x ci.sh
             ./ci.sh
