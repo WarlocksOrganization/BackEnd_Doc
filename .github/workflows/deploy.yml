@@ -16,6 +16,6 @@ jobs:
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            cd ~/smashup-server-test/MatchingServer
+            cd ~/BackEnd_Doc/MatchingServer
             chmod +x ci.sh
             ./ci.sh

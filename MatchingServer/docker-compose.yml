@@ -26,9 +26,9 @@ services:
     expose:
       - "5432"
     environment:
-      - POSTGRES_USER=admin
-      - POSTGRES_PASSWORD=admin
-      - POSTGRES_DB=gamedata
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
     volumes:
       - ./db-init.sql:/docker-entrypoint-initdb.d/db-init.sql # For initialization scripts
       - ./postgres-data:/var/lib/postgresql/data # Bind mount for persistent data
