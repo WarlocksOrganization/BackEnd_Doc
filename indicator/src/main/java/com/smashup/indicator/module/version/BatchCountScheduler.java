@@ -19,14 +19,17 @@ import java.util.List;
 
 public class BatchCountScheduler {
     private final GamerHintMatrixSubService gamerHintMatrixSubService;
+    private final GamerHintMatrixService gamerHintMatrixService;
     private final VersionService versionService;
     private final MatrixRepository matrixRepository;
     private final WinMatrixRepository winMatrixRepository;
+    private final ReadyMadeManager readyMadeManager;
+
 
 
 
     @Scheduled(fixedRate = 1000*60*60*1) // 1시간마다 실행
-//    @Scheduled(fixedRate = 1000*60*2) // 2분마다 실행 테스트용
+//    @Scheduled(fixedRate = 1000*60*1) // 1분마다 실행 테스트용
     public synchronized void incrementBatchCount() {
 //        System.out.println("⏰ 스케줄러 진입");
         try {
@@ -46,6 +49,8 @@ public class BatchCountScheduler {
                 String docClass = doc.getId().split("/")[3];
                 String id = String.join("/", versionService.getCurrentPatchVersion(),versionService.getBatchCount()+"",doc.getType(), docClass );
                 doc.setId(id);
+                // 이월된 batchCount 세팅. batchCount가 올라갔을때 그 batchCount 사용.
+                doc.setBatchCount(versionService.getBatchCount());
                 // version 처음부터 시작하니까 교체. 1L => 0L => null
                 doc.setVersion(null);
                 // 저장.
@@ -62,6 +67,10 @@ public class BatchCountScheduler {
                 // 저장.
                 winMatrixRepository.save(winDoc);
             }
+
+            // pick 과 win 다 이월시킴! 이 타이밍에 getIndicator가 호출됨.
+            List<MatrixDocument> readyMade = gamerHintMatrixService.getIndicator();
+            readyMadeManager.updateGetIndicator(readyMade);
 
 
         } catch (Exception e) {

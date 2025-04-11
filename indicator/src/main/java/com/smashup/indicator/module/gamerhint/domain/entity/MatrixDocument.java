@@ -19,7 +19,8 @@ import java.util.Map;
 @Document(collection = "matrices")
 public class MatrixDocument {
     @Id
-    private String id; // String으로 동적 생성 // patch+batch+매트릭스 유형
+    private String id; // String으로 동적 생성 // patch+batch+매트릭스 유형+classCode
+    private Integer batchCount; //
     private String type; // C | T
     private List<Integer> cardPool; // 편의성을 위해 중복 저장.
     private Map<String, List<List<Integer>> > matrixMap; // Map<deckId, List<count>>
