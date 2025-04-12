@@ -69,7 +69,8 @@ public class BatchCountScheduler {
             }
 
             // pick 과 win 다 이월시킴! 이 타이밍에 getIndicator가 호출됨.
-            List<MatrixDocument> readyMade = gamerHintMatrixService.getIndicator();
+//            List<MatrixDocument> readyMade = gamerHintMatrixService.getIndicator();
+            List<MatrixDocument> readyMade = gamerHintMatrixService.getIndicatorForShow();
             readyMadeManager.updateGetIndicator(readyMade);
 
 

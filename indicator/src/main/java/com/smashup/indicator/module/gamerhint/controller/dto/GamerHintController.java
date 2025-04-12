@@ -47,39 +47,50 @@ public class GamerHintController extends AbstractRestController {
         }
     }
 
-    // 데이터 수집 => API 테스트 성공
+    // 행렬 요청 시연용(coldStart X) => API 테스트 성공
     @GetMapping("/hints")
-    public ResponseEntity<Map<String, Object>> getIndicator() throws Exception {
+    public ResponseEntity<Map<String, Object>> getIndicatorForShow() throws Exception {
         try {
             log.debug("getIndicator() called!!");
-
-            // 아직 보낼게 안 채워졌으면, 기존의 getIndicator로 채우고, 그거 보내기.
-            // 안 채워진 예상 사유. 서버 재실행후, 배치 스케줄러 미실행된 공백기.
-            if(readyMadeManager.getGetIndicator().isEmpty()){
-                List<MatrixDocument> result = gamerHintMatrixService.getIndicator();
-                if(result==null){
-                    // 클라이언트에서 cold start에 대한 판단을 isOk = false, statusCode = 200으로 하기로 함.
-                    Map<String, Object> map = new HashMap<>();
-                    map.put("isOk", false);
-                    map.put("data", "sorry, now cold start");
-                    return new ResponseEntity<Map<String,Object>>(map, HttpStatus.OK);
-//                    return handleError("sorry, now cold start");
-                } else{
-                    // result가 not null일때 업데이트!
-                    log.debug("YES DB, YES UPDATE");
-                    readyMadeManager.updateGetIndicator(result);
-                    return handleSuccess(result);
-                }
-            }
-            // 보낼게 있다! DB 안찍고 이거 바로 보내기.
-            else{
-                log.debug("NO DB");
-                return handleSuccess(readyMadeManager.getGetIndicator());
-            }
+            List<MatrixDocument> result = gamerHintMatrixService.getIndicatorForShow();
+            return handleSuccess(result);
         } catch (Exception e) {
             return handleError(e.getMessage());
         }
     }
+    // 행렬 요청 (coldStart O) => API 테스트 성공
+//    @GetMapping("/hints")
+//    public ResponseEntity<Map<String, Object>> getIndicator() throws Exception {
+//        try {
+//            log.debug("getIndicator() called!!");
+//
+//            // 아직 보낼게 안 채워졌으면, 기존의 getIndicator로 채우고, 그거 보내기.
+//            // 안 채워진 예상 사유. 서버 재실행후, 배치 스케줄러 미실행된 공백기.
+//            if(readyMadeManager.getGetIndicator().isEmpty()){
+//                List<MatrixDocument> result = gamerHintMatrixService.getIndicator();
+//                if(result==null){
+//                    // 클라이언트에서 cold start에 대한 판단을 isOk = false, statusCode = 200으로 하기로 함.
+//                    Map<String, Object> map = new HashMap<>();
+//                    map.put("isOk", false);
+//                    map.put("data", "sorry, now cold start");
+//                    return new ResponseEntity<Map<String,Object>>(map, HttpStatus.OK);
+////                    return handleError("sorry, now cold start");
+//                } else{
+//                    // result가 not null일때 업데이트!
+//                    log.debug("YES DB, YES UPDATE");
+//                    readyMadeManager.updateGetIndicator(result);
+//                    return handleSuccess(result);
+//                }
+//            }
+//            // 보낼게 있다! DB 안찍고 이거 바로 보내기.
+//            else{
+//                log.debug("NO DB");
+//                return handleSuccess(readyMadeManager.getGetIndicator());
+//            }
+//        } catch (Exception e) {
+//            return handleError(e.getMessage());
+//        }
+//    }
 
     // 데이터 반출 => API 테스트 성공
     @GetMapping("/hints/pickrate")
