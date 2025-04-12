@@ -6,6 +6,7 @@ import com.smashup.indicator.module.gamerhint.domain.entity.MatrixDocument;
 import com.smashup.indicator.module.gamerhint.domain.entity.WinMatrixDocument;
 import com.smashup.indicator.module.gamerhint.service.impl.GamerHintMatrixService;
 //import com.smashup.indicator.module.gamerhint.service.impl.GamerHintService;
+import com.smashup.indicator.module.gamerhint.service.impl.GamerHintMatrixSubService;
 import com.smashup.indicator.module.version.ReadyMadeManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,6 +27,7 @@ public class GamerHintController extends AbstractRestController {
 
     // 의존성 주입
     private final GamerHintMatrixService gamerHintMatrixService;
+    private final GamerHintMatrixSubService gamerHintMatrixSubService;
     private final ReadyMadeManager readyMadeManager;
 
     // 데이터 수집 => API 테스트 성공
@@ -97,6 +99,21 @@ public class GamerHintController extends AbstractRestController {
         try {
             log.debug("getIndicatorAllWin: {}");
             List<WinMatrixDocument> result = gamerHintMatrixService.getIndicatorAllWin();
+            return handleSuccess(result);
+        } catch (Exception e) {
+            return handleError(e.getMessage());
+        }
+    }
+
+    // doc 시추 => API 테스트 성공
+    @GetMapping("/doc/{patchVersion}/{batchCount}")
+    public ResponseEntity<Map<String, Object>> getDoc(
+            @PathVariable String patchVersion,
+            @PathVariable Integer batchCount
+    ) throws Exception {
+        try {
+            log.debug("getDoc");
+            List<MatrixDocument> result = gamerHintMatrixSubService.getDocumentByBatch(patchVersion,batchCount);
             return handleSuccess(result);
         } catch (Exception e) {
             return handleError(e.getMessage());
