@@ -1,9 +1,12 @@
-package com.smashup.indicator.module.version.controller.dto.request;
+package com.smashup.indicator.module.version.domain.entity;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Version;
+import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.List;
 import java.util.Map;
@@ -12,7 +15,14 @@ import java.util.Map;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class UpdatePoolRequestDto {
+
+@Document(collection = "versionWithPool")
+public class VersionWithPoolDocument {
+    @Id
+    private String id; // String으로 동적 생성 // patchVersion
+    private Integer patchVersionNum;
+
+    // UpdatePoolRequestDto
     private String patchVersion;
     // cardpool, patchVersion 세팅 통합하면서 추가됨.
     /// poolManager 세팅

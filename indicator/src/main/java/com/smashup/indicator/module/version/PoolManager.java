@@ -9,20 +9,12 @@ import java.util.*;
 public class PoolManager {
     // 필드 변수
     private String patchVersion = "not yet set";
-
     private final List<Integer> classPool = new ArrayList<>();
     private final List<Integer> mapPool = new ArrayList<>();
     private final List<Integer> playerNumPool = new ArrayList<>();
-
-//    private final List<Integer> cardPool = new ArrayList<>();
-    // Map<classCode, classCardPool>
-    private final Map<Integer, List<Integer>> classCardPoolMap = new HashMap<>();
-    // Map<cardId, cardName>
-    private final Map<Integer, String> allCardPoolMap = new HashMap<>();
-
-//    private final Map<Integer, Integer> cardPoolIndex = new HashMap<>();
-    // Map<classCode, Map<classCardId, classCardPoolIndex>>
-    private final Map<Integer, Map<Integer, Integer>> classCardPoolIndexMap = new HashMap<>();
+    private final Map<Integer, List<Integer>> classCardPoolMap = new HashMap<>(); // Map<classCode, classCardPool>
+    private final Map<Integer, String> allCardPoolMap = new HashMap<>(); // Map<cardId, cardName>
+    private final Map<Integer, Map<Integer, Integer>> classCardPoolIndexMap = new HashMap<>(); // Map<classCode, Map<classCardId, classCardPoolIndex>>
 
     public synchronized void updatePoolPost(UpdatePoolRequestDto dto) {
         // 패치 수정 안전 프로세스
