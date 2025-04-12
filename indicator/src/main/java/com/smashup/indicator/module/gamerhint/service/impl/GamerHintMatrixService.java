@@ -32,15 +32,36 @@ public class GamerHintMatrixService {
     private final VersionService versionService;
 
 
+//    // 지표 전달하기.
+//    @Transactional
+//    public List<MatrixDocument> getIndicator() throws Exception {
+//        // 콜드스타트 문구 발송
+//        if(versionService.getBatchCount()==1){
+//            return null;
+//        }
+//
+//        List<MatrixDocument> temp = gamerHintMatrixSubService.getDocumentByBatch(versionService.getCurrentPatchVersion(),versionService.getBatchCount()-1);
+//        List<MatrixDocument> results = new ArrayList<>();
+//        for (MatrixDocument doc: temp) {
+//            MatrixDocument extractDoc = MatrixDocument.builder()
+//                    .id(doc.getId())
+//                    .type(doc.getType())
+//                    .version(doc.getVersion())
+//                    .cardPool(doc.getCardPool())
+//                    .matrixMap(new HashMap<>())
+//                    .build();
+//            String matrixId = "-1/-1";
+//            extractDoc.getMatrixMap().put(matrixId, doc.getMatrixMap().get(matrixId));
+//
+//            results.add(extractDoc);
+//        }
+//        return results;
+//    }
+
     // 지표 전달하기.
     @Transactional
-    public List<MatrixDocument> getIndicator() throws Exception {
-        // 콜드스타트 문구 발송
-        if(versionService.getBatchCount()==1){
-            return null;
-        }
-
-        List<MatrixDocument> temp = gamerHintMatrixSubService.getDocumentByBatch(versionService.getCurrentPatchVersion(),versionService.getBatchCount()-1);
+    public List<MatrixDocument> getIndicatorForShow() throws Exception {
+        List<MatrixDocument> temp = gamerHintMatrixSubService.getDocumentByBatch(versionService.getCurrentPatchVersion(),versionService.getBatchCount());
         List<MatrixDocument> results = new ArrayList<>();
         for (MatrixDocument doc: temp) {
             MatrixDocument extractDoc = MatrixDocument.builder()
@@ -49,6 +70,7 @@ public class GamerHintMatrixService {
                     .version(doc.getVersion())
                     .cardPool(doc.getCardPool())
                     .matrixMap(new HashMap<>())
+                    .batchCount(doc.getBatchCount())
                     .build();
             String matrixId = "-1/-1";
             extractDoc.getMatrixMap().put(matrixId, doc.getMatrixMap().get(matrixId));
