@@ -15,6 +15,7 @@ public class PoolManager {
     private final Map<Integer, List<Integer>> classCardPoolMap = new HashMap<>(); // Map<classCode, classCardPool>
     private final Map<Integer, String> allCardPoolMap = new HashMap<>(); // Map<cardId, cardName>
     private final Map<Integer, Map<Integer, Integer>> classCardPoolIndexMap = new HashMap<>(); // Map<classCode, Map<classCardId, classCardPoolIndex>>
+    private final Map<Integer, Integer> upgradeCardPoolMap = new HashMap<>(); // Map< 승급 강화 카드 id, 승급 카드 id> >
 
     public synchronized void updatePoolPost(UpdatePoolRequestDto dto) {
         // 패치 수정 안전 프로세스
@@ -42,6 +43,10 @@ public class PoolManager {
         // ===== 카드별 픽률 승률 보여줄때 편하려고 cardName까지 맵핑하는 용도.
         allCardPoolMap.clear();
         allCardPoolMap.putAll(dto.getAllCardPoolMap());
+        // ===== 승급 카드, 승급 강화 카드 맵핑
+        upgradeCardPoolMap.clear();
+//        System.out.println(dto.getUpgradeCardPoolMap());
+        upgradeCardPoolMap.putAll(dto.getUpgradeCardPoolMap());
 
         // 구조 잡으면서 정렬 후 바로 삽입. classCardPoolIndexMap도 생성하기.
         Map<Integer, List<Integer>> cardPoolMap = dto.getCardPoolMap();
@@ -65,6 +70,9 @@ public class PoolManager {
         return patchVersion;
     }
 
+    public Map<Integer, Integer>  getUpgradeCardPoolMap() {
+        return Collections.unmodifiableMap(upgradeCardPoolMap);
+    }
     public Map<Integer, String>  getAllCardPoolMap() {
         return Collections.unmodifiableMap(allCardPoolMap);
     }
