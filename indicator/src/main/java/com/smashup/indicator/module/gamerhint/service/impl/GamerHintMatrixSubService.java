@@ -362,13 +362,65 @@ public class GamerHintMatrixSubService {
         }
     }
 
-//    @Transactional
-//    public void dbtest() {
-//        MatrixDocument test = MatrixDocument.builder()
-//                .id(new ObjectId().toString())
-//                .type("test")
-//                .build();
-//        matrixRepository.save(test);
-//    }
+    public void weightUpdateMatrix(MatrixDocument doc, List<String> targetMatrixIdList) {
+        // 재료 load
+        Map<Integer, Integer> upgradeCardPoolMap = poolManager.getUpgradeCardPoolMap();
+
+        String[] temp = doc.getId().split("/");
+        String classCodeStr = temp[3];
+        Integer classCode = Integer.parseInt(classCodeStr);
+        Map<Integer, Map<Integer, Integer>> classCardPoolIndexMap = poolManager.getClassCardPoolIndexMap();
+        Map<Integer, Integer> classCardPoolIndex = classCardPoolIndexMap.get(classCode);
+
+        // 타겟 matrix 순회
+        for (String id : targetMatrixIdList){
+            List<List<Integer>> matrix= doc.getMatrixMap().get(id);
+
+            // 승급 강화 카드 순회하기.
+            for (Map.Entry<Integer, Integer> entry : upgradeCardPoolMap.entrySet()){
+                Integer upgradeCardId = entry.getValue();
+                Integer upgradeReinforceCardId = entry.getKey();
+                // 자기 직업 승급 강화 카드가 아니면 작업하면 안됨.
+                if(classCardPoolIndex.containsKey(upgradeReinforceCardId)==false){
+                    continue;
+                }
+                // Id => index 변환
+                Integer upgradeCardIndex = classCardPoolIndex.get(upgradeCardId);
+                Integer upgradeReinforceCardIndex = classCardPoolIndex.get(upgradeReinforceCardId);
+
+                // matrix col의 길이만큼 순회하면서, 열 복사 => 열 고정, 행 순회
+                for (int row = 0; row < matrix.get(0).size(); row++) {
+                    // 교점 건너뛰기.
+                    if(row==upgradeCardIndex || row==upgradeReinforceCardIndex){
+                        continue;
+                    }
+
+                    // 승급 카드의 빈도 = parent, 승급 강화카드의 빈도는 child
+                    int parent = matrix.get(row).get(upgradeCardIndex);
+                    int child = matrix.get(row).get(upgradeReinforceCardIndex);
+                    matrix.get(row).set(upgradeReinforceCardIndex, parent+child);
+                }
+                // matrix col의 길이만큼 순회하면서, 행 복사 => 행 고정, 열 순회
+                for (int col = 0; col < matrix.get(0).size(); col++) {
+                    // 교점 건너뛰기.
+                    if(col==upgradeCardIndex || col==upgradeReinforceCardIndex){
+                        continue;
+                    }
+
+                    // 승급 카드의 빈도 = parent, 승급 강화카드의 빈도는 child
+                    int parent = matrix.get(upgradeCardIndex).get(col);
+                    int child = matrix.get(upgradeReinforceCardIndex).get(col);
+                    matrix.get(upgradeReinforceCardIndex).set(col, parent+child);
+                }
+                // 건너뛴 교점 작업하기
+                int parent = matrix.get(upgradeCardIndex).get(upgradeCardIndex);
+                int child1 = matrix.get(upgradeCardIndex).get(upgradeReinforceCardIndex);
+                matrix.get(upgradeCardIndex).set(upgradeReinforceCardIndex, parent+child1);
+                int child2 = matrix.get(upgradeReinforceCardIndex).get(upgradeReinforceCardIndex);
+                matrix.get(upgradeReinforceCardIndex).set(upgradeReinforceCardIndex, parent+child2);
+
+            }
+        }
+    }
 
 }

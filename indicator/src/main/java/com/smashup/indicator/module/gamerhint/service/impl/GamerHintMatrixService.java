@@ -77,6 +77,18 @@ public class GamerHintMatrixService {
 
             results.add(extractDoc);
         }
+
+        // 가중치 적용하는 logic 추가하기.
+        List<String> targetMatrixIdList = new ArrayList<>();
+        targetMatrixIdList.add("-1/-1");
+        for (MatrixDocument doc: results) {
+            // T 타입만 적용. C 타입은 패스.
+            if(doc.getType().equals("C")){
+                continue;
+            }
+            gamerHintMatrixSubService.weightUpdateMatrix(doc,targetMatrixIdList);
+        }
+
         return results;
     }
     // 지표 전달하기.
