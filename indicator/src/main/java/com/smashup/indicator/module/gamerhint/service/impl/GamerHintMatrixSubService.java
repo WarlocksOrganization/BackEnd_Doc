@@ -400,18 +400,18 @@ public class GamerHintMatrixSubService {
                     int child = matrix.get(row).get(upgradeReinforceCardIndex);
                     matrix.get(row).set(upgradeReinforceCardIndex, parent+child);
                 }
-                // matrix col의 길이만큼 순회하면서, 행 복사 => 행 고정, 열 순회
-                for (int col = 0; col < matrix.get(0).size(); col++) {
-                    // 교점 건너뛰기.
-                    if(col==upgradeCardIndex || col==upgradeReinforceCardIndex){
-                        continue;
-                    }
-
-                    // 승급 카드의 빈도 = parent, 승급 강화카드의 빈도는 child
-                    int parent = matrix.get(upgradeCardIndex).get(col);
-                    int child = matrix.get(upgradeReinforceCardIndex).get(col);
-                    matrix.get(upgradeReinforceCardIndex).set(col, parent+child);
-                }
+//                // matrix col의 길이만큼 순회하면서, 행 복사 => 행 고정, 열 순회
+//                for (int col = 0; col < matrix.get(0).size(); col++) {
+//                    // 교점 건너뛰기.
+//                    if(col==upgradeCardIndex || col==upgradeReinforceCardIndex){
+//                        continue;
+//                    }
+//
+//                    // 승급 카드의 빈도 = parent, 승급 강화카드의 빈도는 child
+//                    int parent = matrix.get(upgradeCardIndex).get(col);
+//                    int child = matrix.get(upgradeReinforceCardIndex).get(col);
+//                    matrix.get(upgradeReinforceCardIndex).set(col, parent+child);
+//                }
                 // 건너뛴 교점 작업하기
                 int parent = matrix.get(upgradeCardIndex).get(upgradeCardIndex);
                 int child1 = matrix.get(upgradeCardIndex).get(upgradeReinforceCardIndex);
