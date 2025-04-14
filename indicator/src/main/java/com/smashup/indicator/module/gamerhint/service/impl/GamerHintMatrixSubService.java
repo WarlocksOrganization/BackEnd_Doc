@@ -396,7 +396,7 @@ public class GamerHintMatrixSubService {
                     }
 
                     // 승급 카드의 빈도 = parent, 승급 강화카드의 빈도는 child
-                    int parent = matrix.get(row).get(upgradeCardIndex);
+                    int parent = matrix.get(row).get(upgradeCardIndex) *8 /10;
                     int child = matrix.get(row).get(upgradeReinforceCardIndex);
                     matrix.get(row).set(upgradeReinforceCardIndex, parent+child);
                 }
