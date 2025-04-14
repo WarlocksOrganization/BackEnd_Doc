@@ -396,12 +396,12 @@ public class GamerHintMatrixSubService {
                     }
 
                     // 승급 카드의 빈도 = parent, 승급 강화카드의 빈도는 child
-                    int parent = matrix.get(row).get(upgradeCardIndex) *8 /10;
+                    int parent = matrix.get(row).get(upgradeCardIndex) *3 /10;
                     int child = matrix.get(row).get(upgradeReinforceCardIndex);
                     matrix.get(row).set(upgradeReinforceCardIndex, parent+child);
                 }
 //                // matrix col의 길이만큼 순회하면서, 행 복사 => 행 고정, 열 순회
-//                for (int col = 0; col < matrix.get(0).size(); col++) {
+//                for (int col = 0; col < matrix.get(0).size(); col++ㄷ) {
 //                    // 교점 건너뛰기.
 //                    if(col==upgradeCardIndex || col==upgradeReinforceCardIndex){
 //                        continue;
