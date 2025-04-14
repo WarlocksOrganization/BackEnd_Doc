@@ -91,6 +91,49 @@ public class GamerHintMatrixService {
 
         return results;
     }
+
+    // 지표 전달하기.
+    @Transactional
+    public List<MatrixDocument> getIndicatorForShowTest(Integer classCode) throws Exception {
+        List<MatrixDocument> temp = gamerHintMatrixSubService.getDocumentByBatch(versionService.getCurrentPatchVersion(),versionService.getBatchCount());
+        List<MatrixDocument> results = new ArrayList<>();
+        for (MatrixDocument doc: temp) {
+            // 특정 직업만 긁자... HeatMap 만들기 편하게
+            String[] idString = doc.getId().split("/");
+            String classCodeStr = idString[3];
+            Integer docClassCode = Integer.parseInt(classCodeStr);
+
+            if(docClassCode != classCode){
+                continue;
+            }
+
+            MatrixDocument extractDoc = MatrixDocument.builder()
+                    .id(doc.getId())
+                    .type(doc.getType())
+                    .version(doc.getVersion())
+                    .cardPool(doc.getCardPool())
+                    .matrixMap(new HashMap<>())
+                    .batchCount(doc.getBatchCount())
+                    .build();
+            String matrixId = "-1/-1";
+            extractDoc.getMatrixMap().put(matrixId, doc.getMatrixMap().get(matrixId));
+
+            results.add(extractDoc);
+        }
+
+        // 가중치 적용하는 logic 추가하기.
+        List<String> targetMatrixIdList = new ArrayList<>();
+        targetMatrixIdList.add("-1/-1");
+        for (MatrixDocument doc: results) {
+            // T 타입만 적용. C 타입은 패스.
+            if(doc.getType().equals("C")){
+                continue;
+            }
+            gamerHintMatrixSubService.weightUpdateMatrix(doc,targetMatrixIdList);
+        }
+
+        return results;
+    }
     // 지표 전달하기.
     @Transactional
     public List<MatrixDocument> getIndicatorAllPick() throws Exception {
