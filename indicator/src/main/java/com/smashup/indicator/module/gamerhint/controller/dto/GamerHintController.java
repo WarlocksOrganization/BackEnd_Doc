@@ -58,6 +58,20 @@ public class GamerHintController extends AbstractRestController {
             return handleError(e.getMessage());
         }
     }
+
+    // 행렬 요청 시연용(coldStart X) => API 테스트 성공
+    @GetMapping("/hints/test/{classCode}")
+    public ResponseEntity<Map<String, Object>> getIndicatorForShowTest(
+            @PathVariable Integer classCode
+    ) throws Exception {
+        try {
+//            log.debug("getIndicator() called!!");
+            List<MatrixDocument> result = gamerHintMatrixService.getIndicatorForShowTest(classCode);
+            return handleSuccess(result);
+        } catch (Exception e) {
+            return handleError(e.getMessage());
+        }
+    }
     // 행렬 요청 (coldStart O) => API 테스트 성공
 //    @GetMapping("/hints")
 //    public ResponseEntity<Map<String, Object>> getIndicator() throws Exception {

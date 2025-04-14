@@ -412,12 +412,12 @@ public class GamerHintMatrixSubService {
 //                    int child = matrix.get(upgradeReinforceCardIndex).get(col);
 //                    matrix.get(upgradeReinforceCardIndex).set(col, parent+child);
 //                }
-                // 건너뛴 교점 작업하기
-                int parent = matrix.get(upgradeCardIndex).get(upgradeCardIndex);
-                int child1 = matrix.get(upgradeCardIndex).get(upgradeReinforceCardIndex);
-                matrix.get(upgradeCardIndex).set(upgradeReinforceCardIndex, parent+child1);
-                int child2 = matrix.get(upgradeReinforceCardIndex).get(upgradeReinforceCardIndex);
-                matrix.get(upgradeReinforceCardIndex).set(upgradeReinforceCardIndex, parent+child2);
+//                // 건너뛴 교점 작업하기
+//                int parent = matrix.get(upgradeCardIndex).get(upgradeCardIndex);
+//                int child1 = matrix.get(upgradeCardIndex).get(upgradeReinforceCardIndex);
+//                matrix.get(upgradeCardIndex).set(upgradeReinforceCardIndex, parent+child1);
+//                int child2 = matrix.get(upgradeReinforceCardIndex).get(upgradeReinforceCardIndex);
+//                matrix.get(upgradeReinforceCardIndex).set(upgradeReinforceCardIndex, parent+child2);
 
             }
         }
